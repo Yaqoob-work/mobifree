@@ -1,10 +1,10 @@
+
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
-
-
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -39,7 +39,6 @@ class _HomeCategoryState extends State<HomeCategory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: FutureBuilder<List<Category>>(
         future: _categories,
         builder: (context, snapshot) {
@@ -259,8 +258,6 @@ class VideoScreen extends StatefulWidget {
   _VideoScreenState createState() => _VideoScreenState();
 }
 
-
-
 class _VideoScreenState extends State<VideoScreen> {
   late VideoPlayerController _controller;
   bool _isError = false;
@@ -268,7 +265,8 @@ class _VideoScreenState extends State<VideoScreen> {
   bool showChannels = false;
   int currentIndex = 0;
   final FocusNode _fabFocusNode = FocusNode();
-  Color _fabColor = Colors.white;
+  // Color _fabColor = Colors.white;
+  Timer? _inactivityTimer;
 
   @override
   void initState() {
@@ -276,11 +274,11 @@ class _VideoScreenState extends State<VideoScreen> {
     currentIndex = widget.initialIndex;
     _initializeVideoPlayer(widget.channels[currentIndex].url);
 
-    _fabFocusNode.addListener(() {
-      setState(() {
-        _fabColor = _fabFocusNode.hasFocus ? const Color.fromARGB(255, 136, 51, 122) : Colors.white;
-      });
-    });
+    // _fabFocusNode.addListener(() {
+    //   setState(() {
+    //     _fabColor = _fabFocusNode.hasFocus ? const Color.fromARGB(255, 136, 51, 122) : Colors.white;
+    //   });
+    // });
 
     // Registering the center button event
     RawKeyboard.instance.addListener(_handleKeyEvent);
@@ -296,6 +294,7 @@ class _VideoScreenState extends State<VideoScreen> {
     _controller.dispose();
     _fabFocusNode.dispose();
     RawKeyboard.instance.removeListener(_handleKeyEvent);
+    _inactivityTimer?.cancel();
     super.dispose();
   }
 
@@ -306,6 +305,7 @@ class _VideoScreenState extends State<VideoScreen> {
         showChannels = !showChannels;
       });
     }
+    _resetInactivityTimer(); // Reset inactivity timer on key event
   }
 
   void _initializeVideoPlayer(String videoUrl) {
@@ -319,6 +319,15 @@ class _VideoScreenState extends State<VideoScreen> {
           _errorMessage = error.toString();
         });
       });
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(const Duration(seconds: 10), () {
+      setState(() {
+        showChannels = false;
+      });
+    });
   }
 
   void _changeChannel(int index) {
@@ -386,18 +395,16 @@ class _VideoScreenState extends State<VideoScreen> {
                         bottom: showChannels ? 160 : 16,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                         
                           child: Focus(
-                              focusNode: _fabFocusNode,
-                            
+                            focusNode: _fabFocusNode,
                             child: FloatingActionButton(
-                              backgroundColor: _fabColor,
+                              // backgroundColor: _fabColor,
                               onPressed: () {
                                 setState(() {
                                   showChannels = !showChannels;
                                 });
                               },
-                              child: Icon(Icons.menu),
+                              child: Icon(showChannels ? Icons.close : Icons.grid_view),
                             ),
                           ),
                         ),

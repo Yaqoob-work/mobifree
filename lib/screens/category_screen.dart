@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,9 +65,6 @@ Future<List<Channel>> fetchChannels() async {
   }
 }
 
-
-
-
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
   final String genres;
@@ -85,9 +83,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool _isError = false;
   String _errorMessage = '';
   late Future<List<Channel>> futureChannels;
-  bool showChannels = false; // Track the state of showing channels
-  final FocusNode _fabFocusNode = FocusNode();
-  Color _fabColor = Colors.white;
+  bool showChannels = false;
+  Timer? _timer;
+  DateTime? _lastActivityTime; // Track last activity time
 
   @override
   void initState() {
@@ -95,11 +93,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     futureChannels = fetchChannelsByGenres(widget.genres);
     _initializeVideoPlayer();
 
-    _fabFocusNode.addListener(() {
-      setState(() {
-        _fabColor = _fabFocusNode.hasFocus ? const Color.fromARGB(255, 136, 51, 122): Colors.white;
-      });
-    });
+    // Initialize timer to hide channels after 10 seconds of inactivity
+    _startTimer();
   }
 
   void _initializeVideoPlayer() {
@@ -115,10 +110,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       });
   }
 
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (_lastActivityTime == null ||
+          DateTime.now().difference(_lastActivityTime!) > Duration(seconds: 10)) {
+        setState(() {
+          showChannels = false;
+        });
+      }
+    });
+  }
+
+  void _resetTimer() {
+    _lastActivityTime = DateTime.now();
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+    _startTimer();
+  }
+
   @override
   void dispose() {
     _controller.dispose();
-    _fabFocusNode.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -199,6 +213,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                                 channel: channels[index],
                                                 onPressed: () {
                                                   _controller.pause();
+                                                  _resetTimer();
+                                                },
+                                                onFocused: () {
+                                                  _resetTimer();
                                                 },
                                               )
                                             : const SizedBox.shrink(),
@@ -221,26 +239,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             duration: const Duration(milliseconds: 300),
             bottom: showChannels ? 150 : 16,
             right: 16,
-            // child: Focus(
-            //   focusNode: _fabFocusNode,
-              child: FloatingActionButton(
-                onPressed: () {
-                  setState(() {
-                    showChannels = !showChannels; // Toggle the state of showing channels
-                  });
-                },
-                // backgroundColor: _fabColor,
-                child: Icon(showChannels ? Icons.close : Icons.grid_view),
-              ),
-            // ),
+            child: FloatingActionButton(
+              onPressed: () {
+                setState(() {
+                  showChannels = !showChannels;
+                  _resetTimer();
+                });
+              },
+              child: Icon(showChannels ? Icons.close : Icons.grid_view),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
 
 class CategoryScreen extends StatefulWidget {
   @override
@@ -329,8 +342,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
 class ChannelItem extends StatefulWidget {
   final Channel channel;
   final VoidCallback onPressed;
+  final VoidCallback? onFocused;
 
-  ChannelItem({required this.channel, required this.onPressed});
+  ChannelItem({
+    required this.channel,
+    required this.onPressed,
+    this.onFocused,
+  });
 
   @override
   _ChannelItemState createState() => _ChannelItemState();
@@ -338,6 +356,7 @@ class ChannelItem extends StatefulWidget {
 
 class _ChannelItemState extends State<ChannelItem> {
   late FocusNode _focusNode;
+  bool _isFocused = false;
 
   @override
   void initState() {
@@ -352,7 +371,6 @@ class _ChannelItemState extends State<ChannelItem> {
   }
 
   void _handleSelect() {
-    // Perform actions when the D-pad center button (select button) is pressed
     widget.onPressed();
     Navigator.push(
       context,
@@ -371,8 +389,11 @@ class _ChannelItemState extends State<ChannelItem> {
       focusNode: _focusNode,
       onFocusChange: (hasFocus) {
         setState(() {
-          // Rebuild the widget when focus changes to update border color
+          _isFocused = hasFocus;
         });
+        if (hasFocus && widget.onFocused != null) {
+          widget.onFocused!();
+        }
       },
       onKey: (node, event) {
         if (event is RawKeyDownEvent &&
@@ -383,7 +404,7 @@ class _ChannelItemState extends State<ChannelItem> {
         return KeyEventResult.ignored;
       },
       child: GestureDetector(
-        onTap: _handleSelect, // Handle tap gesture as well
+        onTap: _handleSelect,
         child: Padding(
           padding: const EdgeInsets.all(1.0),
           child: Column(
@@ -395,8 +416,9 @@ class _ChannelItemState extends State<ChannelItem> {
                 height: _focusNode.hasFocus ? 90 : 70,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color:
-                        _focusNode.hasFocus ?const Color.fromARGB(255, 136, 51, 122) : Colors.transparent,
+                    color: _isFocused
+                        ?  const Color.fromARGB(255, 136, 51, 122)
+                        : Colors.transparent,
                     width: 5.0,
                   ),
                   borderRadius: BorderRadius.circular(13.0),
@@ -416,7 +438,11 @@ class _ChannelItemState extends State<ChannelItem> {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     widget.channel.name,
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _isFocused ? const Color.fromARGB(255, 136, 51, 122): Colors.white,
+                      // Yellow color when focused, white otherwise
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

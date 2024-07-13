@@ -1,15 +1,20 @@
+
+
+
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
 import '../video_widget/video_screen.dart';
 
-class LiveScreen extends StatefulWidget {
+class VOD extends StatefulWidget {
   @override
-  _LiveScreenState createState() => _LiveScreenState();
+  _VODState createState() => _VODState();
 }
 
-class _LiveScreenState extends State<LiveScreen> {
+class _VODState extends State<VOD> {
   List<dynamic> entertainmentList = [];
   bool isLoading = true;
   String errorMessage = '';
@@ -23,7 +28,7 @@ class _LiveScreenState extends State<LiveScreen> {
   Future<void> fetchEntertainment() async {
     try {
       final response = await http.get(
-        Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://mobifreetv.com/android/getAllContentsOfNetwork/0'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -35,13 +40,12 @@ class _LiveScreenState extends State<LiveScreen> {
         setState(() {
           entertainmentList = responseData
               .where((channel) =>
-                  channel['status'] != null &&
-                  channel['status'].contains('1'))
+                  channel['genres'] != null &&
+                  channel['genres'].contains('movies'))
               .map((channel) {
-                channel['isFocused'] = false; // Add isFocused field
-                return channel;
-              })
-              .toList();
+            channel['isFocused'] = false; // Add isFocused field
+            return channel;
+          }).toList();
           isLoading = false;
         });
       } else {
@@ -74,7 +78,8 @@ class _LiveScreenState extends State<LiveScreen> {
                       itemCount: entertainmentList.length,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () => _navigateToVideoScreen(context, entertainmentList[index]),
+                          onTap: () =>
+                              _navigateToVideoScreen(context, entertainmentList[index]),
                           child: _buildGridViewItem(index),
                         );
                       },
@@ -84,8 +89,10 @@ class _LiveScreenState extends State<LiveScreen> {
 
   Widget _buildGridViewItem(int index) {
     return Focus(
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+      onKey: (FocusNode node, RawKeyEvent event) {
+        if (event is RawKeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+                event.logicalKey == LogicalKeyboardKey.enter)) {
           _navigateToVideoScreen(context, entertainmentList[index]);
           return KeyEventResult.handled;
         }
@@ -97,7 +104,7 @@ class _LiveScreenState extends State<LiveScreen> {
         });
       },
       child: Container(
-        margin: const EdgeInsets.all(8.0),
+        margin: EdgeInsets.all(8.0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(15.0),
           child: Column(
@@ -107,7 +114,9 @@ class _LiveScreenState extends State<LiveScreen> {
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: entertainmentList[index]['isFocused'] ? const Color.fromARGB(255, 136, 51, 122): Colors.transparent,
+                    color: entertainmentList[index]['isFocused']
+                        ? const Color.fromARGB(255, 136, 51, 122)
+                        : Colors.transparent,
                     width: 3.0,
                   ),
                   borderRadius: BorderRadius.circular(15.0),
@@ -115,20 +124,32 @@ class _LiveScreenState extends State<LiveScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: Image.network(
-                    entertainmentList[index]['banner'],
+                    entertainmentList[index]['banner'] ?? 'https://example.com/default_banner.png',
                     width: entertainmentList[index]['isFocused'] ? 110 : 90,
                     height: entertainmentList[index]['isFocused'] ? 90 : 70,
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              const SizedBox(height: 8.0),
-              Text(
-                entertainmentList[index]['name'] ?? 'Unknown',
-                style: const TextStyle(
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
+              SizedBox(height: 8.0),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                      child: Text(
+                        entertainmentList[index]['name'] ?? 'Unknown',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -142,14 +163,19 @@ class _LiveScreenState extends State<LiveScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => VideoScreen(
-          videoUrl: entertainmentItem['url'],
-          videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
+          videoUrl: entertainmentItem['url'] ?? '',
+          videoTitle: entertainmentItem['name'] ?? 'Unknown',
+          channelList: entertainmentList,
+          onFabFocusChanged: _handleFabFocusChanged, genres: '',
         ),
       ),
     );
   }
+
+  void _handleFabFocusChanged(bool hasFocus) {
+    setState(() {
+      // Update FAB focus state
+      // This method can be called from VideoScreen to update FAB focus state
+    });
+  }
 }
-
-
-
