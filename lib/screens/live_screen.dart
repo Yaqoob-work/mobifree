@@ -97,6 +97,7 @@ class _LiveScreenState extends State<LiveScreen> {
         });
       },
       child: Container(
+        height: 100,
         margin: const EdgeInsets.all(8.0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(15.0),

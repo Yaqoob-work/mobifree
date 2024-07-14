@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:video_player/video_player.dart';
 import 'package:flutter/services.dart';
+
+import '../video_widget/video_screen.dart';
 
 class NewsScreen extends StatefulWidget {
   @override
@@ -144,7 +145,7 @@ class _NewsScreenState extends State<NewsScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList,
+          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
         ),
       ),
     );
@@ -152,174 +153,3 @@ class _NewsScreenState extends State<NewsScreen> {
 }
 
 
-
-class VideoScreen extends StatefulWidget {
-  final String videoUrl;
-  final String videoTitle;
-  final List<dynamic> channelList;
-
-  VideoScreen({required this.videoUrl, required this.videoTitle, required this.channelList});
-
-  @override
-  _VideoScreenState createState() => _VideoScreenState();
-}
-
-class _VideoScreenState extends State<VideoScreen> {
-  late VideoPlayerController _controller;
-  late Future<void> _initializeVideoPlayerFuture;
-  bool isGridVisible = false;
-  int selectedIndex = -1;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl);
-    _initializeVideoPlayerFuture = _controller.initialize();
-    _controller.setLooping(true);
-    _controller.play();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void toggleGridVisibility() {
-    setState(() {
-      isGridVisible = !isGridVisible;
-    });
-  }
-
-  void _onItemFocus(int index, bool hasFocus) {
-    setState(() {
-      widget.channelList[index]['isFocused'] = hasFocus;
-    });
-  }
-
-  void _onItemTap(int index) {
-    setState(() {
-      selectedIndex = index;
-      _controller.pause();
-      _controller = VideoPlayerController.network(widget.channelList[index]['url']);
-      _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-        _controller.play();
-        setState(() {});
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          FutureBuilder(
-            future: _initializeVideoPlayerFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
-                return Center(
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    // aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  ),
-                );
-              } else {
-                return const Center(child: CircularProgressIndicator());
-              }
-            },
-          ),
-          Positioned(
-            bottom: isGridVisible ? 150 : 16.0,
-            right: 16.0,
-            child: FloatingActionButton(
-              onPressed: toggleGridVisibility,
-              child: Icon(isGridVisible ? Icons.close : Icons.grid_view),
-            ),
-          ),
-          if (isGridVisible)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 150,
-                color: Colors.black87,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: widget.channelList.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () => _onItemTap(index),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(50.0),
-                        child: Focus(
-                          onKey: (FocusNode node, RawKeyEvent event) {
-                            if (event is RawKeyDownEvent &&
-                                event.logicalKey == LogicalKeyboardKey.select) {
-                              _onItemTap(index);
-                              return KeyEventResult.handled;
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          onFocusChange: (hasFocus) => _onItemFocus(index, hasFocus),
-                          child: Container(
-                            width: 150,
-                            margin: const EdgeInsets.all(8.0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(15.0),
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 1000),
-                                      curve: Curves.easeInOut,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: widget.channelList[index]['isFocused']
-                                              ? Colors.yellow
-                                              : Colors.transparent,
-                                          width: 5.0,
-                                        ),
-                                        borderRadius: BorderRadius.circular(25.0),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Image.network(
-                                          widget.channelList[index]['banner'],
-                                          fit: widget.channelList[index]['isFocused']
-                                              ? BoxFit.cover
-                                              : BoxFit.contain,
-                                          width: widget.channelList[index]['isFocused'] ? 100 : 80,
-                                          height: widget.channelList[index]['isFocused'] ? 90 : 60,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4.0),
-                                  Text(
-                                    widget.channelList[index]['name'] ?? 'Unknown',
-                                    style: TextStyle(
-                                      color: widget.channelList[index]['isFocused']
-                                          ? const Color.fromARGB(255, 136, 51, 122)
-                                          : Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}

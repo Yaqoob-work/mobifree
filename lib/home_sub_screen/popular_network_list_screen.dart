@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../video_widget/video_screen.dart';
 
 class PopularNetworkListScreen extends StatefulWidget {
   @override
@@ -36,7 +37,7 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => VideoScreen(videoUrl: videoUrl),
+          builder: (context) => VideoScreen(videoUrl: videoUrl, videoTitle: '', channelList: [], onFabFocusChanged: (bool ) {  }, genres: '',),
         ),
       );
     } else {
@@ -85,24 +86,24 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
   }
 }
 
-class VideoScreen extends StatelessWidget {
-  final String videoUrl;
+// class VideoScreen extends StatelessWidget {
+//   final String videoUrl;
 
-  VideoScreen({required this.videoUrl});
+//   VideoScreen({required this.videoUrl});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
       
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Implement video player logic here
-            print('Playing video: $videoUrl');
-          },
-          child: Text('Play Video'),
-        ),
-      ),
-    );
-  }
-}
+//       body: Center(
+//         child: ElevatedButton(
+//           onPressed: () {
+//             // Implement video player logic here
+//             print('Playing video: $videoUrl');
+//           },
+//           child: Text('Play Video'),
+//         ),
+//       ),
+//     );
+//   }
+// }

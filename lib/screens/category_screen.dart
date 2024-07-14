@@ -237,7 +237,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         children: [
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
-            bottom: showChannels ? 150 : 16,
+            bottom: showChannels ? 160 : 16,
             right: 16,
             child: FloatingActionButton(
               onPressed: () {
@@ -304,7 +304,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       child: Text(
                         entry.key,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                            fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
                       ),
                     ),
                     const SizedBox(height: 8),
