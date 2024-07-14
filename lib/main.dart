@@ -137,8 +137,8 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
           Container(
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(40),
-              child: Image.asset('assets/logo.jpg', height: 50),
+              // borderRadius: BorderRadius.circular(40),
+              child: Image.asset('assets/logo.png', height: 100),
             ),
           ),
           Expanded(
