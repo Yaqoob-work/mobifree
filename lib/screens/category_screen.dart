@@ -372,7 +372,7 @@ class _ChannelItemState extends State<ChannelItem> {
 
   void _handleSelect() {
     widget.onPressed();
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => VideoPlayerScreen(

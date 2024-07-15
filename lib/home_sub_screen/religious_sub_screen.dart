@@ -124,8 +124,8 @@ class _ReligiousSubScreenState extends State<ReligiousSubScreen> {
                 constraints: BoxConstraints(maxWidth: entertainmentList[index]['isFocused'] ? 110 : 90),
                 child: Text(
                   entertainmentList[index]['name'] ?? 'Unknown',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style:  TextStyle(
+                    color: entertainmentList[index]['isFocused'] ?Color.fromARGB(255, 106, 235, 20):Colors.white,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,

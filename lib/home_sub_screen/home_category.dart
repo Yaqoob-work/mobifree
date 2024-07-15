@@ -180,7 +180,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 child: Text(
                   widget.channel.name,
                   style: TextStyle(
-                    color: isFocused ?const Color.fromARGB(255, 136, 51, 122) : Colors.white,
+                    color: isFocused ?Color.fromARGB(255, 106, 235, 20) : Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),

@@ -609,7 +609,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                         border: Border.all(
                                           color: widget.channelList[index]
                                                   ['isFocused']
-                                              ? const Color.fromARGB(255, 136, 51, 122)
+                                              ? Color.fromARGB(255, 106, 235, 20)
                                               : Colors.transparent,
                                           width: 5.0,
                                         ),
@@ -635,7 +635,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                       widget.channelList[index]['name'] ?? 'Unknown',
                                       style: TextStyle(
                                         color: widget.channelList[index]['isFocused']
-                                            ? const Color.fromARGB(255, 136, 51, 122)
+                                            ? Color.fromARGB(255, 106, 235, 20)
                                             : Colors.white.withOpacity(0.6),
                                         fontSize: 12.0,
                                       ),

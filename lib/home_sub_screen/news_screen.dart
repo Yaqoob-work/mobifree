@@ -126,8 +126,8 @@ class _NewsScreenState extends State<NewsScreen> {
               const SizedBox(height: 8.0),
               Text(
                 entertainmentList[index]['name'] ?? 'Unknown',
-                style: const TextStyle(
-                  color: Colors.white,
+                style:  TextStyle(
+                  color:entertainmentList[index]['isFocused'] ?Color.fromARGB(255, 106, 235, 20): Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),

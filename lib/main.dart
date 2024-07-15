@@ -130,7 +130,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.21, // Adjust percentage as needed
+      width: MediaQuery.of(context).size.width * 0.18, // Adjust percentage as needed
       color: const Color.fromARGB(255, 136, 51, 122),
       child: Column(
         children: <Widget>[
@@ -138,7 +138,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
               // borderRadius: BorderRadius.circular(40),
-              child: Image.asset('assets/logo.png', height: 100),
+              child: Image.asset('assets/logo.png', width: MediaQuery.of(context).size.width * 0.5),
             ),
           ),
           Expanded(

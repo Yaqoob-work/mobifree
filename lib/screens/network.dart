@@ -117,7 +117,7 @@ class _NetworkState extends State<Network> {
                     color: entertainmentList[index]['isFocused']
                         ? const Color.fromARGB(255, 136, 51, 122)
                         : Colors.transparent,
-                    width: 3.0,
+                    width: 5.0,
                   ),
                   borderRadius: BorderRadius.circular(15.0),
                 ),
@@ -141,7 +141,7 @@ class _NetworkState extends State<Network> {
                       child: Text(
                         entertainmentList[index]['name'] ?? 'Unknown',
                         style: TextStyle(
-                          color: Colors.white,
+                          color:entertainmentList[index]['isFocused'] ? Color.fromARGB(255, 106, 235, 20): Colors.white,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,

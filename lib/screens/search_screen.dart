@@ -172,7 +172,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   searchResults[index]['name'] ?? 'Unknown',
                   style: TextStyle(
                     color:
-                        selectedIndex == index ? Colors.yellow : Colors.white,
+                        selectedIndex == index ? Color.fromARGB(255, 106, 235, 20): Colors.white,
                   ),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,

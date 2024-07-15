@@ -154,7 +154,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
                       child: Text(
                         entertainmentList[index]['name'] ?? 'Unknown',
                         style: TextStyle(
-                          color: Colors.white,
+                          color:entertainmentList[index]['isFocused'] ?Color.fromARGB(255, 106, 235, 20): Colors.white,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,

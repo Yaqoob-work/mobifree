@@ -105,7 +105,7 @@ class _WebSeriesScreenState extends State<WebSeriesScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: entertainmentList[index]['isFocused'] ?const Color.fromARGB(255, 136, 51, 122): Colors.transparent,
-                    width: 3.0,
+                    width: 5.0,
                   ),
                   borderRadius: BorderRadius.circular(15.0),
                 ),
@@ -124,8 +124,8 @@ class _WebSeriesScreenState extends State<WebSeriesScreen> {
                 constraints: BoxConstraints(maxWidth: entertainmentList[index]['isFocused'] ? 110 : 90),
                 child: Text(
                   entertainmentList[index]['name'] ?? 'Unknown',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style:  TextStyle(
+                    color:entertainmentList[index]['isFocused'] ? Color.fromARGB(255, 106, 235, 20): Colors.white,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
