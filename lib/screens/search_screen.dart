@@ -243,7 +243,7 @@ class _SearchScreenState extends State<SearchScreen> {
           videoUrl: searchResults[index]['url'] ?? '',
           videoTitle: searchResults[index]['name'] ?? 'Unknown',
           channelList: searchResults,
-          onFabFocusChanged: _handleFabFocusChanged, genres: '',
+          onFabFocusChanged: _handleFabFocusChanged, genres: '',url: '',
         ),
       ),
     );

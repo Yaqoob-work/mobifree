@@ -179,7 +179,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
           channelList: entertainmentList,
-          onFabFocusChanged: _handleFabFocusChanged, genres: '',
+          onFabFocusChanged: _handleFabFocusChanged, genres: '', url: '',
         ),
       ),
     );

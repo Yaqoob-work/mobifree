@@ -46,6 +46,7 @@ dependencies:
   # vlc_flutter: ^0.0.2
   better_player: ^0.0.84
   flutter_launcher_icons: ^0.13.1
+  carousel_slider: ^4.2.1
   
 
 dev_dependencies:

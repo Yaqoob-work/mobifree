@@ -146,7 +146,7 @@ class _WebSeriesScreenState extends State<WebSeriesScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
+          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
         ),
       ),
     );

@@ -141,7 +141,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
+          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
         ),
       ),
     );

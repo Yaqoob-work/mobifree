@@ -166,7 +166,7 @@ class _VODState extends State<VOD> {
           videoUrl: entertainmentItem['url'] ?? '',
           videoTitle: entertainmentItem['name'] ?? 'Unknown',
           channelList: entertainmentList,
-          onFabFocusChanged: _handleFabFocusChanged, genres: '',
+          onFabFocusChanged: _handleFabFocusChanged, genres: '',url: '',
         ),
       ),
     );

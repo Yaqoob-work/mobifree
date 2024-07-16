@@ -304,7 +304,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'] ?? '',
           videoTitle: entertainmentItem['name'] ?? 'Unknown',
-          channelList: entertainmentList,
+          channelList: entertainmentList,url: '',
           onFabFocusChanged: (bool) {
             // Handle FAB focus change if needed
           },

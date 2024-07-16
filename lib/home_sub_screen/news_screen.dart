@@ -145,7 +145,7 @@ class _NewsScreenState extends State<NewsScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
+          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
         ),
       ),
     );

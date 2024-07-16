@@ -5,7 +5,8 @@ import '../video_widget/video_screen.dart';
 
 class PopularNetworkListScreen extends StatefulWidget {
   @override
-  _PopularNetworkListScreenState createState() => _PopularNetworkListScreenState();
+  _PopularNetworkListScreenState createState() =>
+      _PopularNetworkListScreenState();
 }
 
 class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
@@ -37,7 +38,13 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => VideoScreen(videoUrl: videoUrl, videoTitle: '', channelList: [], onFabFocusChanged: (bool ) {  }, genres: '',),
+          builder: (context) => VideoScreen(
+            videoUrl: videoUrl,
+            videoTitle: '',
+            channelList: [],
+            onFabFocusChanged: (bool) {},
+            genres: '',url: '',
+          ),
         ),
       );
     } else {
@@ -49,7 +56,6 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: networks.isEmpty
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -58,7 +64,8 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
                 final network = networks[index];
                 return GestureDetector(
                   onTap: () {
-                    playVideo(network['url']); // Replace with your video URL field name
+                    playVideo(network[
+                        'url']); // Replace with your video URL field name
                   },
                   child: Container(
                     height: MediaQuery.of(context).size.height * 0.5,
@@ -71,10 +78,15 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
                           network['logo'],
                           width: MediaQuery.of(context).size.width * 0.2,
                         ),
-                        SizedBox(height: 1.0), // Add some space between image and text
+                        SizedBox(
+                            height:
+                                1.0), // Add some space between image and text
                         Text(
                           network['name'],
-                          style: TextStyle(color: Colors.white,fontSize: 16.0, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -85,25 +97,3 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
     );
   }
 }
-
-// class VideoScreen extends StatelessWidget {
-//   final String videoUrl;
-
-//   VideoScreen({required this.videoUrl});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-      
-//       body: Center(
-//         child: ElevatedButton(
-//           onPressed: () {
-//             // Implement video player logic here
-//             print('Playing video: $videoUrl');
-//           },
-//           child: Text('Play Video'),
-//         ),
-//       ),
-//     );
-//   }
-// }

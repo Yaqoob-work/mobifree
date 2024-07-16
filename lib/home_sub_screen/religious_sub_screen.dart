@@ -146,7 +146,7 @@ class _ReligiousSubScreenState extends State<ReligiousSubScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
+          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
         ),
       ),
     );
