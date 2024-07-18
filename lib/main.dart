@@ -130,7 +130,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.18, // Adjust percentage as needed
+      width: MediaQuery.of(context).size.width * 0.19, // Adjust percentage as needed
       // color: const Color.fromARGB(255, 136, 51, 122),
        decoration: BoxDecoration(
     gradient: LinearGradient(
