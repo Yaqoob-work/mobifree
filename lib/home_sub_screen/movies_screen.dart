@@ -305,6 +305,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
           videoUrl: entertainmentItem['url'] ?? '',
           videoTitle: entertainmentItem['name'] ?? 'Unknown',
           channelList: entertainmentList,url: '',
+          playUrl: '',playVideo: (String id) {  },
           onFabFocusChanged: (bool) {
             // Handle FAB focus change if needed
           },

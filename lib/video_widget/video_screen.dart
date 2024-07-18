@@ -347,8 +347,10 @@ class VideoScreen extends StatefulWidget {
     required this.videoTitle,
     required this.channelList,
     required this.onFabFocusChanged, 
-    required String genres, 
+    required String genres,
     required url,
+     required String playUrl,
+      required void Function(String id) playVideo,
   });
 
   @override

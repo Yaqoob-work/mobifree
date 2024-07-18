@@ -131,10 +131,27 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width * 0.18, // Adjust percentage as needed
-      color: const Color.fromARGB(255, 136, 51, 122),
+      // color: const Color.fromARGB(255, 136, 51, 122),
+       decoration: BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [Colors.red,Colors.blue, ],
+      stops: [0.0, 1.0],
+      tileMode: TileMode.clamp,
+    ),),
       child: Column(
         children: <Widget>[
           Container(
+            // color: Colors.white,
+            decoration: BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [Colors.red, Colors.blue],
+      stops: [0.0, 1.0],
+      tileMode: TileMode.clamp,
+    ),),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
               // borderRadius: BorderRadius.circular(40),
@@ -170,7 +187,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                 // ),
                 _buildNavigationItem(
                   Icons.movie,
-                  'V O D',
+                  'vod',
                   3,
                   _focusNodes[3],
                 ),
@@ -217,17 +234,17 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
-          color: isSelected ? Colors.black : const Color.fromARGB(255, 136, 51, 122),
+          // color: isSelected ? Colors.black : const Color.fromARGB(255, 136, 51, 122),
           child: ListTile(
             leading: Icon(
               iconData,
-              color: focusNode.hasFocus || isSelected ? Color.fromARGB(255, 106, 235, 20) : Colors.white,
+              color: focusNode.hasFocus   ? Colors.yellow :isSelected?Colors.blue: Colors.white,
               size:focusNode.hasFocus || isSelected ? 22:18,
             ),
             title: Text(
               title,
               style: TextStyle(
-                color: focusNode.hasFocus || isSelected ? Color.fromARGB(255, 106, 235, 20) : Colors.white,
+                color: focusNode.hasFocus   ? Colors.yellow :isSelected?Colors.blue: Colors.white,
                 fontSize: focusNode.hasFocus || isSelected ?22:18,
               ),
             ),

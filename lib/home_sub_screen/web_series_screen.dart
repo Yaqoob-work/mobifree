@@ -147,6 +147,7 @@ class _WebSeriesScreenState extends State<WebSeriesScreen> {
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
           channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
+          playUrl: '',playVideo: (String id) {  },
         ),
       ),
     );

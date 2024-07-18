@@ -142,6 +142,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
           channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
+          playUrl: '',playVideo: (String id) {  },
         ),
       ),
     );

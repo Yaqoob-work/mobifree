@@ -44,6 +44,7 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
             channelList: [],
             onFabFocusChanged: (bool) {},
             genres: '',url: '',
+            playUrl: '',playVideo: (String id) {  },
           ),
         ),
       );

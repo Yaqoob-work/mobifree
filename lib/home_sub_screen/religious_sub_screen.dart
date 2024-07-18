@@ -147,6 +147,7 @@ class _ReligiousSubScreenState extends State<ReligiousSubScreen> {
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
           channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
+          playUrl: '',playVideo: (String id) {  },
         ),
       ),
     );

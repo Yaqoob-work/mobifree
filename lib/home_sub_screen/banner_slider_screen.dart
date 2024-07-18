@@ -449,7 +449,9 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                 videoTitle: filteredData['title'] ?? 'No Title',
                 channelList: [], // Pass the channel list if needed
                 onFabFocusChanged: (bool focused) {},
-                genres: '', // Pass the appropriate genres if needed
+                genres: '', 
+                playUrl: '', // Pass the appropriate genres if needed
+                playVideo: (String id) {  },
               ),
             ),
           );
@@ -549,7 +551,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                           },
                         ),
                         Positioned(
-                          bottom: MediaQuery.of(context).size.height * 0.1,
+                          bottom: MediaQuery.of(context).size.height * 0.15,
                           left: 40.0,
                           child: LayoutBuilder(
                             builder: (context, constraints) {
@@ -587,7 +589,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                             fetchAndPlayVideo(selectedContentId!);
                                           }
                                         },
-                                        backgroundColor: Colors.black,
+                                        backgroundColor: Colors.black54,
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -654,7 +656,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                       decoration: BoxDecoration(
                                         border: Border.all(
                                           color: _isSmallBannerFocused && _focusedSmallBannerIndex == index
-                                              ? Colors.red // Change border color to red when focused
+                                              ? const Color.fromARGB(255, 136, 51, 122)// Change border color to red when focused
                                               : Colors.transparent,
                                           width: _pageController.page?.round() == index ? 1.0 : 6.0,
                                         ),

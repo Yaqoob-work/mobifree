@@ -244,6 +244,7 @@ class _SearchScreenState extends State<SearchScreen> {
           videoTitle: searchResults[index]['name'] ?? 'Unknown',
           channelList: searchResults,
           onFabFocusChanged: _handleFabFocusChanged, genres: '',url: '',
+          playUrl: '', playVideo: (String id) {  },
         ),
       ),
     );
