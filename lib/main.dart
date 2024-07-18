@@ -239,7 +239,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             leading: Icon(
               iconData,
               color: focusNode.hasFocus   ? Colors.yellow :isSelected?Colors.blue: Colors.white,
-              size:focusNode.hasFocus || isSelected ? 22:18,
+              size:focusNode.hasFocus || isSelected ? 30:25,
             ),
             title: Text(
               title,
