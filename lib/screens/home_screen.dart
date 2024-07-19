@@ -5,8 +5,8 @@ import 'package:mobi_tv_entertainment/home_sub_screen/entertainment_sub_screen.d
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/movies_screen.dart';
-// import 'package:mobi_tv_entertainment/live/screens/home_sub_screen/news_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/popular_network_list_screen.dart';
+// import 'package:mobi_tv_entertainment/live/screens/home_sub_screen/news_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/web_series_screen.dart';
