@@ -17,6 +17,13 @@ import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
 void main() {
   runApp(MyApp());
 }
+class AppColors {
+  static const Color primaryColor = Color.fromARGB(255, 20, 252, 31);
+  static const Color cardColor = Colors.black;
+  static const Color highlightColor = Color.fromARGB(255, 20, 252, 31);
+  static const Color hintColor = Colors.white;
+}
+
 
 class MyApp extends StatelessWidget {
   @override
@@ -25,7 +32,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Side Navigation Bar',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: AppColors.primaryColor,
+        cardColor:AppColors.cardColor,
+        highlightColor: AppColors.highlightColor,
+        hintColor: AppColors.hintColor,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue),
       ),
       home: MyHomePage(),
     );
@@ -136,7 +147,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     gradient: LinearGradient(
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
-      colors: [Colors.red,Colors.blue, ],
+      colors: [Colors.red,Colors.blue ],
       stops: [0.0, 1.0],
       tileMode: TileMode.clamp,
     ),),
@@ -148,7 +159,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     gradient: LinearGradient(
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
-      colors: [Colors.red, Colors.blue],
+      colors: [Colors.red,Colors.blue],
       stops: [0.0, 1.0],
       tileMode: TileMode.clamp,
     ),),
@@ -238,13 +249,13 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
           child: ListTile(
             leading: Icon(
               iconData,
-              color: focusNode.hasFocus   ? Colors.yellow :isSelected?Colors.blue: Colors.white,
+              color: focusNode.hasFocus   ? Colors.yellow :isSelected?AppColors.highlightColor:AppColors.hintColor,
               size:focusNode.hasFocus || isSelected ? 30:25,
             ),
             title: Text(
               title,
               style: TextStyle(
-                color: focusNode.hasFocus   ? Colors.yellow :isSelected?Colors.blue: Colors.white,
+                color: focusNode.hasFocus   ? Colors.yellow :isSelected?AppColors.highlightColor:AppColors.hintColor ,
                 fontSize: focusNode.hasFocus || isSelected ?22:18,
               ),
             ),

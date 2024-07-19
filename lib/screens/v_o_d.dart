@@ -1,9 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 import 'dart:convert';
+
+import 'package:video_player/video_player.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -19,19 +20,19 @@ class VOD extends StatefulWidget {
 class _VODState extends State<VOD> {
   List<dynamic> movies = [];
   bool isLoading = true;
-  int focusedIndex = -1;
-  FocusNode _focusNode = FocusNode();
+  List<FocusNode> focusNodes = [];
 
   @override
   void initState() {
     super.initState();
     fetchMovies();
-    _focusNode.requestFocus();
   }
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    for (FocusNode focusNode in focusNodes) {
+      focusNode.dispose();
+    }
     super.dispose();
   }
 
@@ -51,6 +52,7 @@ class _VODState extends State<VOD> {
           setState(() {
             movies = data;
             isLoading = false;
+            focusNodes = List<FocusNode>.generate(data.length, (index) => FocusNode());
           });
         } else {
           throw Exception('Invalid data structure');
@@ -97,8 +99,8 @@ class _VODState extends State<VOD> {
     if (videoUrl.isNotEmpty) {
       List<dynamic> channelList = [
         {
-          'banner': movies[focusedIndex]['banner'],
-          'name': movies[focusedIndex]['name'],
+          'banner': movies.firstWhere((movie) => movie['id'].toString() == id)['banner'],
+          'name': movies.firstWhere((movie) => movie['id'].toString() == id)['name'],
         }
       ];
 
@@ -117,6 +119,75 @@ class _VODState extends State<VOD> {
     }
   }
 
+  Widget _buildMovieWidget(BuildContext context, int index) {
+    final movie = movies[index];
+
+    return Focus(
+      focusNode: focusNodes[index],
+      onFocusChange: (hasFocus) {
+        setState(() {}); // Update the UI to reflect the focus state
+      },
+      onKey: (FocusNode node, RawKeyEvent event) {
+        if (event is RawKeyDownEvent && (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
+          playVideo(movie['id'].toString());
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: TweenAnimationBuilder<double>(
+        duration: Duration(milliseconds: 500),
+        tween: Tween<double>(begin: 1.0, end: focusNodes[index].hasFocus ? 1 : 0.8),
+        builder: (context, scale, child) {
+          return Transform.scale(
+            scale: scale,
+            child: GestureDetector(
+              onTap: () => playVideo(movie['id'].toString()),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    
+                    margin: EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
+                        width: 5.0,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: Image.network(
+                        movie['banner'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(child: Text('Image not available'));
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    movie['name'],
+                    style: TextStyle(
+                      color: focusNodes[index].hasFocus ? AppColors.highlightColor:AppColors.hintColor,
+                      fontSize: focusNodes[index].hasFocus ? 16 : 14,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+
+                    
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,99 +195,16 @@ class _VODState extends State<VOD> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : movies.isEmpty
-              ? Center(child: Text('No movies found'))
-              : RawKeyboardListener(
-                  focusNode: _focusNode,
-                  onKey: (RawKeyEvent event) {
-                    if (event is RawKeyDownEvent) {
-                      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                        setState(() {
-                          focusedIndex = (focusedIndex - 1).clamp(0, movies.length - 1);
-                        });
-                      } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                        setState(() {
-                          focusedIndex = (focusedIndex + 1).clamp(0, movies.length - 1);
-                        });
-                      } else if (event.logicalKey == LogicalKeyboardKey.select) {
-                        if (focusedIndex != -1 && focusedIndex < movies.length) {
-                          playVideo(movies[focusedIndex]['id'].toString());
-                        }
-                      }
-                    }
-                  },
-                  child: GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      childAspectRatio: 0.7,
-                    ),
-                    itemCount: movies.length,
-                    itemBuilder: (context, index) {
-                      final movie = movies[index];
-                      bool isFocused = focusedIndex == index;
-
-                      return GestureDetector(
-                        onTap: () => playVideo(movie['id'].toString()),
-                        onTapDown: (_) {
-                          setState(() {
-                            focusedIndex = index;
-                          });
-                        },
-                        child: Focus(
-                          onFocusChange: (hasFocus) {
-                            if (hasFocus) {
-                              setState(() {
-                                focusedIndex = index;
-                              });
-                            }
-                          },
-                          
-                            child: Padding(
-                              padding: EdgeInsets.all(10) ,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Container(
-                                    height: isFocused?110:100,
-                                     decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: isFocused ? const Color.fromARGB(255, 136, 51, 122) : Colors.transparent,
-                                  width: 5.0,
-                                ),
-                                borderRadius: BorderRadius.circular(17)
-                              ),
-                                    child: ClipRRect(
-
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      child: Image.network(
-                                        movie['banner'],
-                                        fit: BoxFit.cover,
-                                        
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Center(child: Text('Image not available'));
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8.0),
-                                  Text(
-                                    movie['name'],
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: isFocused ? Color.fromARGB(255, 106, 235, 20) : Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          
-                        ),
-                      );
-                    },
+              ? Center(child: Text('No movies found', style: TextStyle(color:AppColors.hintColor)))
+              : GridView.builder(
+                  padding: EdgeInsets.all(10),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
                   ),
+                  itemCount: movies.length,
+                  itemBuilder: (context, index) => _buildMovieWidget(context, index),
                 ),
     );
   }
@@ -241,9 +229,8 @@ class _VideoScreenState extends State<VideoScreen> {
     super.initState();
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
-        // Ensure the first frame is shown after the video is initialized
         setState(() {
-          _controller.play(); // Start playing the video automatically
+          _controller.play();
         });
       });
   }
@@ -257,7 +244,9 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
+      appBar: AppBar(
+        title: Text(widget.videoTitle),
+      ),
       body: Center(
         child: _controller.value.isInitialized
             ? AspectRatio(
@@ -266,7 +255,6 @@ class _VideoScreenState extends State<VideoScreen> {
               )
             : CircularProgressIndicator(),
       ),
-      
     );
   }
 }

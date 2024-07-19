@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
 class HomeCategory extends StatefulWidget {
@@ -162,7 +163,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 height: isFocused ? 90 : 70,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isFocused ? const Color.fromARGB(255, 136, 51, 122) : Colors.transparent,
+                    color: isFocused ? AppColors.primaryColor: Colors.transparent,
                     width: 5,
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -180,7 +181,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 child: Text(
                   widget.channel.name,
                   style: TextStyle(
-                    color: isFocused ?Color.fromARGB(255, 106, 235, 20) : Colors.white,
+                    color: isFocused ?AppColors.highlightColor : AppColors.hintColor,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
@@ -276,7 +277,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
     // _fabFocusNode.addListener(() {
     //   setState(() {
-    //     _fabColor = _fabFocusNode.hasFocus ? const Color.fromARGB(255, 136, 51, 122) : Colors.white;
+    //     _fabColor = _fabFocusNode.hasFocus ? AppColors.primaryColor: Colors.white;
     //   });
     // });
 

@@ -270,7 +270,7 @@
 //                                         border: Border.all(
 //                                           color: widget.channelList[index]
 //                                                   ['isFocused']
-//                                               ? const Color.fromARGB(255, 136, 51, 122)
+//                                               ? AppColors.primaryColor
 //                                               : Colors.transparent,
 //                                           width: 5.0,
 //                                         ),
@@ -301,8 +301,8 @@
 //                                       style: TextStyle(
 //                                         color: widget.channelList[index]
 //                                                 ['isFocused']
-//                                             ? const Color.fromARGB(255, 136, 51, 122)
-//                                             : Colors.white.withOpacity(0.6),
+//                                             ? AppColors.primaryColor
+//                                             : AppColors.hintColor.withOpacity(0.6),
 //                                         fontSize: 12.0,
 //                                       ),
 //                                       maxLines: 1,
@@ -334,6 +334,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoScreen extends StatefulWidget {
@@ -613,7 +614,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                         border: Border.all(
                                           color: widget.channelList[index]
                                                   ['isFocused']
-                                              ? const Color.fromARGB(255, 136, 51, 122)
+                                              ? AppColors.primaryColor
                                               : Colors.transparent,
                                           width: 5.0,
                                         ),
@@ -639,8 +640,8 @@ class _VideoScreenState extends State<VideoScreen> {
                                       widget.channelList[index]['name'] ?? 'Unknown',
                                       style: TextStyle(
                                         color: widget.channelList[index]['isFocused']
-                                            ? Color.fromARGB(255, 106, 235, 20)
-                                            : Colors.white.withOpacity(0.6),
+                                            ? AppColors.highlightColor
+                                            : AppColors.hintColor.withOpacity(0.6),
                                         fontSize: 12.0,
                                       ),
                                       maxLines: 1,

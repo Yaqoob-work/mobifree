@@ -140,7 +140,7 @@
 //                   child: Container(
 //                     decoration: BoxDecoration(
 //                       border: Border.all(
-//                         color: _currentIndex == index ? const Color.fromARGB(255, 136, 51, 122) : Colors.transparent,
+//                         color: _currentIndex == index ? AppColors.primaryColor : Colors.transparent,
 //                         width: 3.0,
 //                       ),
 //                     ),
@@ -285,7 +285,7 @@
 //                         setState(() {});
 //                       },
 //                       child: FloatingActionButton.extended(
-//                         backgroundColor: _fabFocusNode.hasFocus ? Color.fromARGB(188, 136, 51, 122) : Colors.white,
+//                         backgroundColor: _fabFocusNode.hasFocus ? Color.fromARGB(188, 136, 51, 122) :AppColors.hintColor,
 //                         onPressed: () {
 //                           _playVideo(_videoUrls[_currentIndex]);
 //                         },
@@ -318,6 +318,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
 class BannerSliderPage extends StatefulWidget {
@@ -539,7 +540,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                     child: Text(
                                       banner['title'] ?? 'No Title', // Handle null title here
                                       style: const TextStyle(
-                                        color: Color.fromARGB(255, 106, 235, 20),
+                                        color:AppColors.primaryColor,
                                         fontSize: 40.0,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -589,7 +590,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                             fetchAndPlayVideo(selectedContentId!);
                                           }
                                         },
-                                        backgroundColor: Colors.black54,
+                                        backgroundColor: AppColors.cardColor,
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
@@ -598,8 +599,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                                 fabTitle ?? '',
                                                 style: TextStyle(
                                                   color: _isFabFocused
-                                                      ? Color.fromARGB(255, 106, 235, 20)
-                                                      : Colors.white,
+                                                      ?AppColors.primaryColor
+                                                      :AppColors.hintColor,
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 18.0,
                                                 ),
@@ -656,7 +657,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                       decoration: BoxDecoration(
                                         border: Border.all(
                                           color: _isSmallBannerFocused && _focusedSmallBannerIndex == index
-                                              ? const Color.fromARGB(255, 136, 51, 122)// Change border color to red when focused
+                                              ? AppColors.primaryColor// Change border color to red when focused
                                               : Colors.transparent,
                                           width: _pageController.page?.round() == index ? 1.0 : 6.0,
                                         ),
@@ -677,3 +678,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
     );
   }
 }
+
+
+
+
+

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
 void main() {
@@ -256,12 +257,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 }
 
 class CategoryScreen extends StatefulWidget {
+  
   @override
   _CategoryScreenState createState() => _CategoryScreenState();
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
   late Future<List<Channel>> futureChannels;
+  
 
   @override
   void initState() {
@@ -272,7 +275,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor:  Colors.black,
       body: FutureBuilder<List<Channel>>(
         future: futureChannels,
         builder: (context, snapshot) {
@@ -304,7 +307,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       child: Text(
                         entry.key,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
+                            fontSize: 16, fontWeight: FontWeight.bold,color:AppColors.hintColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -417,7 +420,10 @@ class _ChannelItemState extends State<ChannelItem> {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _isFocused
-                        ?  const Color.fromARGB(255, 136, 51, 122)
+                        ? 
+                         AppColors.primaryColor
+                        // GradientColor.fromLinearGradient(myGradient)
+
                         : Colors.transparent,
                     width: 5.0,
                   ),
@@ -440,7 +446,11 @@ class _ChannelItemState extends State<ChannelItem> {
                     widget.channel.name,
                     style: TextStyle(
                       fontSize: 14,
-                      color: _isFocused ? const Color.fromARGB(255, 136, 51, 122): Colors.white,
+                      color: _isFocused ?
+                       AppColors.highlightColor
+                        // GradientColor.fromLinearGradient(myGradient)
+
+                       :AppColors.hintColor,
                       // Yellow color when focused, white otherwise
                     ),
                     maxLines: 1,

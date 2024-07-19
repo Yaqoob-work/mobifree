@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
 class PopularNetworkListScreen extends StatefulWidget {
@@ -70,7 +71,7 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
                   },
                   child: Container(
                     height: MediaQuery.of(context).size.height * 0.5,
-                    color: Colors.black,
+                    color: AppColors.cardColor,
                     padding: EdgeInsets.symmetric(vertical: 10.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -85,7 +86,7 @@ class _PopularNetworkListScreenState extends State<PopularNetworkListScreen> {
                         Text(
                           network['name'],
                           style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.hintColor,
                               fontSize: 16.0,
                               fontWeight: FontWeight.bold),
                         ),

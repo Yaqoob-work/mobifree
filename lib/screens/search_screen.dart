@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_screen.dart';
 
@@ -50,7 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
           focusNode: _focusNode,
           decoration: InputDecoration(
             // prefix: IconButton(
-            //   icon: Icon(Icons.search, color: Colors.white, size: iconSize),
+            //   icon: Icon(Icons.search, color:AppColors.hintColor, size: iconSize),
             //   onPressed: () {
             //     _performSearch(_searchController.text);
             //   },
@@ -62,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             labelText: 'Search By Channel Name',
           ),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color:AppColors.hintColor),
           textInputAction: TextInputAction.search,
           textAlignVertical:
               TextAlignVertical.center, // Vertical center alignment
@@ -149,7 +150,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: selectedIndex == index
-                        ? const Color.fromARGB(255, 136, 51, 122)
+                        ? AppColors.primaryColor
                         : Colors.transparent,
                     width: 5.0,
                   ),
@@ -172,7 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   searchResults[index]['name'] ?? 'Unknown',
                   style: TextStyle(
                     color:
-                        selectedIndex == index ? Color.fromARGB(255, 106, 235, 20): Colors.white,
+                        selectedIndex == index ?AppColors.primaryColor:AppColors.hintColor,
                   ),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,

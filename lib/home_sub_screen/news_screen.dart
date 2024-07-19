@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_screen.dart';
 
@@ -108,7 +109,7 @@ class _NewsScreenState extends State<NewsScreen> {
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: entertainmentList[index]['isFocused'] ? const Color.fromARGB(255, 136, 51, 122) : Colors.transparent,
+                    color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor : Colors.transparent,
                     width: 3.0,
                   ),
                   borderRadius: BorderRadius.circular(15.0),
@@ -127,7 +128,7 @@ class _NewsScreenState extends State<NewsScreen> {
               Text(
                 entertainmentList[index]['name'] ?? 'Unknown',
                 style:  TextStyle(
-                  color:entertainmentList[index]['isFocused'] ?Color.fromARGB(255, 106, 235, 20): Colors.white,
+                  color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),

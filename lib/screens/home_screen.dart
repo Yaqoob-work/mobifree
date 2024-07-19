@@ -10,6 +10,7 @@ import 'package:mobi_tv_entertainment/home_sub_screen/popular_network_list_scree
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/web_series_screen.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 // import 'package:mobi_tv_entertainment/live/screens/news_screen.dart';
 
@@ -65,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // decoration: BoxDecoration(
                 //   border: Border.all(
                 //     color: _bannersliderFocusNode.hasFocus
-                //         ? const Color.fromARGB(255, 136, 51, 122)
+                //         ? AppColors.primaryColor
                 //         : Colors.transparent,
                 //     width: 5,
                 //   ),
@@ -88,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Divider(
-              color: const Color.fromARGB(255, 136, 51, 122),
+              color: AppColors.primaryColor,
               height: 20,
               thickness: 2,
             ),
@@ -105,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Divider(
-              color: const Color.fromARGB(255, 136, 51, 122),
+              color: AppColors.primaryColor,
               height: 20,
               thickness: 2,
             ),
@@ -127,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         "Web Series",
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.white,
+                          color: AppColors.hintColor,
                         ),
                       ),
                       InkWell(
@@ -144,8 +145,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             color: _webseriesFocusNode.hasFocus
-                                ? const Color.fromARGB(255, 136, 51, 122)
-                                : Colors.white,
+                                ? AppColors.highlightColor
+                                : AppColors.hintColor,
                           ),
                         ),
                       ),
@@ -159,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: WebSeriesScreen(),
             ),
             const Divider(
-              color: const Color.fromARGB(255, 136, 51, 122),
+              color: AppColors.primaryColor,
               height: 20,
               thickness: 2,
             ),
@@ -183,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         "Movies",
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.white,
+                          color: AppColors.hintColor,
                         ),
                       ),
                       InkWell(
@@ -200,8 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             color: _moviesFocusNode.hasFocus
-                                ? const Color.fromARGB(255, 136, 51, 122)
-                                : Colors.white,
+                                ? AppColors.highlightColor
+                                : AppColors.hintColor,
                           ),
                         ),
                       ),
@@ -215,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: MoviesScreen(),
             ),
             const Divider(
-              color: const Color.fromARGB(255, 136, 51, 122),
+              color: AppColors.primaryColor,
               height: 20,
               thickness: 2,
             ),
@@ -238,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         "Live",
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.white,
+                          color: AppColors.hintColor,
                         ),
                       ),
                       InkWell(
@@ -255,8 +256,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             color: _liveFocusNode.hasFocus
-                                ? const Color.fromARGB(255, 136, 51, 122)
-                                : Colors.white,
+                                ? AppColors.highlightColor
+                                : AppColors.hintColor,
                           ),
                         ),
                       ),
@@ -270,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: LiveSubScreen(),
             ),
             const Divider(
-              color: const Color.fromARGB(255, 136, 51, 122),
+              color: AppColors.primaryColor,
               height: 20,
               thickness: 2,
             ),
@@ -292,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         'Entertainment',
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.white,
+                          color: AppColors.hintColor,
                         ),
                       ),
                       InkWell(
@@ -309,8 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             color: _entertainmentFocusNode.hasFocus
-                                ? const Color.fromARGB(255, 136, 51, 122)
-                                : Colors.white,
+                                ? AppColors.highlightColor
+                                : AppColors.hintColor,
                           ),
                         ),
                       ),
@@ -324,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: EntertainmentSubScreen(),
             ),
             const Divider(
-              color: const Color.fromARGB(255, 136, 51, 122),
+              color:AppColors.primaryColor,
               height: 20,
               thickness: 2,
             ),
@@ -346,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         'Religious',
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.white,
+                          color: AppColors.hintColor,
                         ),
                       ),
                       InkWell(
@@ -363,8 +364,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             color: _religiousFocusNode.hasFocus
-                                ? const Color.fromARGB(255, 136, 51, 122)
-                                : Colors.white,
+                                ? AppColors.highlightColor
+                                : AppColors.hintColor,
                           ),
                         ),
                       ),
