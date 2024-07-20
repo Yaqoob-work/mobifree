@@ -61,7 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
               borderSide: const BorderSide(
                   color: Color.fromARGB(255, 136, 51, 122), width: 4.0),
             ),
-            labelText: 'Search By Channel Name',
+            labelText: 'Search By Channel Name',labelStyle: TextStyle(color: AppColors.hintColor)
           ),
           style: const TextStyle(color:AppColors.hintColor),
           textInputAction: TextInputAction.search,

@@ -219,7 +219,7 @@
 // //                 return Center(
 // //                   child: AspectRatio(
 // //                     aspectRatio: 16 / 9,
-// //                     // aspectRatio: _controller.value.aspectRatio,
+// //                     // aspectRatio:16/9,
 // //                     child: VideoPlayer(_controller),
 // //                   ),
 // //                 );

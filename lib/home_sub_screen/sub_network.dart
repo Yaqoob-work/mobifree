@@ -5,12 +5,12 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/home_sub_screen/network_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 
-class Network extends StatefulWidget {
+class SubNetwork extends StatefulWidget {
   @override
-  _NetworkState createState() => _NetworkState();
+  _SubNetworkState createState() => _SubNetworkState();
 }
 
-class _NetworkState extends State<Network> {
+class _SubNetworkState extends State<SubNetwork> {
   List networks = [];
 
   @override
@@ -107,7 +107,7 @@ class _FocusableItemState extends State<FocusableItem> {
               width: 1,
             ),
           ),
-          height: MediaQuery.of(context).size.height,
+          height: MediaQuery.of(context).size.height * 0.5,
           padding: EdgeInsets.symmetric(vertical: 10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -117,7 +117,7 @@ class _FocusableItemState extends State<FocusableItem> {
                   opacity: _focusNode.hasFocus ? 0.8 : 1.0,
                   child: Image.network(
                     widget.network['logo'],
-                    width: MediaQuery.of(context).size.width ,
+                    width: MediaQuery.of(context).size.width * 0.2,
                   ),
                 ),
               ),

@@ -415,7 +415,7 @@ class _PlayVideoPageState extends State<PlayVideoPage> {
       body: Center(
         child: _controller.value.isInitialized
             ? AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
+                aspectRatio:16/9,
                 child: VideoPlayer(_controller),
               )
             : CircularProgressIndicator(),

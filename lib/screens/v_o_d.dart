@@ -244,13 +244,11 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.videoTitle),
-      ),
+      
       body: Center(
         child: _controller.value.isInitialized
             ? AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
+                aspectRatio:16/9,
                 child: VideoPlayer(_controller),
               )
             : CircularProgressIndicator(),

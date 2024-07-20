@@ -5,7 +5,7 @@ import 'package:mobi_tv_entertainment/home_sub_screen/entertainment_sub_screen.d
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/waste/movies_screen.dart';
-import 'package:mobi_tv_entertainment/home_sub_screen/popular_network_list_screen.dart';
+import 'package:mobi_tv_entertainment/home_sub_screen/sub_network.dart';
 // import 'package:mobi_tv_entertainment/live/screens/home_sub_screen/news_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_sub_screen.dart';
@@ -84,15 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
               child: Container(
-                height: MediaQuery.of(context).size.height * 0.50,
-                child: PopularNetworkListScreen(),
+                height: MediaQuery.of(context).size.height * 0.5,
+                child: SubNetwork(),
               ),
             ),
-            const Divider(
-              color: AppColors.primaryColor,
-              height: 20,
-              thickness: 2,
-            ),
+            
             Focus(
               focusNode: _homecategoryFocusNode,
               onFocusChange: (bool hasFocus) {
