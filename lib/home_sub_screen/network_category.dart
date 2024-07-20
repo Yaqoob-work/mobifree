@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobi_tv_entertainment/main.dart';
 import 'dart:convert';
 import 'package:video_player/video_player.dart';
 
@@ -66,7 +67,8 @@ class _NetworkCategoryState extends State<NetworkCategory> {
         };
 
         final response = await http.get(
-          Uri.parse('https://mobifreetv.com/android/getAllContentsOfNetwork/$id'),
+          Uri.parse(
+              'https://mobifreetv.com/android/getAllContentsOfNetwork/$id'),
           headers: headers,
         );
 
@@ -80,7 +82,8 @@ class _NetworkCategoryState extends State<NetworkCategory> {
               hasMoreIds = false;
             });
           } else {
-            final newContents = data.map((item) => Content.fromJson(item)).toList();
+            final newContents =
+                data.map((item) => Content.fromJson(item)).toList();
 
             for (var content in newContents) {
               if (content.genres.isNotEmpty) {
@@ -88,7 +91,8 @@ class _NetworkCategoryState extends State<NetworkCategory> {
                   categorizedContents[content.genres]!.add(content);
                 } else {
                   categorizedContents[content.genres] = [content];
-                  focusNodes[content.genres] = FocusNode(); // Initialize focus nodes
+                  focusNodes[content.genres] =
+                      FocusNode(); // Initialize focus nodes
                 }
               }
             }
@@ -153,7 +157,7 @@ class _NetworkCategoryState extends State<NetworkCategory> {
                   onKey: (FocusNode node, RawKeyEvent event) {
                     if (event is RawKeyDownEvent &&
                         (event.logicalKey == LogicalKeyboardKey.select ||
-                         event.logicalKey == LogicalKeyboardKey.enter)) {
+                            event.logicalKey == LogicalKeyboardKey.enter)) {
                       _onCategoryTap(genre);
                       return KeyEventResult.handled;
                     }
@@ -161,30 +165,48 @@ class _NetworkCategoryState extends State<NetworkCategory> {
                   },
                   child: GestureDetector(
                     onTap: () => _onCategoryTap(genre),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: focusNode.hasFocus ? Colors.yellow : Colors.transparent,
-                          width: 3.0,
-                        ),
-                      ),
-                      child: GridTile(
-                        child: Image.network(
-                          categorizedContents[genre]!.isNotEmpty
-                            ? categorizedContents[genre]![0].banner
-                            : '',
-                          fit: BoxFit.cover,
-                        ),
-                        footer: GridTileBar(
-                          backgroundColor: Colors.black54,
-                          title: Text(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: focusNode.hasFocus
+                                    ? AppColors.primaryColor
+                                    : Colors.transparent,
+                                width: 3.0,
+                              ),
+                              borderRadius: BorderRadius.circular(15.0),
+                            ),
+                            // child: GridTile(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12.0),
+                              child: Image.network(
+                                categorizedContents[genre]!.isNotEmpty
+                                    ? categorizedContents[genre]![0].banner
+                                    : '',
+                                fit: BoxFit.cover,
+                                width: focusNode.hasFocus ? 120 : 90,
+                                height: focusNode.hasFocus ? 90 : 70,
+                              ),
+                            ),
+                          ),
+                          // footer: GridTileBar(
+                          // backgroundColor: Colors.black54,
+                          // title:
+                          Text(
                             genre,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: focusNode.hasFocus ? Colors.yellow : Colors.white,
+                              color: focusNode.hasFocus
+                                  ? AppColors.highlightColor
+                                  : AppColors.hintColor,
                             ),
                           ),
-                        ),
+                          // ),
+                          // ),
+                        ],
                       ),
                     ),
                   ),
@@ -308,7 +330,7 @@ class _CategoryContentPageState extends State<CategoryContentPage> {
             onKey: (FocusNode node, RawKeyEvent event) {
               if (event is RawKeyDownEvent &&
                   (event.logicalKey == LogicalKeyboardKey.select ||
-                   event.logicalKey == LogicalKeyboardKey.enter)) {
+                      event.logicalKey == LogicalKeyboardKey.enter)) {
                 _onBannerTap(context, content.id);
                 return KeyEventResult.handled;
               }
@@ -316,31 +338,47 @@ class _CategoryContentPageState extends State<CategoryContentPage> {
             },
             child: GestureDetector(
               onTap: () => _onBannerTap(context, content.id),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: focusNode.hasFocus ? Colors.yellow : Colors.transparent,
-                    width: 3.0,
-                  ),
-                ),
-                child: GridTile(
-                  child: Image.network(
-                    content.banner,
-                    fit: BoxFit.cover,
-                  ),
-                  footer: GridTileBar(
-                    backgroundColor: Colors.black54,
-                    title: Text(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: focusNode.hasFocus
+                              ? AppColors.primaryColor
+                              : Colors.transparent,
+                          width: 3.0,
+                        ),
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Image.network(
+                          content.banner,
+                          fit: BoxFit.cover,
+                          width: focusNode.hasFocus ? 120 : 90,
+                          height: focusNode.hasFocus ? 90 : 70,
+                        ),
+                      ),
+                    ),
+
+                    Text(
                       '${content.id} - ${content.title}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: focusNode.hasFocus ? Colors.yellow : Colors.white,
+                        color: focusNode.hasFocus
+                            ? AppColors.highlightColor
+                            : AppColors.hintColor,
                       ),
                     ),
-                  ),
+                    // ),
+                    // ),
+                  ],
                 ),
               ),
             ),
+            // ),
           );
         },
       ),

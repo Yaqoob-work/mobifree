@@ -162,7 +162,8 @@ class _NetworkState extends State<Network> {
                               );
                             },
                             child: Icon(Icons.navigate_next, color: Colors.black),
-                            backgroundColor: fabFocusNode.hasFocus ? AppColors.primaryColor : AppColors.hintColor,
+                            // backgroundColor: fabFocusNode.hasFocus ? AppColors.primaryColor : AppColors.hintColor,
+                            backgroundColor:fabFocusNode.hasFocus ?Colors.white54: Colors.white,
                           ),
                         ),
                       ),
