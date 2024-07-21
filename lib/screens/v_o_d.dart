@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -6,11 +9,7 @@ import 'dart:convert';
 
 import 'package:video_player/video_player.dart';
 
-void main() {
-  runApp(MaterialApp(
-    home: VOD(),
-  ));
-}
+
 
 class VOD extends StatefulWidget {
   @override
@@ -127,8 +126,8 @@ class _VODState extends State<VOD> {
       onFocusChange: (hasFocus) {
         setState(() {}); // Update the UI to reflect the focus state
       },
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent && (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
+      onKeyEvent: (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
           playVideo(movie['id'].toString());
           return KeyEventResult.handled;
         }
@@ -143,27 +142,43 @@ class _VODState extends State<VOD> {
             child: GestureDetector(
               onTap: () => playVideo(movie['id'].toString()),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                // mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    
+                    width: focusNodes[index].hasFocus ? 110 : 90,
+                  height: focusNodes[index].hasFocus ? 90 : 70,
                     margin: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
-                        width: 5.0,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
+                    // decoration: BoxDecoration(
+                    //   border: Border.all(
+                    //     color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
+                    //     width: 5.0,
+                    //   ),
+                    //   borderRadius: BorderRadius.circular(18),
+                    // ),
+                    child: ContainerGradientBorder(
+                  width: focusNodes[index].hasFocus ? 110 : 90,
+                  height: focusNodes[index].hasFocus ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
+                    
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Image.network(
                         movie['banner'],
                         fit: BoxFit.cover,
+                        width: focusNodes[index].hasFocus ? 110 : 90,
+                  height: focusNodes[index].hasFocus ? 90 : 70,
                         errorBuilder: (context, error, stackTrace) {
                           return Center(child: Text('Image not available'));
                         },
                       ),
+                    ),
                     ),
                   ),
                   SizedBox(height: 5),
@@ -171,7 +186,7 @@ class _VODState extends State<VOD> {
                     movie['name'],
                     style: TextStyle(
                       color: focusNodes[index].hasFocus ? AppColors.highlightColor:AppColors.hintColor,
-                      fontSize: focusNodes[index].hasFocus ? 16 : 14,
+                      fontSize: focusNodes[index].hasFocus ? 20 : 20,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
@@ -210,6 +225,7 @@ class _VODState extends State<VOD> {
   }
 }
 
+
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
@@ -223,6 +239,16 @@ class VideoScreen extends StatefulWidget {
 
 class _VideoScreenState extends State<VideoScreen> {
   late VideoPlayerController _controller;
+  bool _controlsVisible = true;
+  late Timer _hideControlsTimer;
+  Duration _totalDuration = Duration.zero;
+  Duration _currentPosition = Duration.zero;
+
+  final FocusNode screenFocusNode = FocusNode();
+  final FocusNode playPauseFocusNode = FocusNode();
+  final FocusNode rewindFocusNode = FocusNode();
+  final FocusNode forwardFocusNode = FocusNode();
+  final FocusNode backFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -230,28 +256,193 @@ class _VideoScreenState extends State<VideoScreen> {
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
         setState(() {
-          _controller.play();
+          _totalDuration = _controller.value.duration;
         });
+        _controller.play();
+        _startPositionUpdater();
       });
+
+    _startHideControlsTimer();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(screenFocusNode);
+    });
   }
 
   @override
   void dispose() {
-    super.dispose();
     _controller.dispose();
+    _hideControlsTimer.cancel();
+    screenFocusNode.dispose();
+    playPauseFocusNode.dispose();
+    rewindFocusNode.dispose();
+    forwardFocusNode.dispose();
+    backFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _startHideControlsTimer() {
+    _hideControlsTimer = Timer(Duration(seconds: 10), () {
+      setState(() {
+        _controlsVisible = false;
+      });
+    });
+  }
+
+  void _resetHideControlsTimer() {
+    _hideControlsTimer.cancel();
+    setState(() {
+      _controlsVisible = true;
+    });
+    _startHideControlsTimer();
+  }
+
+  void _startPositionUpdater() {
+    Timer.periodic(Duration(seconds: 1), (_) {
+      setState(() {
+        _currentPosition = _controller.value.position;
+      });
+    });
+  }
+
+  void _onRewind() {
+    _controller.seekTo(_controller.value.position - Duration(minutes: 5));
+    _resetHideControlsTimer();
+  }
+
+  void _onForward() {
+    _controller.seekTo(_controller.value.position + Duration(minutes: 5));
+    _resetHideControlsTimer();
+  }
+
+  void _togglePlayPause() {
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
+    _resetHideControlsTimer();
+  }
+
+  void _navigateBack() {
+    Navigator.pop(context);
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
-      body: Center(
-        child: _controller.value.isInitialized
-            ? AspectRatio(
-                aspectRatio:16/9,
-                child: VideoPlayer(_controller),
-              )
-            : CircularProgressIndicator(),
+      backgroundColor: Colors.black,
+      body: Focus(
+        focusNode: screenFocusNode,
+       onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.select ||
+                event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
+              _togglePlayPause();
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              _onRewind();
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+              _onForward();
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              _resetHideControlsTimer();
+              return KeyEventResult.handled;
+            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+              _navigateBack(); // Use 'escape' key for back navigation
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          onTap: _resetHideControlsTimer,
+          child: Stack(
+            children: [
+              Center(
+                child: _controller.value.isInitialized
+                    ? AspectRatio(
+                        aspectRatio: 16/9,
+                        child: VideoPlayer(_controller),
+                      )
+                    : CircularProgressIndicator(),
+              ),
+              if (_controlsVisible)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 1,
+                              child: Center(
+                                child: IconButton(
+                                  icon: Icon(
+                                    _controller.value.isPlaying
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                  onPressed: _togglePlayPause,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Center(
+                                child: Text(
+                                  _formatDuration(_currentPosition),
+                                  style: TextStyle(color: AppColors.primaryColor, fontSize: 20),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 6,
+                              child: Center(
+                                child: VideoProgressIndicator(
+                                  _controller,
+                                  allowScrubbing: true,
+                                  colors: VideoProgressColors(
+                                    playedColor:AppColors.highlightColor,
+                                    bufferedColor: Colors.grey,
+                                    backgroundColor: AppColors.primaryColor
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Center(
+                                child: Text(
+                                  _formatDuration(_totalDuration),
+                                  style: TextStyle(color: AppColors.primaryColor, fontSize: 20),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

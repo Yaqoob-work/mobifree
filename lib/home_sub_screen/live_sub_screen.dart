@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -82,8 +83,8 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
 
   Widget _buildListViewItem(int index) {
     return Focus(
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+      onKeyEvent : (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
           _navigateToVideoScreen(context, entertainmentList[index]);
           return KeyEventResult.handled;
         }
@@ -103,13 +104,24 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: entertainmentList[index]['isFocused'] ?AppColors.primaryColor: Colors.transparent,
-                    width: 3.0,
-                  ),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: entertainmentList[index]['isFocused'] ?AppColors.primaryColor: Colors.transparent,
+                //     width: 5.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(17.0),
+                // ),
+                child: ContainerGradientBorder(
+                  width: entertainmentList[index]['isFocused'] ? 110 : 70,
+                  height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: Image.network(
@@ -119,14 +131,21 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
+                ),
               ),
               const SizedBox(height: 8.0),
-              Text(
-                entertainmentList[index]['name'] ?? 'Unknown',
-                style:  TextStyle(
-                  color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: AppColors.hintColor,
+              Container(
+                width: entertainmentList[index]['isFocused'] ? 110 : 90,
+                child: Text(
+                  entertainmentList[index]['name'] ?? 'Unknown',
+                  style:  TextStyle(
+                    fontSize: 20,
+                    color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: AppColors.hintColor,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis ,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -77,7 +78,7 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
@@ -103,8 +104,8 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
 
   Widget _buildGridViewItem(int index) {
     return Focus(
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent &&
+      onKeyEvent: (FocusNode node, KeyEvent  event) {
+        if (event is KeyDownEvent  &&
             (event.logicalKey == LogicalKeyboardKey.select ||
                 event.logicalKey == LogicalKeyboardKey.enter)) {
           _navigateToVideoScreen(context, entertainmentList[index]);
@@ -119,22 +120,33 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
       },
       child: Container(
         margin: EdgeInsets.all(8.0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15.0),
+        // child: ClipRRect(
+        //   borderRadius: BorderRadius.circular(15.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: entertainmentList[index]['isFocused']
-                        ? AppColors.primaryColor
-                        : Colors.transparent,
-                    width: 3.0,
-                  ),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: entertainmentList[index]['isFocused']
+                //         ? AppColors.primaryColor
+                //         : Colors.transparent,
+                //     width: 5.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(17.0),
+                // ),
+                 child: ContainerGradientBorder(
+                  width:entertainmentList[index]['isFocused'] ? 110 : 70,
+                  height:entertainmentList[index]['isFocused'] ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: Image.network(
@@ -145,30 +157,29 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
                   ),
                 ),
               ),
+              ),
               SizedBox(height: 8.0),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  return FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Container(
-                      constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                      child: Text(
-                        entertainmentList[index]['name'] ?? 'Unknown',
-                        style: TextStyle(
-                          color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: Colors.white,
+              Container(
+                    width: entertainmentList[index]['isFocused'] ? 110 : 90,
+
+                      child: Center(
+                        child: Text(
+                          entertainmentList[index]['name'] ?? 'Unknown',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  );
-                },
-              ),
+                  
             ],
           ),
         ),
-      ),
+      
     );
   }
 

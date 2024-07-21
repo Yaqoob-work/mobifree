@@ -132,7 +132,6 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
 
         if (filteredData != null) {
           final videoUrl = filteredData['url']; // Replace 'url' with the actual field name for the video URL
-          // Navigate to the video player screen and play the video
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -210,8 +209,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                               final banner = bannerList[index];
                               return Focus(
                                 focusNode: _bigBannerFocusNode,
-                                onKey: (FocusNode node, RawKeyEvent event) {
-                                  if (event is RawKeyDownEvent) {
+                                onKeyEvent : (FocusNode node, KeyEvent event) {
+                                  if (event is KeyDownEvent ) {
                                     if (event.logicalKey == LogicalKeyboardKey.select) {
                                       if (selectedContentId != null) {
                                         fetchAndPlayVideo(selectedContentId!);
@@ -280,8 +279,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                   width: fabWidth,
                                   child: Focus(
                                     focusNode: _fabFocusNode,
-                                    onKey: (FocusNode node, RawKeyEvent event) {
-                                      if (event is RawKeyDownEvent) {
+                                    onKeyEvent : (FocusNode node, KeyEvent event) {
+                                      if (event is KeyDownEvent ) {
                                         if (event.logicalKey == LogicalKeyboardKey.select) {
                                           if (selectedContentId != null) {
                                             fetchAndPlayVideo(selectedContentId!);
@@ -307,8 +306,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                         label: Text(
                                           fabTitle ?? '',
                                           style: TextStyle(
-                                            color: _isFabFocused ? AppColors.primaryColor : AppColors.highlightColor,
-                                            fontSize: 18.0,
+                                            color: _isFabFocused ?  AppColors.primaryColor: AppColors.highlightColor,
+                                            fontSize: 20.0,
                                           ),
                                         ),
                                         backgroundColor: Colors.transparent,
@@ -333,8 +332,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                   final banner = bannerList[index];
                                   return Focus(
                                     focusNode: _smallBannerFocusNodes[index],
-                                    onKey: (FocusNode node, RawKeyEvent event) {
-                                      if (event is RawKeyDownEvent) {
+                                    onKeyEvent : (FocusNode node, KeyEvent event) {
+                                      if (event is KeyDownEvent ) {
                                         if (event.logicalKey == LogicalKeyboardKey.select ||
                                             event.logicalKey == LogicalKeyboardKey.enter) {
                                           _scrollToSmallBanner(index);
@@ -386,8 +385,4 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
   }
 }
 
-void main() {
-  runApp(MaterialApp(
-    home: BannerSliderPage(),
-  ));
-}
+

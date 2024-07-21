@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -101,12 +102,21 @@ class _FocusableItemState extends State<FocusableItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _focusNode.hasFocus ? AppColors.primaryColor : AppColors.cardColor,
-              width: 1,
-            ),
-          ),
+          // decoration: BoxDecoration(
+          //   border: Border.all(
+          //     color: _focusNode.hasFocus ? AppColors.primaryColor : Colors.transparent,
+          //     width: 1,
+          //   ),
+          // ),
+           child: ContainerGradientBorder(
+                  width: MediaQuery.of(context).size.width,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 1,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
           height: MediaQuery.of(context).size.height,
           padding: EdgeInsets.symmetric(vertical: 10.0),
           child: Column(
@@ -132,6 +142,7 @@ class _FocusableItemState extends State<FocusableItem> {
               ),
             ],
           ),
+           ),
         ),
       ),
     );

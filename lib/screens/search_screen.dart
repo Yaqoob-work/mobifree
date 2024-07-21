@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -44,38 +45,51 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        toolbarHeight: MediaQuery.of(context).size.width * 0.1,
-        title: TextField(
-          controller: _searchController,
-          focusNode: _focusNode,
-          decoration: InputDecoration(
-            // prefix: IconButton(
-            //   icon: Icon(Icons.search, color:AppColors.hintColor, size: iconSize),
-            //   onPressed: () {
-            //     _performSearch(_searchController.text);
-            //   },
-            // ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10.0),
-              borderSide: const BorderSide(
-                  color: Color.fromARGB(255, 136, 51, 122), width: 4.0),
+        backgroundColor: AppColors.cardColor,
+        toolbarHeight: MediaQuery.of(context).size.height * 0.1,
+        title: Container(
+           child: ContainerGradientBorder(
+                  width: MediaQuery.of(context).size.width - 10,
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  containerColor: AppColors.cardColor,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _focusNode,
+              decoration: InputDecoration(
+                
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: const BorderSide(
+                      color: AppColors.primaryColor, width: 4.0),
+                ),
+                labelText: 'Search By Channel Name',labelStyle: TextStyle(color: AppColors.hintColor)
+              ),
+              style: const TextStyle(color:AppColors.hintColor),
+              textInputAction: TextInputAction.search,
+              textAlignVertical:
+                  TextAlignVertical.center, // Vertical center alignment
+              onChanged: (value) {
+                _performSearch(value);
+              },
+              onSubmitted: (value) {
+                _performSearch(value);
+              },
             ),
-            labelText: 'Search By Channel Name',labelStyle: TextStyle(color: AppColors.hintColor)
           ),
-          style: const TextStyle(color:AppColors.hintColor),
-          textInputAction: TextInputAction.search,
-          textAlignVertical:
-              TextAlignVertical.center, // Vertical center alignment
-          onChanged: (value) {
-            _performSearch(value);
-          },
-          onSubmitted: (value) {
-            _performSearch(value);
-          },
+           ),
         ),
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.cardColor,
       body: Column(
         children: [
           isLoading
@@ -92,7 +106,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             'No results found'
                           
                           ,
-                            style: TextStyle(color: Color.fromARGB(255, 59, 54, 54)),
+                            style: TextStyle(color: AppColors.hintColor),
                           ),
                           
                         ],
@@ -121,12 +135,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildGridViewItem(int index) {
-    double bannerWidth = selectedIndex == index ? 110 : 90;
-    double bannerHeight = selectedIndex == index ? 90 : 70;
+    
 
     return Focus(
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent &&
+      onKeyEvent: (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
           _onItemTap(index);
           return KeyEventResult.handled;
@@ -147,36 +160,53 @@ class _SearchScreenState extends State<SearchScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: selectedIndex == index
-                        ? AppColors.primaryColor
-                        : Colors.transparent,
-                    width: 5.0,
-                  ),
-                  borderRadius: BorderRadius.circular(16.0),
-                ),
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: selectedIndex == index
+                //         ? AppColors.primaryColor
+                //         : Colors.transparent,
+                //     width: 5.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(16.0),
+                // ),
+                 child: ContainerGradientBorder(
+                  width: selectedIndex == index ? 110 : 90,
+                  height: selectedIndex == index ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 14,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: Image.network(
                     searchResults[index]['banner'] ?? '',
-                    width: bannerWidth,
-                    height: bannerHeight,
+                    
+                    width: selectedIndex == index ? 110 : 90,
+                  height: selectedIndex == index ? 90 : 70,
                     fit: BoxFit.cover,
                   ),
                 ),
+                 ),
               ),
               const SizedBox(height: 8.0),
               Container(
-                width: bannerWidth,
-                child: Text(
-                  searchResults[index]['name'] ?? 'Unknown',
-                  style: TextStyle(
-                    color:
-                        selectedIndex == index ?AppColors.primaryColor:AppColors.hintColor,
+                child: Container(
+                  width: selectedIndex == index ? 110 : 90,
+                  child: Text(
+                    searchResults[index]['name'] ?? 'Unknown',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color:
+                          selectedIndex == index ?AppColors.primaryColor:AppColors.hintColor,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

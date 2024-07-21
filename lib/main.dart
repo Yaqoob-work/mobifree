@@ -1,26 +1,21 @@
 
 
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/screens/category_screen.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
 import 'package:mobi_tv_entertainment/screens/network.dart';
-// import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
-// import 'package:mobi_tv_entertainment/live/screens/news_screen.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
-// import 'package:mobi_tv_entertainment/screens/network.dart';
 
 void main() {
   runApp(MyApp());
 }
 class AppColors {
-  static const Color primaryColor = Color.fromARGB(255, 20, 252, 31);
+  static const Color primaryColor = Color.fromARGB(255, 247, 3, 3);
+  static const Color highlightColor = Colors.blue;
   static const Color cardColor = Colors.black;
-  static const Color highlightColor = Color.fromARGB(255, 20, 252, 31);
   static const Color hintColor = Colors.white;
 }
 
@@ -38,6 +33,7 @@ class MyApp extends StatelessWidget {
         hintColor: AppColors.hintColor,
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue),
       ),
+   
       home: MyHomePage(),
     );
   }
@@ -88,11 +84,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   _selectedPage = index;
                 });
               },
-              children: <Widget>[
+              children: 
+              <Widget>
+              [
                 const HomeScreen(),
                 SearchScreen(),
                 LiveScreen(),
-                // NewsScreen(),
                 VOD(),
                 Network(),
                 CategoryScreen(),
@@ -190,12 +187,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                   2,
                   _focusNodes[2],
                 ),
-                // _buildNavigationItem(
-                //   Icons.newspaper,
-                //   'News',
-                //   3,
-                //   _focusNodes[3],
-                // ),
+                
                 _buildNavigationItem(
                   Icons.movie,
                   'vod',

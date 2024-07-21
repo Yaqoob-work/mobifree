@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
@@ -107,13 +108,24 @@ class _NewsScreenState extends State<NewsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor : Colors.transparent,
-                    width: 3.0,
-                  ),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor : Colors.transparent,
+                //     width: 3.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(15.0),
+                // ),
+                 child: ContainerGradientBorder(
+                  width: entertainmentList[index]['isFocused']? 110 : 90,
+                  height: entertainmentList[index]['isFocused']? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: Image.network(
@@ -124,13 +136,17 @@ class _NewsScreenState extends State<NewsScreen> {
                   ),
                 ),
               ),
+              ),
               const SizedBox(height: 8.0),
               Text(
                 entertainmentList[index]['name'] ?? 'Unknown',
                 style:  TextStyle(
+                  fontSize: 20,
                   color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: Colors.white,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -36,13 +37,11 @@ class _LiveScreenState extends State<LiveScreen> {
         setState(() {
           entertainmentList = responseData
               .where((channel) =>
-                  channel['status'] != null &&
-                  channel['status'].contains('1'))
+                  channel['status'] != null && channel['status'].contains('1'))
               .map((channel) {
-                channel['isFocused'] = false; // Add isFocused field
-                return channel;
-              })
-              .toList();
+            channel['isFocused'] = false; // Add isFocused field
+            return channel;
+          }).toList();
           isLoading = false;
         });
       } else {
@@ -75,7 +74,8 @@ class _LiveScreenState extends State<LiveScreen> {
                       itemCount: entertainmentList.length,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () => _navigateToVideoScreen(context, entertainmentList[index]),
+                          onTap: () => _navigateToVideoScreen(
+                              context, entertainmentList[index]),
                           child: _buildGridViewItem(index),
                         );
                       },
@@ -85,8 +85,9 @@ class _LiveScreenState extends State<LiveScreen> {
 
   Widget _buildGridViewItem(int index) {
     return Focus(
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.select) {
           _navigateToVideoScreen(context, entertainmentList[index]);
           return KeyEventResult.handled;
         }
@@ -98,7 +99,7 @@ class _LiveScreenState extends State<LiveScreen> {
         });
       },
       child: Container(
-        height: 100,
+        
         margin: const EdgeInsets.all(8.0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(15.0),
@@ -107,30 +108,47 @@ class _LiveScreenState extends State<LiveScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor: Colors.transparent,
-                    width: 3.0,
-                  ),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Image.network(
-                    entertainmentList[index]['banner'],
-                    width: entertainmentList[index]['isFocused'] ? 110 : 90,
-                    height: entertainmentList[index]['isFocused'] ? 90 : 70,
-                    fit: BoxFit.cover,
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor: Colors.transparent,
+                //     width: 5.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(15.0),
+                // ),
+                child: ContainerGradientBorder(
+                  width: entertainmentList[index]['isFocused'] ? 110 : 90,
+                  height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 14,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Image.network(
+                      entertainmentList[index]['banner'],
+                      width: entertainmentList[index]['isFocused'] ? 110 : 90,
+                      height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 8.0),
               Text(
                 entertainmentList[index]['name'] ?? 'Unknown',
-                style:  TextStyle(
-                  color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: Colors.white,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: entertainmentList[index]['isFocused']
+                      ? AppColors.highlightColor
+                      : Colors.white,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -146,13 +164,14 @@ class _LiveScreenState extends State<LiveScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
-          playUrl: '',playVideo: (String id) {  },
+          channelList: entertainmentList,
+          onFabFocusChanged: (bool) {},
+          genres: '',
+          url: '',
+          playUrl: '',
+          playVideo: (String id) {},
         ),
       ),
     );
   }
 }
-
-
-

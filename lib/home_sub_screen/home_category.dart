@@ -1,6 +1,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -83,7 +84,7 @@ class CategoryWidget extends StatelessWidget {
                   Text(
                     category.text,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.hintColor,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -143,8 +144,8 @@ class _ChannelWidgetState extends State<ChannelWidget> {
             isFocused = hasFocus;
           });
         },
-        onKey: (node, event) {
-          if (event is RawKeyDownEvent &&
+        onKeyEvent : (node, event) {
+          if (event is KeyDownEvent  &&
               event.logicalKey == LogicalKeyboardKey.select) {
             widget.onTap();
             return KeyEventResult.handled;
@@ -152,29 +153,43 @@ class _ChannelWidgetState extends State<ChannelWidget> {
           return KeyEventResult.ignored;
         },
         child: Container(
-          width: 120,
+          // width: 120,
           margin: const EdgeInsets.symmetric(horizontal: 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: isFocused ? 100 : 80,
-                height: isFocused ? 90 : 70,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isFocused ? AppColors.primaryColor: Colors.transparent,
-                    width: 5,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                // width: isFocused ? 100 : 80,
+                // height: isFocused ? 90 : 70,
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: isFocused ? AppColors.primaryColor: Colors.transparent,
+                //     width: 5,
+                //   ),
+                //   borderRadius: BorderRadius.circular(20),
+                // ),
+                 child: ContainerGradientBorder(
+                  width: isFocused ? 110 : 90,
+                  height: isFocused ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 17,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: Image.network(
                     widget.channel.banner,
                     fit: BoxFit.cover,
+                    width: isFocused ? 110 : 90,
+                  height: isFocused ? 90 : 70,
                   ),
                 ),
+                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -182,11 +197,12 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   widget.channel.name,
                   style: TextStyle(
                     color: isFocused ?AppColors.highlightColor : AppColors.hintColor,
-                    fontSize: 14,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -310,7 +326,7 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   void _initializeVideoPlayer(String videoUrl) {
-    _controller = VideoPlayerController.network(videoUrl)
+    _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl))
       ..initialize().then((_) {
         setState(() {});
         _controller.play();
@@ -374,7 +390,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                   child: ChannelWidget(
                                     channel: channel,
                                     onTap: () {
-                                      Navigator.pushReplacement(
+                                      Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) => VideoScreen(

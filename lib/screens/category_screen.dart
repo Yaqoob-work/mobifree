@@ -1,27 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Video Player Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: CategoryScreen(),
-    );
-  }
-}
 
 class Channel {
   final String name;
@@ -99,7 +85,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _initializeVideoPlayer() {
-    _controller = VideoPlayerController.network(widget.videoUrl)
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
         setState(() {});
         _controller.play();
@@ -114,7 +100,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 10), (timer) {
       if (_lastActivityTime == null ||
-          DateTime.now().difference(_lastActivityTime!) > Duration(seconds: 10)) {
+          DateTime.now().difference(_lastActivityTime!) >
+              Duration(seconds: 10)) {
         setState(() {
           showChannels = false;
         });
@@ -257,14 +244,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 }
 
 class CategoryScreen extends StatefulWidget {
-  
   @override
   _CategoryScreenState createState() => _CategoryScreenState();
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
   late Future<List<Channel>> futureChannels;
-  
 
   @override
   void initState() {
@@ -275,7 +260,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  Colors.black,
+      backgroundColor: AppColors.cardColor,
       body: FutureBuilder<List<Channel>>(
         future: futureChannels,
         builder: (context, snapshot) {
@@ -307,7 +292,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       child: Text(
                         entry.key,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold,color:AppColors.hintColor),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.hintColor),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -398,8 +385,8 @@ class _ChannelItemState extends State<ChannelItem> {
           widget.onFocused!();
         }
       },
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent &&
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
           _handleSelect();
           return KeyEventResult.handled;
@@ -415,47 +402,58 @@ class _ChannelItemState extends State<ChannelItem> {
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: _focusNode.hasFocus ? 100 : 80,
-                height: _focusNode.hasFocus ? 90 : 70,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _isFocused
-                        ? 
-                         AppColors.primaryColor
-                        // GradientColor.fromLinearGradient(myGradient)
+                width: _focusNode.hasFocus ? 120 : 80,
+                height: _focusNode.hasFocus ? 100 : 80,
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: _isFocused
+                //         ?
+                //          AppColors.primaryColor
+                //         // GradientColor.fromLinearGradient(myGradient)
 
-                        : Colors.transparent,
-                    width: 5.0,
-                  ),
-                  borderRadius: BorderRadius.circular(13.0),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: Image.network(
-                    widget.channel.banner,
-                    fit: BoxFit.cover,
+                //         : Colors.transparent,
+                //     width: 5.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(13.0),
+                // ),
+                child: ContainerGradientBorder(
+                  width: _focusNode.hasFocus ? 110 : 70,
+                  height: _focusNode.hasFocus ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      widget.channel.banner,
+                      fit: BoxFit.cover,
+                      width: _focusNode.hasFocus ? 110 : 70,
+                      height: _focusNode.hasFocus ? 90 : 70,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 2),
               Container(
                 width: _focusNode.hasFocus ? 100 : 80,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    widget.channel.name,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _isFocused ?
-                       AppColors.highlightColor
+                child: Text(
+                  widget.channel.name,
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: _isFocused
+                        ? AppColors.highlightColor
                         // GradientColor.fromLinearGradient(myGradient)
 
-                       :AppColors.hintColor,
-                      // Yellow color when focused, white otherwise
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                        : AppColors.hintColor,
+                    // Yellow color when focused, white otherwise
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

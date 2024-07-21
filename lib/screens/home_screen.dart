@@ -4,12 +4,10 @@ import 'package:mobi_tv_entertainment/home_sub_screen/entertainment_screen.dart'
 import 'package:mobi_tv_entertainment/home_sub_screen/entertainment_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
-import 'package:mobi_tv_entertainment/waste/movies_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_network.dart';
 // import 'package:mobi_tv_entertainment/live/screens/home_sub_screen/news_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/religious_sub_screen.dart';
-import 'package:mobi_tv_entertainment/waste/web_series_screen.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 // import 'package:mobi_tv_entertainment/live/screens/news_screen.dart';
@@ -101,116 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: HomeCategory(),
               ),
             ),
-            // const Divider(
-            //   color: AppColors.primaryColor,
-            //   height: 20,
-            //   thickness: 2,
-            // ),
-            // Web Series Section
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            //   child: Center(
-            //     child: Focus(
-            //       focusNode: _webseriesFocusNode,
-            //       onFocusChange: (bool hasFocus) {
-            //         setState(() {
-            //           // Handle focus change if needed
-            //         });
-            //       },
-            //       child: Row(
-            //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //         children: [
-            //           const Text(
-            //             "Web Series",
-            //             style: TextStyle(
-            //               fontSize: 20,
-            //               color: AppColors.hintColor,
-            //             ),
-            //           ),
-            //           InkWell(
-            //             onTap: () {
-            //               Navigator.push(
-            //                 context,
-            //                 MaterialPageRoute(
-            //                   builder: (context) => WebSeriesScreen(),
-            //                 ),
-            //               );
-            //             },
-            //             child: Text(
-            //               'View All',
-            //               style: TextStyle(
-            //                 fontSize: 20,
-            //                 color: _webseriesFocusNode.hasFocus
-            //                     ? AppColors.highlightColor
-            //                     : AppColors.hintColor,
-            //               ),
-            //             ),
-            //           ),
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            // SizedBox(
-            //   height: 180,
-            //   child: WebSeriesScreen(),
-            // ),
-            // const Divider(
-            //   color: AppColors.primaryColor,
-            //   height: 20,
-            //   thickness: 2,
-            // ),
-
-            // // Movies Section
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            //   child: Center(
-            //     child: Focus(
-            //       focusNode: _moviesFocusNode,
-            //       onFocusChange: (bool hasFocus) {
-            //         setState(() {
-            //           // Handle focus change if needed
-            //         });
-            //       },
-            //       child: Row(
-            //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //         children: [
-                      
-            //           const Text(
-            //             "Movies",
-            //             style: TextStyle(
-            //               fontSize: 20,
-            //               color: AppColors.hintColor,
-            //             ),
-            //           ),
-            //           InkWell(
-            //             onTap: () {
-            //               Navigator.push(
-            //                 context,
-            //                 MaterialPageRoute(
-            //                   builder: (context) => MoviesScreen(),
-            //                 ),
-            //               );
-            //             },
-            //             child: Text(
-            //               'View All',
-            //               style: TextStyle(
-            //                 fontSize: 20,
-            //                 color: _moviesFocusNode.hasFocus
-            //                     ? AppColors.highlightColor
-            //                     : AppColors.hintColor,
-            //               ),
-            //             ),
-            //           ),
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            // SizedBox(
-            //   height: 180,
-            //   child: MoviesScreen(),
-            // ),
+           
             const Divider(
               color: AppColors.primaryColor,
               height: 20,

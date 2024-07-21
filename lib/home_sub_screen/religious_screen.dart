@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
@@ -86,8 +87,8 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
 
   Widget _buildGridViewItem(int index) {
     return Focus(
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+      onKeyEvent : (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
           _navigateToVideoScreen(context, entertainmentList[index]);
           return KeyEventResult.handled;
         }
@@ -107,13 +108,24 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: entertainmentList[index]['isFocused'] ?AppColors.primaryColor : Colors.transparent,
-                    width: 3.0,
-                  ),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+                // decoration: BoxDecoration(
+                //   border: Border.all(
+                //     color: entertainmentList[index]['isFocused'] ?AppColors.primaryColor : Colors.transparent,
+                //     width: 5.0,
+                //   ),
+                //   borderRadius: BorderRadius.circular(15.0),
+                // ),
+                child: ContainerGradientBorder(
+                  width: entertainmentList[index]['isFocused'] ? 110 : 90,
+                  height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList: const [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: Image.network(
@@ -124,13 +136,17 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
                   ),
                 ),
               ),
+              ),
               const SizedBox(height: 8.0),
               Text(
                 entertainmentList[index]['name'] ?? 'Unknown',
                 style:  TextStyle(
+                  fontSize: 20,
                   color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor:AppColors.hintColor,
                 ),
                 textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ],
           ),
