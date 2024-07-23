@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +13,7 @@ class SubNetwork extends StatefulWidget {
 
 class _SubNetworkState extends State<SubNetwork> {
   List networks = [];
+  List<FocusNode> _focusNodes = [];
 
   @override
   void initState() {
@@ -28,6 +30,14 @@ class _SubNetworkState extends State<SubNetwork> {
     if (response.statusCode == 200) {
       setState(() {
         networks = json.decode(response.body);
+        // Create focus nodes for each network item
+        _focusNodes = List.generate(networks.length, (_) => FocusNode());
+        // Request focus for the first item
+        if (_focusNodes.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            FocusScope.of(context).requestFocus(_focusNodes[0]);
+          });
+        }
       });
     } else {
       throw Exception('Failed to load networks');
@@ -35,24 +45,42 @@ class _SubNetworkState extends State<SubNetwork> {
   }
 
   @override
+  void dispose() {
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cardColor,
       body: networks.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: networks.length,
-              itemBuilder: (context, index) {
-                final network = networks[index];
-                return FocusableItem(
-                  network: network,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => NetworkCategory()),
-                    );
-                  },
-                );
-              },
+          : Column(
+              children: [
+                SizedBox(height: 20.0), // Add some spacing at the top
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: networks.length,
+                    itemBuilder: (context, index) {
+                      final network = networks[index];
+                      return FocusableItem(
+                        network: network,
+                        focusNode: _focusNodes[index],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => NetworkCategory()),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -60,33 +88,20 @@ class _SubNetworkState extends State<SubNetwork> {
 
 class FocusableItem extends StatefulWidget {
   final Map network;
+  final FocusNode focusNode;
   final VoidCallback onTap;
 
-  FocusableItem({required this.network, required this.onTap});
+  FocusableItem({required this.network, required this.focusNode, required this.onTap});
 
   @override
   _FocusableItemState createState() => _FocusableItemState();
 }
 
 class _FocusableItemState extends State<FocusableItem> {
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Focus(
-      focusNode: _focusNode,
+      focusNode: widget.focusNode,
       onKey: (node, event) {
         if (event.isKeyPressed(LogicalKeyboardKey.select) ||
             event.isKeyPressed(LogicalKeyboardKey.enter)) {
@@ -101,32 +116,68 @@ class _FocusableItemState extends State<FocusableItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _focusNode.hasFocus ? AppColors.primaryColor : AppColors.cardColor,
-              width: 1,
-            ),
-          ),
-          height: MediaQuery.of(context).size.height * 0.5,
-          padding: EdgeInsets.symmetric(vertical: 10.0),
+          margin: const EdgeInsets.all(8.0),
+          
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Opacity(
-                  opacity: _focusNode.hasFocus ? 0.8 : 1.0,
-                  child: Image.network(
-                    widget.network['logo'],
-                    width: MediaQuery.of(context).size.width * 0.2,
-                  ),
-                ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: widget.focusNode.hasFocus ? 200 : 120,
+                height: widget.focusNode.hasFocus ? 150 : 120,
+          //       decoration: BoxDecoration(
+          //   border: Border.all(
+          //     color: widget.focusNode.hasFocus ? AppColors.primaryColor : AppColors.cardColor,
+          //     width: 5,
+          //   ),
+          // ),
+          child: ContainerGradientBorder(
+                  width: widget.focusNode.hasFocus ? 190 : 110,
+                  height: widget.focusNode.hasFocus ? 140 : 110,
+                  start: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  borderWidth: 7,
+                  colorList:  widget.focusNode.hasFocus ? [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                  ]
+                  :
+                  [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor
+                  ],
+                  borderRadius: 10,
+                child: 
+                   ClipRRect(
+                     child: Image.network(
+                      widget.network['logo'],
+                      fit: BoxFit.cover,
+                      width:widget.focusNode.hasFocus ? MediaQuery.of(context).size.width * 0.25: MediaQuery.of(context).size.width * 0.2,
+                      height: 150 ,
+                                       ),
+                   ),
+          ),
               ),
               SizedBox(height: 10.0),
               Text(
                 widget.network['name'],
                 style: TextStyle(
-                  color: _focusNode.hasFocus ? AppColors.highlightColor : AppColors.hintColor,
-                  fontSize: 40.0,
+                  color: widget.focusNode.hasFocus ? AppColors.highlightColor : AppColors.hintColor,
+                  fontSize: 16.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),

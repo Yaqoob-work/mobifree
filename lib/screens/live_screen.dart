@@ -68,7 +68,7 @@ class _LiveScreenState extends State<LiveScreen> {
                   ? Center(child: Text('No entertainment channels found'))
                   : GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
+                        crossAxisCount: 4,
                         childAspectRatio: 0.75,
                       ),
                       itemCount: entertainmentList.length,
@@ -107,7 +107,10 @@ class _LiveScreenState extends State<LiveScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
+              AnimatedContainer(
+                width: entertainmentList[index]['isFocused'] ? 200 : 120,
+                  height: entertainmentList[index]['isFocused'] ? 150 : 120,
+                duration: const Duration(milliseconds: 300),
                 // decoration: BoxDecoration(
                 //   border: Border.all(
                 //     color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor: Colors.transparent,
@@ -116,39 +119,64 @@ class _LiveScreenState extends State<LiveScreen> {
                 //   borderRadius: BorderRadius.circular(15.0),
                 // ),
                 child: ContainerGradientBorder(
-                  width: entertainmentList[index]['isFocused'] ? 110 : 90,
-                  height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                  width: entertainmentList[index]['isFocused'] ? 190 : 110,
+                  height: entertainmentList[index]['isFocused'] ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                  colorList: const [
+                  colorList:  entertainmentList[index]['isFocused'] ? [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                  ]
+                  :
+                  [
                     AppColors.primaryColor,
                     AppColors.highlightColor
                   ],
-                  borderRadius: 14,
+                  borderRadius: 10,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
                     child: Image.network(
                       entertainmentList[index]['banner'],
-                      width: entertainmentList[index]['isFocused'] ? 110 : 90,
-                      height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                      width: entertainmentList[index]['isFocused'] ? 160 : 100,
+                      height: entertainmentList[index]['isFocused'] ? 130 : 100,
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 8.0),
-              Text(
-                entertainmentList[index]['name'] ?? 'Unknown',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: entertainmentList[index]['isFocused']
-                      ? AppColors.highlightColor
-                      : Colors.white,
+              Container(
+                      width: entertainmentList[index]['isFocused'] ? 180 : 120,
+
+                child: Text(
+                  entertainmentList[index]['name'] ?? 'Unknown',
+                  style: TextStyle(
+                    fontSize: 20,
+                    
+                    color: entertainmentList[index]['isFocused']
+                        ? AppColors.highlightColor
+                        : Colors.white,
+                  ),
+                  
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -169,7 +197,7 @@ class _LiveScreenState extends State<LiveScreen> {
           genres: '',
           url: '',
           playUrl: '',
-          playVideo: (String id) {},
+          playVideo: (String id) {}, id: '',channels: [], initialIndex: 1,
         ),
       ),
     );

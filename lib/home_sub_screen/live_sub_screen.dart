@@ -15,10 +15,12 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   List<dynamic> entertainmentList = [];
   bool isLoading = true;
   String errorMessage = '';
+  late FocusNode firstFocusNode;
 
   @override
   void initState() {
     super.initState();
+    firstFocusNode = FocusNode();
     fetchEntertainment();
   }
 
@@ -37,14 +39,19 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
         setState(() {
           entertainmentList = responseData
               .where((channel) =>
-                  channel['status'] != null &&
-                  channel['status'].contains('1'))
+                  channel['status'] != null && channel['status'].contains('1'))
               .map((channel) {
-                channel['isFocused'] = false; // Add isFocused field
-                return channel;
-              })
-              .toList();
+            channel['isFocused'] = false; // Add isFocused field
+            return channel;
+          }).toList();
           isLoading = false;
+
+          // Request focus for the first item
+          if (entertainmentList.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              firstFocusNode.requestFocus();
+            });
+          }
         });
       } else {
         throw Exception('Failed to load data');
@@ -56,6 +63,12 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
         isLoading = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    firstFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,7 +86,8 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                       itemCount: entertainmentList.length,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () => _navigateToVideoScreen(context, entertainmentList[index]),
+                          onTap: () => _navigateToVideoScreen(
+                              context, entertainmentList[index]),
                           child: _buildListViewItem(index),
                         );
                       },
@@ -83,8 +97,10 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
 
   Widget _buildListViewItem(int index) {
     return Focus(
-      onKeyEvent : (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+      focusNode: index == 0 ? firstFocusNode : null,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.select) {
           _navigateToVideoScreen(context, entertainmentList[index]);
           return KeyEventResult.handled;
         }
@@ -103,48 +119,64 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                // decoration: BoxDecoration(
-                //   border: Border.all(
-                //     color: entertainmentList[index]['isFocused'] ?AppColors.primaryColor: Colors.transparent,
-                //     width: 5.0,
-                //   ),
-                //   borderRadius: BorderRadius.circular(17.0),
-                // ),
+              AnimatedContainer(
+                width: entertainmentList[index]['isFocused'] ? 200 : 120,
+                height: entertainmentList[index]['isFocused'] ? 150 : 120,
+                duration: const Duration(milliseconds: 300),
                 child: ContainerGradientBorder(
-                  width: entertainmentList[index]['isFocused'] ? 110 : 70,
-                  height: entertainmentList[index]['isFocused'] ? 90 : 70,
+                  width: entertainmentList[index]['isFocused'] ? 190 : 110,
+                  height: entertainmentList[index]['isFocused'] ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                  colorList: const [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
-                  ],
+                  colorList: entertainmentList[index]['isFocused']
+                      ? [
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                        ]
+                      : [
+                          AppColors.primaryColor,
+                          AppColors.highlightColor
+                        ],
                   borderRadius: 10,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Image.network(
-                    entertainmentList[index]['banner'],
-                    width: entertainmentList[index]['isFocused'] ? 110 : 90,
-                    height: entertainmentList[index]['isFocused'] ? 90 : 70,
-                    fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Image.network(
+                      entertainmentList[index]['banner'],
+                      width: entertainmentList[index]['isFocused'] ? 180 : 100,
+                      height: entertainmentList[index]['isFocused'] ? 130 : 100,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-                ),
               ),
-              const SizedBox(height: 8.0),
               Container(
-                width: entertainmentList[index]['isFocused'] ? 110 : 90,
+                width: entertainmentList[index]['isFocused'] ? 180 : 120,
                 child: Text(
                   entertainmentList[index]['name'] ?? 'Unknown',
-                  style:  TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
-                    color:entertainmentList[index]['isFocused'] ?AppColors.highlightColor: AppColors.hintColor,
+                    color: entertainmentList[index]['isFocused']
+                        ? AppColors.highlightColor
+                        : Colors.white,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis ,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -161,8 +193,13 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',url: '',
-          playUrl: '',playVideo: (String id) {  },
+          channelList: entertainmentList,
+          onFabFocusChanged: (bool) {},
+          genres: '',
+          url: '',
+          playUrl: '',
+          playVideo: (String id) {},
+          id: '',channels: [], initialIndex: 1,
         ),
       ),
     );

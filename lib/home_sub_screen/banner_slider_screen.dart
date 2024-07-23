@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
 class BannerSliderPage extends StatefulWidget {
@@ -19,9 +18,6 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
   late PageController _pageController;
   late Timer _timer;
   String? selectedContentId;
-  FocusNode _bigBannerFocusNode = FocusNode();
-  FocusNode _fabFocusNode = FocusNode();
-  bool _isFabFocused = false;
   List<FocusNode> _smallBannerFocusNodes = [];
   bool _isSmallBannerFocused = false;
   int _focusedSmallBannerIndex = 0;
@@ -32,28 +28,14 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
     _pageController = PageController();
     fetchBanners();
     _startAutoSlide();
-    _fabFocusNode.addListener(_onFabFocusChange);
-    _bigBannerFocusNode.addListener(_onBigBannerFocusChange);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _timer.cancel();
-    _fabFocusNode.dispose();
-    _bigBannerFocusNode.dispose();
     _smallBannerFocusNodes.forEach((node) => node.dispose());
     super.dispose();
-  }
-
-  void _onFabFocusChange() {
-    setState(() {
-      _isFabFocused = _fabFocusNode.hasFocus;
-    });
-  }
-
-  void _onBigBannerFocusChange() {
-    setState(() {});
   }
 
   void _startAutoSlide() {
@@ -90,17 +72,21 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
             return {
               'content_id': banner['content_id'],
               'banner': banner['banner'],
-              'title': banner['title'] ?? 'No Title', // Handle null title here
+              'title': banner['title'] ?? 'No Title',
             };
           }).toList();
 
-          // Create focus nodes for small banners
           _smallBannerFocusNodes = List.generate(bannerList.length, (_) => FocusNode());
 
-          // Set the initial FAB title
           fabTitle = bannerList.isNotEmpty ? bannerList[0]['title'] : null;
           selectedContentId = bannerList.isNotEmpty ? bannerList[0]['content_id'].toString() : null;
           isLoading = false;
+
+          WidgetsBinding.instance!.addPostFrameCallback((_) {
+            if (mounted) {
+              FocusScope.of(context).requestFocus(_smallBannerFocusNodes[0]);
+            }
+          });
         });
       } else {
         throw Exception('Failed to load banners');
@@ -131,7 +117,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
         );
 
         if (filteredData != null) {
-          final videoUrl = filteredData['url']; // Replace 'url' with the actual field name for the video URL
+          final videoUrl = filteredData['url'];
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -139,11 +125,12 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                 url: videoUrl,
                 videoUrl: videoUrl,
                 videoTitle: filteredData['title'] ?? 'No Title',
-                channelList: [], // Pass the channel list if needed
+                channelList: [],
                 onFabFocusChanged: (bool focused) {},
-                genres: '', 
-                playUrl: '', // Pass the appropriate genres if needed
-                playVideo: (String id) {  },
+                genres: '',
+                playUrl: '',
+                playVideo: (String id) {},
+                id: '', channels: [], initialIndex: 1, 
               ),
             ),
           );
@@ -159,15 +146,6 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
         errorMessage = e.toString();
       });
     }
-  }
-
-  double _calculateTextWidth(String text, TextStyle style) {
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: style),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return textPainter.size.width;
   }
 
   void _scrollToSmallBanner(int index) {
@@ -187,16 +165,20 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Center(child: Text('Error: $errorMessage'))
               : bannerList.isEmpty
-                  ? const Center(child: Text('No banners found'))
-                  : FocusTraversalGroup(
-                    policy: WidgetOrderTraversalPolicy(),
-                    child: Stack(
-                        children: [
-                          PageView.builder(
+                  ? Center(child: Text('No banners found'))
+                  : Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (selectedContentId != null) {
+                              fetchAndPlayVideo(selectedContentId!);
+                            }
+                          },
+                          child: PageView.builder(
                             controller: _pageController,
                             itemCount: bannerList.length,
                             onPageChanged: (index) {
@@ -207,111 +189,86 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                             },
                             itemBuilder: (context, index) {
                               final banner = bannerList[index];
-                              return Focus(
-                                focusNode: _bigBannerFocusNode,
-                                onKeyEvent : (FocusNode node, KeyEvent event) {
-                                  if (event is KeyDownEvent ) {
-                                    if (event.logicalKey == LogicalKeyboardKey.select) {
-                                      if (selectedContentId != null) {
-                                        fetchAndPlayVideo(selectedContentId!);
-                                      }
-                                      return KeyEventResult.handled;
-                                    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft || 
-                                               event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                                      _smallBannerFocusNodes[_focusedSmallBannerIndex].requestFocus();
-                                      return KeyEventResult.handled;
-                                    }
-                                  }
-                                  return KeyEventResult.ignored;
-                                },
-                                child: AnimatedOpacity(
-                                  opacity: _bigBannerFocusNode.hasFocus ? 0.8 : 1.0,
-                                  duration: Duration(milliseconds: 300),
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        width: MediaQuery.of(context).size.width,
-                                        height: MediaQuery.of(context).size.height * 0.8,
-                                        child: InkWell(
-                                          onTap: () {
-                                            if (selectedContentId != null) {
-                                              fetchAndPlayVideo(selectedContentId!);
-                                            }
-                                          },
-                                          child: Image.network(
-                                            banner['banner'],
-                                            fit: BoxFit.cover,
-                                            width: MediaQuery.of(context).size.width,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 30.0,
-                                        left: 30.0,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                                          child: Text(
-                                            banner['title'] ?? 'No Title', // Handle null title here
-                                            style: const TextStyle(
-                                              color: AppColors.highlightColor,
-                                              fontSize: 40.0,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                              return Stack(
+                                children: [
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: MediaQuery.of(context).size.height * 0.8,
+                                    child: Image.network(
+                                      banner['banner'],
+                                      fit: BoxFit.cover,
+                                      width: MediaQuery.of(context).size.width,
+                                    ),
                                   ),
-                                ),
+                                  Positioned(
+                                    top: 30.0,
+                                    left: 30.0,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                                      child: Text(
+                                        banner['title'] ?? 'No Title',
+                                        style: const TextStyle(
+                                          color: Color.fromARGB(255, 106, 235, 20),
+                                          fontSize: 40.0,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               );
                             },
                           ),
-                          Positioned(
-                            bottom: MediaQuery.of(context).size.height * 0.15,
-                            left: 40.0,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                double fabWidth = _calculateTextWidth(
-                                        fabTitle ?? '', TextStyle(fontSize: 18.0)) +
-                                    32.0; // Adding some padding
-
-                                return Container(
-                                  width: fabWidth,
-                                  child: Focus(
-                                    focusNode: _fabFocusNode,
-                                    onKeyEvent : (FocusNode node, KeyEvent event) {
-                                      if (event is KeyDownEvent ) {
-                                        if (event.logicalKey == LogicalKeyboardKey.select) {
-                                          if (selectedContentId != null) {
-                                            fetchAndPlayVideo(selectedContentId!);
-                                          }
-                                          return KeyEventResult.handled;
-                                        }
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            color: Colors.black.withOpacity(0.5),
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: bannerList.length,
+                              itemBuilder: (context, index) {
+                                final banner = bannerList[index];
+                                return Focus(
+                                  focusNode: _smallBannerFocusNodes[index],
+                                  onKeyEvent: (FocusNode node, KeyEvent event) {
+                                    if (event is KeyDownEvent) {
+                                      if (event.logicalKey == LogicalKeyboardKey.select) {
+                                        fetchAndPlayVideo(banner['content_id'].toString()); // Play video on center button press
+                                        return KeyEventResult.handled;
                                       }
-                                      return KeyEventResult.ignored;
+                                    }
+                                    return KeyEventResult.ignored;
+                                  },
+                                  onFocusChange: (bool focused) {
+                                    setState(() {
+                                      _isSmallBannerFocused = focused;
+                                      if (focused) {
+                                        _focusedSmallBannerIndex = index;
+                                      }
+                                    });
+                                  },
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _scrollToSmallBanner(index);
                                     },
-                                    child: AnimatedContainer(
-                                      duration: Duration(milliseconds: 200),
+                                    child: Container(
+                                      margin: const EdgeInsets.all(8.0),
+                                      width: MediaQuery.of(context).size.width * 0.1,
                                       decoration: BoxDecoration(
-                                        color: _isFabFocused ? Colors.white :AppColors.hintColor,
-                                        borderRadius: BorderRadius.circular(20.0),
-                                      ),
-                                      child: FloatingActionButton.extended(
-                                        heroTag: 'playButton',
-                                        onPressed: () {
-                                          if (selectedContentId != null) {
-                                            fetchAndPlayVideo(selectedContentId!);
-                                          }
-                                        },
-                                        label: Text(
-                                          fabTitle ?? '',
-                                          style: TextStyle(
-                                            color: _isFabFocused ?  AppColors.primaryColor: AppColors.highlightColor,
-                                            fontSize: 20.0,
-                                          ),
+                                        border: Border.all(
+                                          color: _isSmallBannerFocused && _focusedSmallBannerIndex == index
+                                              ? const Color.fromARGB(255, 136, 51, 122)
+                                              : Colors.transparent,
+                                          width: _pageController.page?.round() == index ? 1.0 : 6.0,
                                         ),
-                                        backgroundColor: Colors.transparent,
-                                        elevation: 0,
+                                      ),
+                                      child: Image.network(
+                                        banner['banner'],
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
                                   ),
@@ -319,70 +276,9 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                               },
                             ),
                           ),
-                          Positioned(
-                            bottom: MediaQuery.of(context).size.height * 0.02,
-                            left: 0.0,
-                            right: 0.0,
-                            child: SizedBox(
-                              height: 50,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: bannerList.length,
-                                itemBuilder: (context, index) {
-                                  final banner = bannerList[index];
-                                  return Focus(
-                                    focusNode: _smallBannerFocusNodes[index],
-                                    onKeyEvent : (FocusNode node, KeyEvent event) {
-                                      if (event is KeyDownEvent ) {
-                                        if (event.logicalKey == LogicalKeyboardKey.select ||
-                                            event.logicalKey == LogicalKeyboardKey.enter) {
-                                          _scrollToSmallBanner(index);
-                                          return KeyEventResult.handled;
-                                        }
-                                      }
-                                      return KeyEventResult.ignored;
-                                    },
-                                    onFocusChange: (bool focused) {
-                                      setState(() {
-                                        _isSmallBannerFocused = focused;
-                                        if (focused) {
-                                          _focusedSmallBannerIndex = index;
-                                        }
-                                      });
-                                    },
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        _scrollToSmallBanner(index);
-                                      },
-                                      child: AnimatedContainer(
-                                        duration: Duration(milliseconds: 200),
-                                        margin: EdgeInsets.symmetric(horizontal: 4.0),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: _focusedSmallBannerIndex == index
-                                                ? AppColors.primaryColor
-                                                : Colors.transparent,
-                                            width: 3.0,
-                                          ),
-                                        ),
-                                        child: Image.network(
-                                          banner['banner'],
-                                          fit: BoxFit.cover,
-                                          width: 80,
-                                          height: 50,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ),
+                        ),
+                      ],
+                    ),
     );
   }
 }
-
-

@@ -20,6 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
   int selectedIndex = -1;
   double iconSize = 30.0;
   final FocusNode _focusNode = FocusNode();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -48,45 +50,42 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: AppColors.cardColor,
         toolbarHeight: MediaQuery.of(context).size.height * 0.1,
         title: Container(
-           child: ContainerGradientBorder(
-                  width: MediaQuery.of(context).size.width - 10,
-                  height: MediaQuery.of(context).size.height * 0.1,
-                  containerColor: AppColors.cardColor,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList: const [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
-                  ],
-                  borderRadius: 10,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1),
-            child: TextField(
-              controller: _searchController,
-              focusNode: _focusNode,
-              decoration: InputDecoration(
-                
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                  borderSide: const BorderSide(
-                      color: AppColors.primaryColor, width: 4.0),
+          child: ContainerGradientBorder(
+            width: MediaQuery.of(context).size.width - 20,
+            height: MediaQuery.of(context).size.height * 0.1,
+            containerColor: AppColors.cardColor,
+            start: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            borderWidth: 7,
+            colorList: const [
+              AppColors.primaryColor,
+              AppColors.highlightColor
+            ],
+            borderRadius: 10,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1),
+              child: TextField(
+                controller: _searchController,
+                focusNode: _focusNode,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: const BorderSide(
+                        color: AppColors.primaryColor, width: 4.0),
+                  ),
+                  labelText: 'Search By Channel Name',
+                  labelStyle: TextStyle(color: AppColors.hintColor),
                 ),
-                labelText: 'Search By Channel Name',labelStyle: TextStyle(color: AppColors.hintColor)
+                style: const TextStyle(color: AppColors.hintColor),
+                textInputAction: TextInputAction.search,
+                textAlignVertical:
+                    TextAlignVertical.center, // Vertical center alignment
+                onSubmitted: (value) {
+                  _performSearch(value);
+                },
               ),
-              style: const TextStyle(color:AppColors.hintColor),
-              textInputAction: TextInputAction.search,
-              textAlignVertical:
-                  TextAlignVertical.center, // Vertical center alignment
-              onChanged: (value) {
-                _performSearch(value);
-              },
-              onSubmitted: (value) {
-                _performSearch(value);
-              },
             ),
           ),
-           ),
         ),
       ),
       backgroundColor: AppColors.cardColor,
@@ -100,15 +99,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   ? const Expanded(
                       child: Center(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'No results found'
-                          
-                          ,
+                            'No results found',
                             style: TextStyle(color: AppColors.hintColor),
                           ),
-                          
                         ],
                       )),
                     )
@@ -116,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
+                          crossAxisCount: 4,
                         ),
                         itemCount: searchResults.length,
                         itemBuilder: (context, index) {
@@ -135,8 +131,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildGridViewItem(int index) {
-    
-
     return Focus(
       onKeyEvent: (FocusNode node, KeyEvent event) {
         if (event is KeyDownEvent &&
@@ -152,118 +146,126 @@ class _SearchScreenState extends State<SearchScreen> {
         });
       },
       child: Container(
-        margin: const EdgeInsets.all(8.0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15.0),
+        // margin: const EdgeInsets.all(8.0),
+        width: 250,
+        height: 200,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                // decoration: BoxDecoration(
-                //   border: Border.all(
-                //     color: selectedIndex == index
-                //         ? AppColors.primaryColor
-                //         : Colors.transparent,
-                //     width: 5.0,
-                //   ),
-                //   borderRadius: BorderRadius.circular(16.0),
-                // ),
-                 child: ContainerGradientBorder(
-                  width: selectedIndex == index ? 110 : 90,
-                  height: selectedIndex == index ? 90 : 70,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: _focusNode.hasFocus ? 200 : 120,
+                height: _focusNode.hasFocus ? 150 : 120,
+                child: ContainerGradientBorder(
+                  width: selectedIndex == index ? 180 : 110,
+                  height: selectedIndex == index ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                  colorList: const [
+                   colorList: _focusNode.hasFocus ? [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                  ]
+                  :
+                  [
                     AppColors.primaryColor,
                     AppColors.highlightColor
                   ],
                   borderRadius: 14,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Image.network(
-                    searchResults[index]['banner'] ?? '',
-                    
-                    width: selectedIndex == index ? 110 : 90,
-                  height: selectedIndex == index ? 90 : 70,
-                    fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Image.network(
+                      searchResults[index]['banner'] ?? '',
+                      width: selectedIndex == index ? 160 : 100,
+                      height: selectedIndex == index ? 130 : 100,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-                 ),
               ),
-              const SizedBox(height: 8.0),
-              Container(
-                child: Container(
-                  width: selectedIndex == index ? 110 : 90,
+                 Container(
+                  width: selectedIndex == index ? 180 : 100,
                   child: Text(
                     searchResults[index]['name'] ?? 'Unknown',
                     style: TextStyle(
                       fontSize: 20,
-                      color:
-                          selectedIndex == index ?AppColors.primaryColor:AppColors.hintColor,
+                      color: selectedIndex == index
+                          ? AppColors.primaryColor
+                          : AppColors.hintColor,
                     ),
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                 ),
-              ),
+              
             ],
           ),
-        ),
+        
       ),
     );
   }
 
-  Future<void> _performSearch(String searchTerm) async {
-    setState(() {
-      isLoading = true;
-      searchResults.clear();
-    });
+  void _performSearch(String searchTerm) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    try {
-      final response = await http.get(
-        Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      setState(() {
+        isLoading = true;
+        searchResults.clear();
+      });
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
+      try {
+        final response = await http.get(
+          Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+          headers: {
+            'x-api-key': 'vLQTuPZUxktl5mVW',
+          },
+        );
 
+        if (response.statusCode == 200) {
+          final List<dynamic> responseData = json.decode(response.body);
+
+          setState(() {
+            if (searchTerm.isEmpty) {
+              searchResults.clear();
+            } else {
+              searchResults = responseData
+                  .where((channel) =>
+                      channel['name'] != null &&
+                      channel['name']
+                          .toString()
+                          .toLowerCase()
+                          .contains(searchTerm.toLowerCase()))
+                  .toList();
+            }
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Failed to load data');
+        }
+      } catch (e) {
+        print('Error fetching data: $e');
         setState(() {
-          if (searchTerm.isEmpty) {
-            searchResults.clear();
-          } else {
-            searchResults = responseData
-                .where((channel) =>
-                    channel['name'] != null &&
-                    channel['name']
-                        .toString()
-                        .toLowerCase()
-                        .contains(searchTerm.toLowerCase()))
-                .toList();
-
-            // Initialize isFocused to false for each channel
-            searchResults.forEach((channel) {
-              if (channel['isFocused'] == null) {
-                channel['isFocused'] = false;
-              }
-            });
-          }
           isLoading = false;
         });
-      } else {
-        throw Exception('Failed to load data');
       }
-    } catch (e) {
-      print('Error fetching data: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
+    });
   }
 
   void _onItemTap(int index) {
@@ -274,8 +276,11 @@ class _SearchScreenState extends State<SearchScreen> {
           videoUrl: searchResults[index]['url'] ?? '',
           videoTitle: searchResults[index]['name'] ?? 'Unknown',
           channelList: searchResults,
-          onFabFocusChanged: _handleFabFocusChanged, genres: '',url: '',
-          playUrl: '', playVideo: (String id) {  },
+          onFabFocusChanged: _handleFabFocusChanged,
+          genres: '',
+          url: '',
+          playUrl: '',
+          playVideo: (String id) {}, id: '',channels: [], initialIndex: 1,
         ),
       ),
     );
@@ -285,8 +290,3 @@ class _SearchScreenState extends State<SearchScreen> {
     // Handle FAB focus change if needed
   }
 }
-
-
-
-
-

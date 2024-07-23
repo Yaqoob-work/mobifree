@@ -9,8 +9,6 @@ import 'dart:convert';
 
 import 'package:video_player/video_player.dart';
 
-
-
 class VOD extends StatefulWidget {
   @override
   _VODState createState() => _VODState();
@@ -51,7 +49,8 @@ class _VODState extends State<VOD> {
           setState(() {
             movies = data;
             isLoading = false;
-            focusNodes = List<FocusNode>.generate(data.length, (index) => FocusNode());
+            focusNodes =
+                List<FocusNode>.generate(data.length, (index) => FocusNode());
           });
         } else {
           throw Exception('Invalid data structure');
@@ -98,8 +97,10 @@ class _VODState extends State<VOD> {
     if (videoUrl.isNotEmpty) {
       List<dynamic> channelList = [
         {
-          'banner': movies.firstWhere((movie) => movie['id'].toString() == id)['banner'],
-          'name': movies.firstWhere((movie) => movie['id'].toString() == id)['name'],
+          'banner': movies
+              .firstWhere((movie) => movie['id'].toString() == id)['banner'],
+          'name': movies
+              .firstWhere((movie) => movie['id'].toString() == id)['name'],
         }
       ];
 
@@ -127,80 +128,99 @@ class _VODState extends State<VOD> {
         setState(() {}); // Update the UI to reflect the focus state
       },
       onKeyEvent: (FocusNode node, KeyEvent event) {
-        if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+                event.logicalKey == LogicalKeyboardKey.enter)) {
           playVideo(movie['id'].toString());
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
-      child: TweenAnimationBuilder<double>(
-        duration: Duration(milliseconds: 500),
-        tween: Tween<double>(begin: 1.0, end: focusNodes[index].hasFocus ? 1 : 0.8),
-        builder: (context, scale, child) {
-          return Transform.scale(
-            scale: scale,
-            child: GestureDetector(
+      child: 
+        
+             GestureDetector(
               onTap: () => playVideo(movie['id'].toString()),
               child: Column(
                 // mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: focusNodes[index].hasFocus ? 110 : 90,
-                  height: focusNodes[index].hasFocus ? 90 : 70,
-                    margin: EdgeInsets.all(5),
-                    // decoration: BoxDecoration(
-                    //   border: Border.all(
-                    //     color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
-                    //     width: 5.0,
-                    //   ),
-                    //   borderRadius: BorderRadius.circular(18),
-                    // ),
-                    child: ContainerGradientBorder(
-                  width: focusNodes[index].hasFocus ? 110 : 90,
-                  height: focusNodes[index].hasFocus ? 90 : 70,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList: const [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
-                  ],
-                  borderRadius: 10,
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
                     
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.0),
-                      child: Image.network(
-                        movie['banner'],
-                        fit: BoxFit.cover,
-                        width: focusNodes[index].hasFocus ? 110 : 90,
-                  height: focusNodes[index].hasFocus ? 90 : 70,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(child: Text('Image not available'));
-                        },
+                      width: focusNodes[index].hasFocus ? 200 : 120,
+                      height: focusNodes[index].hasFocus ? 150 : 120,
+                      margin: EdgeInsets.all(5),
+                      // decoration: BoxDecoration(
+                      //   border: Border.all(
+                      //     color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
+                      //     width: 5.0,
+                      //   ),
+                      //   borderRadius: BorderRadius.circular(18),
+                      // ),
+                      child: ContainerGradientBorder(
+                        width: focusNodes[index].hasFocus ? 180 : 110,
+                        height: focusNodes[index].hasFocus ? 140 : 110,
+                        start: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        borderWidth: 7,
+                        colorList: focusNodes[index].hasFocus
+                            ? [
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                                AppColors.primaryColor,
+                                AppColors.highlightColor,
+                              ]
+                            : [AppColors.primaryColor, AppColors.highlightColor],
+                        borderRadius: 10,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Image.network(
+                            movie['banner'],
+                            fit: BoxFit.cover,
+                            width: focusNodes[index].hasFocus ? 160 : 100,
+                            height: focusNodes[index].hasFocus ? 130 : 100,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(child: Text('Image not available'));
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                    ),
                   ),
-                  SizedBox(height: 5),
+                  // SizedBox(height: 5),
                   Text(
                     movie['name'],
                     style: TextStyle(
-                      color: focusNodes[index].hasFocus ? AppColors.highlightColor:AppColors.hintColor,
+                      color: focusNodes[index].hasFocus
+                          ? AppColors.highlightColor
+                          : AppColors.hintColor,
                       fontSize: focusNodes[index].hasFocus ? 20 : 20,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-
-                    
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
           );
-        },
-      ),
-    );
+        
+      
+    
   }
 
   @override
@@ -210,28 +230,33 @@ class _VODState extends State<VOD> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : movies.isEmpty
-              ? Center(child: Text('No movies found', style: TextStyle(color:AppColors.hintColor)))
+              ? Center(
+                  child: Text('No movies found',
+                      style: TextStyle(color: AppColors.hintColor)))
               : GridView.builder(
                   padding: EdgeInsets.all(10),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    crossAxisCount: 4,
+                    // crossAxisSpacing: 10,
+                    // mainAxisSpacing: 10,
                   ),
                   itemCount: movies.length,
-                  itemBuilder: (context, index) => _buildMovieWidget(context, index),
+                  itemBuilder: (context, index) =>
+                      _buildMovieWidget(context, index),
                 ),
     );
   }
 }
-
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
   final List<dynamic> channelList;
 
-  VideoScreen({required this.videoUrl, required this.videoTitle, required this.channelList});
+  VideoScreen(
+      {required this.videoUrl,
+      required this.videoTitle,
+      required this.channelList});
 
   @override
   _VideoScreenState createState() => _VideoScreenState();
@@ -253,7 +278,7 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl)
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
         setState(() {
           _totalDuration = _controller.value.duration;
@@ -305,12 +330,12 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   void _onRewind() {
-    _controller.seekTo(_controller.value.position - Duration(minutes: 5));
+    _controller.seekTo(_controller.value.position - Duration(minutes: 1));
     _resetHideControlsTimer();
   }
 
   void _onForward() {
-    _controller.seekTo(_controller.value.position + Duration(minutes: 5));
+    _controller.seekTo(_controller.value.position + Duration(minutes: 1));
     _resetHideControlsTimer();
   }
 
@@ -340,7 +365,7 @@ class _VideoScreenState extends State<VideoScreen> {
       backgroundColor: Colors.black,
       body: Focus(
         focusNode: screenFocusNode,
-       onKeyEvent: (node, event) {
+        onKeyEvent: (node, event) {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.select ||
                 event.logicalKey == LogicalKeyboardKey.enter ||
@@ -371,7 +396,7 @@ class _VideoScreenState extends State<VideoScreen> {
               Center(
                 child: _controller.value.isInitialized
                     ? AspectRatio(
-                        aspectRatio: 16/9,
+                        aspectRatio: 16 / 9,
                         child: VideoPlayer(_controller),
                       )
                     : CircularProgressIndicator(),
@@ -396,7 +421,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                     _controller.value.isPlaying
                                         ? Icons.pause
                                         : Icons.play_arrow,
-                                    color: AppColors.primaryColor,
+                                    color: AppColors.highlightColor,
                                   ),
                                   onPressed: _togglePlayPause,
                                 ),
@@ -407,7 +432,9 @@ class _VideoScreenState extends State<VideoScreen> {
                               child: Center(
                                 child: Text(
                                   _formatDuration(_currentPosition),
-                                  style: TextStyle(color: AppColors.primaryColor, fontSize: 20),
+                                  style: TextStyle(
+                                      color: AppColors.highlightColor,
+                                      fontSize: 20),
                                 ),
                               ),
                             ),
@@ -418,10 +445,10 @@ class _VideoScreenState extends State<VideoScreen> {
                                   _controller,
                                   allowScrubbing: true,
                                   colors: VideoProgressColors(
-                                    playedColor:AppColors.highlightColor,
-                                    bufferedColor: Colors.grey,
-                                    backgroundColor: AppColors.primaryColor
-                                  ),
+                                      playedColor: AppColors.primaryColor,
+                                      bufferedColor: Colors.grey,
+                                      backgroundColor:
+                                          AppColors.highlightColor),
                                 ),
                               ),
                             ),
@@ -430,7 +457,9 @@ class _VideoScreenState extends State<VideoScreen> {
                               child: Center(
                                 child: Text(
                                   _formatDuration(_totalDuration),
-                                  style: TextStyle(color: AppColors.primaryColor, fontSize: 20),
+                                  style: TextStyle(
+                                      color: AppColors.highlightColor,
+                                      fontSize: 20),
                                 ),
                               ),
                             ),

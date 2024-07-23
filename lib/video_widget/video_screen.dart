@@ -1,11 +1,7 @@
-
-
-
-
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
@@ -13,17 +9,22 @@ class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
   final List<dynamic> channelList;
+  final List<dynamic> channels;
   final Function(bool) onFabFocusChanged; // Callback to notify FAB focus change
+  final int initialIndex;
 
   VideoScreen({
     required this.videoUrl,
     required this.videoTitle,
     required this.channelList,
-    required this.onFabFocusChanged, 
+    required this.onFabFocusChanged,
     required String genres,
     required url,
-     required String playUrl,
-      required void Function(String id) playVideo,
+    required String playUrl,
+    required void Function(String id) playVideo,
+    required String id,
+    required this.channels,
+    required this.initialIndex,
   });
 
   @override
@@ -52,7 +53,8 @@ class _VideoScreenState extends State<VideoScreen> {
     _controller.setVolume(volume);
 
     // Initialize focus nodes for each channel item
-    focusNodes = List.generate(widget.channelList.length, (index) => FocusNode());
+    focusNodes =
+        List.generate(widget.channelList.length, (index) => FocusNode());
 
     // Initialize isFocused to false for each channel
     widget.channelList.forEach((channel) {
@@ -280,7 +282,8 @@ class _VideoScreenState extends State<VideoScreen> {
                                 children: [
                                   Expanded(
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 1000),
+                                      duration:
+                                          const Duration(milliseconds: 1000),
                                       curve: Curves.easeInOut,
                                       decoration: BoxDecoration(
                                         border: Border.all(
@@ -290,13 +293,16 @@ class _VideoScreenState extends State<VideoScreen> {
                                               : Colors.transparent,
                                           width: 5.0,
                                         ),
-                                        borderRadius: BorderRadius.circular(25.0),
+                                        borderRadius:
+                                            BorderRadius.circular(25.0),
                                       ),
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(20),
                                         child: Image.network(
-                                          widget.channelList[index]['banner'] ?? '',
-                                          fit: widget.channelList[index]['isFocused']
+                                          widget.channelList[index]['banner'] ??
+                                              '',
+                                          fit: widget.channelList[index]
+                                                  ['isFocused']
                                               ? BoxFit.cover
                                               : BoxFit.contain,
                                           width: bannerWidth,
@@ -309,11 +315,14 @@ class _VideoScreenState extends State<VideoScreen> {
                                   Container(
                                     width: bannerWidth,
                                     child: Text(
-                                      widget.channelList[index]['name'] ?? 'Unknown',
+                                      widget.channelList[index]['name'] ??
+                                          'Unknown',
                                       style: TextStyle(
-                                        color: widget.channelList[index]['isFocused']
+                                        color: widget.channelList[index]
+                                                ['isFocused']
                                             ? AppColors.highlightColor
-                                            : AppColors.hintColor.withOpacity(0.6),
+                                            : AppColors.hintColor
+                                                .withOpacity(0.6),
                                         fontSize: 20.0,
                                       ),
                                       maxLines: 1,
@@ -337,3 +346,7 @@ class _VideoScreenState extends State<VideoScreen> {
     );
   }
 }
+
+
+
+

@@ -163,7 +163,7 @@ class _EntertainmentSubScreenState extends State<EntertainmentSubScreen> {
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
           channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '', url: '',
-          playUrl: '',playVideo: (String id) {  },
+          playUrl: '',playVideo: (String id) {  }, id: '',channels: [], initialIndex: 1,
         ),
       ),
     );

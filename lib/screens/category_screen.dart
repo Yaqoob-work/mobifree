@@ -299,7 +299,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      height: 140,
+                      height: 250,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: entry.value.length,
@@ -402,8 +402,8 @@ class _ChannelItemState extends State<ChannelItem> {
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: _focusNode.hasFocus ? 120 : 80,
-                height: _focusNode.hasFocus ? 100 : 80,
+                width: _focusNode.hasFocus ? 200 : 120,
+                height: _focusNode.hasFocus ? 150 : 110,
                 // decoration: BoxDecoration(
                 //   border: Border.all(
                 //     color: _isFocused
@@ -417,12 +417,31 @@ class _ChannelItemState extends State<ChannelItem> {
                 //   borderRadius: BorderRadius.circular(13.0),
                 // ),
                 child: ContainerGradientBorder(
-                  width: _focusNode.hasFocus ? 110 : 70,
-                  height: _focusNode.hasFocus ? 90 : 70,
+                  width: _isFocused ? 190 : 110,
+                  height: _isFocused ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                  colorList: const [
+                  colorList:  _isFocused ? [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                  ]
+                  :
+                  [
                     AppColors.primaryColor,
                     AppColors.highlightColor
                   ],
@@ -432,8 +451,8 @@ class _ChannelItemState extends State<ChannelItem> {
                     child: Image.network(
                       widget.channel.banner,
                       fit: BoxFit.cover,
-                      width: _focusNode.hasFocus ? 110 : 70,
-                      height: _focusNode.hasFocus ? 90 : 70,
+                      width: _focusNode.hasFocus ? 180 : 100,
+                      height: _focusNode.hasFocus ? 130 : 100,
                     ),
                   ),
                 ),

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -173,7 +172,10 @@ class _NetworkCategoryState extends State<NetworkCategory> {
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
                         children: [
-                          Container(
+                          AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: focusNode.hasFocus ? 200 : 120,
+                height: focusNode.hasFocus ? 150 : 110,
                             // decoration: BoxDecoration(
                             //   border: Border.all(
                             //     color: focusNode.hasFocus
@@ -184,16 +186,35 @@ class _NetworkCategoryState extends State<NetworkCategory> {
                             //   borderRadius: BorderRadius.circular(17.0),
                             // ),
                              child: ContainerGradientBorder(
-                  width: focusNode.hasFocus? 120 : 90,
-                  height: focusNode.hasFocus? 90 : 70,
+                  width: focusNode.hasFocus ? 190 : 110,
+                  height: focusNode.hasFocus ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                  colorList: const [
+                  colorList:  focusNode.hasFocus ? [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                  ]
+                  :
+                  [
                     AppColors.primaryColor,
                     AppColors.highlightColor
                   ],
-                  borderRadius: 14,
+                  borderRadius: 10,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12.0),
                               child: Image.network(
@@ -201,8 +222,8 @@ class _NetworkCategoryState extends State<NetworkCategory> {
                                     ? categorizedContents[genre]![0].banner
                                     : '',
                                 fit: BoxFit.cover,
-                                width: focusNode.hasFocus ? 120 : 90,
-                                height: focusNode.hasFocus ? 90 : 70,
+                                width: focusNode.hasFocus ? 180 : 100,
+                                height: focusNode.hasFocus ? 130 : 100,
                               ),
                             ),
                           ),
@@ -357,7 +378,10 @@ class _CategoryContentPageState extends State<CategoryContentPage> {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    Container(
+                    AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: focusNode.hasFocus ? 200 : 120,
+                height: focusNode.hasFocus ? 150 : 110,
                       // decoration: BoxDecoration(
                       //   border: Border.all(
                       //     color: focusNode.hasFocus
@@ -367,24 +391,43 @@ class _CategoryContentPageState extends State<CategoryContentPage> {
                       //   ),
                       //   borderRadius: BorderRadius.circular(17.0),
                       // ),
-                      child: ContainerGradientBorder(
-                  width: focusNode.hasFocus? 120 : 90,
-                  height: focusNode.hasFocus? 90 : 70,
+                                  child: ContainerGradientBorder(
+                  width: focusNode.hasFocus ? 190 : 110,
+                  height: focusNode.hasFocus ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                  colorList: const [
+                  colorList:  focusNode.hasFocus ? [
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                    AppColors.primaryColor,
+                    AppColors.highlightColor,
+                  ]
+                  :
+                  [
                     AppColors.primaryColor,
                     AppColors.highlightColor
                   ],
-                  borderRadius: 14,
+                  borderRadius: 10,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12.0),
                         child: Image.network(
                           content.banner,
                           fit: BoxFit.cover,
-                          width: focusNode.hasFocus ? 120 : 90,
-                          height: focusNode.hasFocus ? 90 : 70,
+                          width: focusNode.hasFocus ? 180 : 100,
+                          height: focusNode.hasFocus ? 130 : 100,
                         ),
                       ),
                     ),
@@ -497,12 +540,12 @@ class _PlayVideoPageState extends State<PlayVideoPage> {
   }
 
   void _onRewind() {
-    _controller.seekTo(_controller.value.position - Duration(minutes: 5));
+    _controller.seekTo(_controller.value.position - Duration(minutes: 1));
     _resetHideControlsTimer();
   }
 
   void _onForward() {
-    _controller.seekTo(_controller.value.position + Duration(minutes: 5));
+    _controller.seekTo(_controller.value.position + Duration(minutes: 1));
     _resetHideControlsTimer();
   }
 
@@ -611,9 +654,9 @@ class _PlayVideoPageState extends State<PlayVideoPage> {
                                   _controller,
                                   allowScrubbing: true,
                                   colors: VideoProgressColors(
-                                    playedColor: AppColors.highlightColor,
+                                    playedColor: AppColors.primaryColor,
                                     bufferedColor: Colors.grey,
-                                    backgroundColor: AppColors.primaryColor,
+                                    backgroundColor: AppColors.highlightColor,
                                   ),
                                 ),
                               ),

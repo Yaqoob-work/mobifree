@@ -8,6 +8,7 @@ import 'package:mobi_tv_entertainment/screens/network.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
+import 'package:mobi_tv_entertainment/waste/category_screen.dart';
 
 void main() {
   runApp(MyApp());
