@@ -2,13 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobi_tv_entertainment/screens/category_screen.dart';
+import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
 import 'package:mobi_tv_entertainment/screens/network.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
-import 'package:mobi_tv_entertainment/waste/category_screen.dart';
+
 
 void main() {
   runApp(MyApp());
@@ -34,8 +34,16 @@ class MyApp extends StatelessWidget {
         hintColor: AppColors.hintColor,
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue),
       ),
-   
-      home: MyHomePage(),
+   initialRoute: '/',
+      routes: {
+        '/': (context) => MyHomePage(),
+        // '/videoPlayer': (context) => VideoPlayerScreen(),
+        '/category': (context) => HomeCategory(),
+        '/search': (context) => SearchScreen(),
+        '/vod': (context) => VOD(),
+        '/network': (context) => Network(),
+      },
+      // home: MyHomePage(),
     );
   }
 }
@@ -88,12 +96,12 @@ class _MyHomePageState extends State<MyHomePage> {
               children: 
               <Widget>
               [
-                const HomeScreen(),
+                 HomeScreen(),
                 SearchScreen(),
                 LiveScreen(),
                 VOD(),
                 Network(),
-                CategoryScreen(),
+                HomeCategory(),
               ],
             ),
           ),

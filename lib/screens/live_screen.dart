@@ -5,6 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 
 class LiveScreen extends StatefulWidget {
   @override
@@ -195,9 +205,10 @@ class _LiveScreenState extends State<LiveScreen> {
           channelList: entertainmentList,
           onFabFocusChanged: (bool) {},
           genres: '',
-          url: '',
-          playUrl: '',
-          playVideo: (String id) {}, id: '',channels: [], initialIndex: 1,
+          // url: '',
+          // playUrl: '',
+          // playVideo: (String id) {}, id: '',
+          // channels: [], initialIndex: 1,
         ),
       ),
     );

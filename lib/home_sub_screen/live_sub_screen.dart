@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
+
 class LiveSubScreen extends StatefulWidget {
   @override
   _LiveSubScreenState createState() => _LiveSubScreenState();
@@ -15,12 +16,10 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   List<dynamic> entertainmentList = [];
   bool isLoading = true;
   String errorMessage = '';
-  late FocusNode firstFocusNode;
 
   @override
   void initState() {
     super.initState();
-    firstFocusNode = FocusNode();
     fetchEntertainment();
   }
 
@@ -45,13 +44,6 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
             return channel;
           }).toList();
           isLoading = false;
-
-          // Request focus for the first item
-          if (entertainmentList.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              firstFocusNode.requestFocus();
-            });
-          }
         });
       } else {
         throw Exception('Failed to load data');
@@ -63,12 +55,6 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
         isLoading = false;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    firstFocusNode.dispose();
-    super.dispose();
   }
 
   @override
@@ -88,7 +74,23 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                         return GestureDetector(
                           onTap: () => _navigateToVideoScreen(
                               context, entertainmentList[index]),
-                          child: _buildListViewItem(index),
+                          child: Focus(
+                            onFocusChange: (isFocused) {
+                              setState(() {
+                                entertainmentList[index]['isFocused'] = isFocused;
+                              });
+                            },
+                            onKey: (node, event) {
+                              if (event is RawKeyDownEvent &&
+                                  (event.logicalKey == LogicalKeyboardKey.select ||
+                                      event.logicalKey == LogicalKeyboardKey.enter)) {
+                                _navigateToVideoScreen(context, entertainmentList[index]);
+                                return KeyEventResult.handled;
+                              }
+                              return KeyEventResult.ignored;
+                            },
+                            child: _buildListViewItem(index),
+                          ),
                         );
                       },
                     ),
@@ -96,41 +98,27 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   }
 
   Widget _buildListViewItem(int index) {
-    return Focus(
-      focusNode: index == 0 ? firstFocusNode : null,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.select) {
-          _navigateToVideoScreen(context, entertainmentList[index]);
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      onFocusChange: (hasFocus) {
-        setState(() {
-          entertainmentList[index]['isFocused'] = hasFocus;
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.all(8.0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                width: entertainmentList[index]['isFocused'] ? 200 : 120,
-                height: entertainmentList[index]['isFocused'] ? 150 : 120,
-                duration: const Duration(milliseconds: 300),
-                child: ContainerGradientBorder(
-                  width: entertainmentList[index]['isFocused'] ? 190 : 110,
-                  height: entertainmentList[index]['isFocused'] ? 140 : 110,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList: entertainmentList[index]['isFocused']
-                      ? [
+    return Container(
+      width: 240,
+      height: 200,
+      margin: const EdgeInsets.all(8.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: entertainmentList[index]['isFocused'] ? 200 : 120,
+              height: entertainmentList[index]['isFocused'] ? 150 : 120,
+              child: ContainerGradientBorder(
+                width: entertainmentList[index]['isFocused'] ? 190 : 110,
+                height: entertainmentList[index]['isFocused'] ? 140 : 110,
+                start: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                borderWidth: 7,
+                colorList: entertainmentList[index]['isFocused']
+                    ? [
                           AppColors.primaryColor,
                           AppColors.highlightColor,
                           AppColors.primaryColor,
@@ -148,39 +136,35 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                           AppColors.primaryColor,
                           AppColors.highlightColor,
                         ]
-                      : [
-                          AppColors.primaryColor,
-                          AppColors.highlightColor
-                        ],
-                  borderRadius: 10,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Image.network(
-                      entertainmentList[index]['banner'],
-                      width: entertainmentList[index]['isFocused'] ? 180 : 100,
-                      height: entertainmentList[index]['isFocused'] ? 130 : 100,
-                      fit: BoxFit.cover,
-                    ),
+                      : [AppColors.primaryColor, AppColors.highlightColor],
+                borderRadius: 10,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.network(
+                    entertainmentList[index]['banner'],
+                    width: entertainmentList[index]['isFocused'] ? 180 : 100,
+                    height: entertainmentList[index]['isFocused'] ? 130 : 100,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
-              Container(
-                width: entertainmentList[index]['isFocused'] ? 180 : 120,
-                child: Text(
-                  entertainmentList[index]['name'] ?? 'Unknown',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: entertainmentList[index]['isFocused']
-                        ? AppColors.highlightColor
-                        : Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            ),
+            Container(
+              width: entertainmentList[index]['isFocused'] ? 180 : 100,
+              child: Text(
+                entertainmentList[index]['name'] ?? 'Unknown',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: entertainmentList[index]['isFocused']
+                      ? AppColors.highlightColor
+                      : Colors.white,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -196,10 +180,6 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
           channelList: entertainmentList,
           onFabFocusChanged: (bool) {},
           genres: '',
-          url: '',
-          playUrl: '',
-          playVideo: (String id) {},
-          id: '',channels: [], initialIndex: 1,
         ),
       ),
     );

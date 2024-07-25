@@ -8,7 +8,16 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
-import '../video_widget/video_screen.dart';
+// import '../video_widget/video_screen.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -157,8 +166,8 @@ class _ChannelWidgetState extends State<ChannelWidget> {
         },
         child: Container(
           // padding: EdgeInsets.all(10) ,
-          width: 250,
-          height: 250,
+          width: 210,
+          height: 210,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -210,30 +219,34 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                     AppColors.highlightColor
                   ],
                   borderRadius: 14,
-                // child: ClipRRect(
-                  // borderRadius: BorderRadius.circular(15),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
                   child: Image.network(
                     widget.channel.banner,
                     fit: BoxFit.cover,
                     width: isFocused ? 180 : 100,
                   height: isFocused ? 130 : 100,
                   ),
-                // ),
+                ),
                  ),
               ),
               // Padding(
                 // padding: const EdgeInsets.all(8.0),
                 // child: 
-                Text(
-                  widget.channel.name,
-                  style: TextStyle(
-                    color: isFocused ?AppColors.highlightColor : AppColors.hintColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                Container(
+                    width: isFocused ? 180 : 100,
+
+                  child: Text(
+                    widget.channel.name,
+                    style: TextStyle(
+                      color: isFocused ?AppColors.highlightColor : AppColors.hintColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
                 ),
               // ),
                 // ),
@@ -297,7 +310,6 @@ class Channel {
 
 
 
-
 class VideoScreen extends StatefulWidget {
   final List<Channel> channels;
   final int initialIndex;
@@ -318,7 +330,6 @@ class _VideoScreenState extends State<VideoScreen> {
   bool showChannels = false;
   int currentIndex = 0;
   final FocusNode _fabFocusNode = FocusNode();
-  // Color _fabColor = Colors.white;
   Timer? _inactivityTimer;
 
   @override
@@ -327,16 +338,8 @@ class _VideoScreenState extends State<VideoScreen> {
     currentIndex = widget.initialIndex;
     _initializeVideoPlayer(widget.channels[currentIndex].url);
 
-    // _fabFocusNode.addListener(() {
-    //   setState(() {
-    //     _fabColor = _fabFocusNode.hasFocus ? AppColors.primaryColor: Colors.white;
-    //   });
-    // });
-
-    // Registering the center button event
     RawKeyboard.instance.addListener(_handleKeyEvent);
 
-    // Focus the FAB automatically when entering the screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_fabFocusNode);
     });
@@ -358,7 +361,7 @@ class _VideoScreenState extends State<VideoScreen> {
         showChannels = !showChannels;
       });
     }
-    _resetInactivityTimer(); // Reset inactivity timer on key event
+    _resetInactivityTimer();
   }
 
   void _initializeVideoPlayer(String videoUrl) {
@@ -410,11 +413,10 @@ class _VideoScreenState extends State<VideoScreen> {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 300),
-                          opacity: showChannels ? 1.0 : 0.0,
+                        child: Visibility(
+                          visible: showChannels,
                           child: Container(
-                            height: 150,
+                            height: 210,
                             color: Colors.black.withOpacity(0.5),
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -426,7 +428,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                   child: ChannelWidget(
                                     channel: channel,
                                     onTap: () {
-                                      Navigator.push(
+                                      Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) => VideoScreen(
@@ -445,13 +447,12 @@ class _VideoScreenState extends State<VideoScreen> {
                       ),
                       Positioned(
                         right: 16,
-                        bottom: showChannels ? 160 : 16,
+                        bottom: showChannels ? 220 : 16,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Focus(
                             focusNode: _fabFocusNode,
                             child: FloatingActionButton(
-                              // backgroundColor: _fabColor,
                               onPressed: () {
                                 setState(() {
                                   showChannels = !showChannels;

@@ -5,6 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/home_sub_screen/network_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 
 class Network extends StatefulWidget {
   @override
@@ -33,11 +43,11 @@ class _NetworkState extends State<Network> {
         // Create focus nodes for each network item
         _focusNodes = List.generate(networks.length, (_) => FocusNode());
         // Request focus for the first item
-        if (_focusNodes.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            FocusScope.of(context).requestFocus(_focusNodes[0]);
-          });
-        }
+        // if (_focusNodes.isNotEmpty) {
+        //   WidgetsBinding.instance.addPostFrameCallback((_) {
+        //     FocusScope.of(context).requestFocus(_focusNodes[0]);
+        //   });
+        // }
       });
     } else {
       throw Exception('Failed to load networks');
@@ -69,7 +79,7 @@ class _NetworkState extends State<Network> {
                 ),
                 itemCount: networks.length,
                 itemBuilder: (context, index) {
-                  final network = networks[index];
+                  final network = networks[index]??'';
                   return FocusableItem(
                     network: network,
                     focusNode: _focusNodes[index],

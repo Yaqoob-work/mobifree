@@ -7,6 +7,15 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_screen.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 
 void main() {
@@ -191,8 +200,10 @@ class _EntertainmentScreenState extends State<EntertainmentScreen> {
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
           channelList: entertainmentList,
-          onFabFocusChanged: _handleFabFocusChanged, genres: '', url: '',
-          playUrl: '',playVideo: (String id) {  }, id: '',channels: [], initialIndex: 1,
+          onFabFocusChanged: _handleFabFocusChanged, genres: '',
+          //  url: '',
+          // playUrl: '',playVideo: (String id) {  }, id: '',
+          // channels: [], initialIndex: 1,
         ),
       ),
     );

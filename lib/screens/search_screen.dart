@@ -7,6 +7,16 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_screen.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -155,15 +165,15 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: _focusNode.hasFocus ? 200 : 120,
-                height: _focusNode.hasFocus ? 150 : 120,
+                width: selectedIndex == index ? 200 : 130,
+                height: selectedIndex == index ? 150 : 130,
                 child: ContainerGradientBorder(
-                  width: selectedIndex == index ? 180 : 110,
-                  height: selectedIndex == index ? 140 : 110,
+                  width: selectedIndex == index ? 190 : 120,
+                  height: selectedIndex == index ? 140 : 120,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
-                   colorList: _focusNode.hasFocus ? [
+                   colorList: selectedIndex == index ? [
                     AppColors.primaryColor,
                     AppColors.highlightColor,
                     AppColors.primaryColor,
@@ -191,7 +201,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     borderRadius: BorderRadius.circular(12.0),
                     child: Image.network(
                       searchResults[index]['banner'] ?? '',
-                      width: selectedIndex == index ? 160 : 100,
+                      width: selectedIndex == index ? 180 : 100,
                       height: selectedIndex == index ? 130 : 100,
                       fit: BoxFit.cover,
                     ),
@@ -278,9 +288,10 @@ class _SearchScreenState extends State<SearchScreen> {
           channelList: searchResults,
           onFabFocusChanged: _handleFabFocusChanged,
           genres: '',
-          url: '',
-          playUrl: '',
-          playVideo: (String id) {}, id: '',channels: [], initialIndex: 1,
+          // url: '',
+          // playUrl: '',
+          // playVideo: (String id) {}, id: '',
+          // channels: [], initialIndex: 1,
         ),
       ),
     );

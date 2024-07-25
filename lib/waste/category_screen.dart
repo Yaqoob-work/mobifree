@@ -2,9 +2,7 @@
 // import 'dart:convert';
 // import 'package:container_gradient_border/container_gradient_border.dart';
 // import 'package:flutter/material.dart';
-// import 'package:flutter/rendering.dart';
 // import 'package:flutter/services.dart';
-// import 'package:flutter/widgets.dart';
 // import 'package:http/http.dart' as http;
 // import 'package:mobi_tv_entertainment/main.dart';
 // import 'package:video_player/video_player.dart';
@@ -35,7 +33,7 @@
 // Future<List<Channel>> fetchChannels() async {
 //   try {
 //     final response = await http.get(
-//       Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+//       Uri.parse('https://mobifreetv.com/android/getSelectHomeCategory'),
 //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
 //     );
 
@@ -43,7 +41,7 @@
 //       List<dynamic> data = json.decode(response.body);
 //       return data.map((channel) => Channel.fromJson(channel)).toList();
 //     } else {
-//       print('Failed to load channels. Status code: ${response.statusCode}');
+//       // print('Failed to load channels. Status code: ${response.statusCode}');
 //       throw Exception('Failed to load channels');
 //     }
 //   } catch (e) {
@@ -82,6 +80,7 @@
 
 //     // Initialize timer to hide channels after 10 seconds of inactivity
 //     _startTimer();
+    
 //   }
 
 //   void _initializeVideoPlayer() {
@@ -89,10 +88,12 @@
 //       ..initialize().then((_) {
 //         setState(() {});
 //         _controller.play();
+//         _resetTimer();
 //       }).catchError((error) {
 //         setState(() {
 //           _isError = true;
 //           _errorMessage = error.toString();
+//           _resetTimer();
 //         });
 //       });
 //   }
@@ -139,7 +140,7 @@
 //             .toList();
 //         return filteredChannels;
 //       } else {
-//         print('Failed to load channels. Status code: ${response.statusCode}');
+//         // print('Failed to load channels. Status code: ${response.statusCode}');
 //         throw Exception('Failed to load channels');
 //       }
 //     } catch (e) {
@@ -148,13 +149,13 @@
 //     }
 //   }
 
+
+
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       body: Center(
-//         child: _isError
-//             ? Text('Error loading video: $_errorMessage')
-//             : _controller.value.isInitialized
+//         child:  _controller.value.isInitialized
 //                 ? Stack(
 //                     children: [
 //                       Positioned.fill(
@@ -171,7 +172,7 @@
 //                           duration: const Duration(milliseconds: 300),
 //                           opacity: showChannels ? 1.0 : 0.0,
 //                           child: Container(
-//                             height: 150,
+//                             height: 250,
 //                             color: Colors.black.withOpacity(0.5),
 //                             child: FutureBuilder<List<Channel>>(
 //                               future: futureChannels,
@@ -219,13 +220,79 @@
 //                       ),
 //                     ],
 //                   )
-//                 : const CircularProgressIndicator(),
+//                 : 
+//                 // const CircularProgressIndicator(),
+//                 Stack(
+//                   children:[ 
+                    
+//                     Positioned(
+//                       left: MediaQuery.of(context).size.width /2,
+                        
+//                           top: MediaQuery.of(context).size.height /2,
+//                       child: const CircularProgressIndicator(),),
+                    
+//                     Positioned(
+//                           left: 0,
+//                           right: 0,
+//                           bottom: 0,
+//                           child: AnimatedOpacity(
+//                             duration: const Duration(milliseconds: 300),
+//                             opacity: showChannels ? 1.0 : 0.0,
+//                             child: Container(
+//                               height: 250,
+//                               color: Colors.black.withOpacity(0.5),
+//                               child: FutureBuilder<List<Channel>>(
+//                                 future: futureChannels,
+//                                 builder: (context, snapshot) {
+//                                   if (snapshot.connectionState ==
+//                                       ConnectionState.waiting) {
+//                                     return const Center(
+//                                         child: CircularProgressIndicator());
+//                                   } else if (snapshot.hasError) {
+//                                     return Center(
+//                                         child: Text('Error: ${snapshot.error}'));
+//                                   } else if (!snapshot.hasData ||
+//                                       snapshot.data!.isEmpty) {
+//                                     return const Center(
+//                                         child: Text('No channels found'));
+//                                   } else {
+//                                     List<Channel> channels = snapshot.data!;
+//                                     return ListView.builder(
+//                                       scrollDirection: Axis.horizontal,
+//                                       itemCount: channels.length,
+//                                       itemBuilder: (context, index) {
+//                                         return Padding(
+//                                           padding: const EdgeInsets.symmetric(
+//                                               horizontal: 8.0),
+//                                           child: showChannels
+//                                               ? ChannelItem(
+//                                                   channel: channels[index],
+//                                                   onPressed: () {
+//                                                     _controller.pause();
+//                                                     _resetTimer();
+//                                                   },
+//                                                   onFocused: () {
+//                                                     _resetTimer();
+//                                                   },
+//                                                 )
+//                                               : const SizedBox.shrink(),
+//                                         );
+//                                       },
+//                                     );
+//                                   }
+//                                 },
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                   ],
+//                 ),
 //       ),
 //       floatingActionButton: Stack(
 //         children: [
 //           AnimatedPositioned(
 //             duration: const Duration(milliseconds: 300),
-//             bottom: showChannels ? 160 : 16,
+//             bottom: showChannels ? 260 : 16,
 //             right: 16,
 //             child: FloatingActionButton(
 //               onPressed: () {
@@ -299,7 +366,7 @@
 //                     ),
 //                     const SizedBox(height: 8),
 //                     Container(
-//                       height: 140,
+//                       height: 250,
 //                       child: ListView.builder(
 //                         scrollDirection: Axis.horizontal,
 //                         itemCount: entry.value.length,
@@ -372,7 +439,6 @@
 //       ),
 //     );
 //   }
-
 //   @override
 //   Widget build(BuildContext context) {
 //     return Focus(
@@ -402,8 +468,8 @@
 //             children: [
 //               AnimatedContainer(
 //                 duration: const Duration(milliseconds: 300),
-//                 width: _focusNode.hasFocus ? 120 : 80,
-//                 height: _focusNode.hasFocus ? 100 : 80,
+//                 width: _focusNode.hasFocus ? 200 : 120,
+//                 height: _focusNode.hasFocus ? 150 : 110,
 //                 // decoration: BoxDecoration(
 //                 //   border: Border.all(
 //                 //     color: _isFocused
@@ -417,23 +483,39 @@
 //                 //   borderRadius: BorderRadius.circular(13.0),
 //                 // ),
 //                 child: ContainerGradientBorder(
-//                   width: _focusNode.hasFocus ? 110 : 70,
-//                   height: _focusNode.hasFocus ? 90 : 70,
+//                   width: _isFocused ? 190 : 110,
+//                   height: _isFocused ? 140 : 110,
 //                   start: Alignment.topLeft,
 //                   end: Alignment.bottomRight,
 //                   borderWidth: 7,
-//                   colorList: const [
-//                     AppColors.primaryColor,
-//                     AppColors.highlightColor
-//                   ],
+//                   colorList: _isFocused
+//                       ? [
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                           AppColors.primaryColor,
+//                           AppColors.highlightColor,
+//                         ]
+//                       : [AppColors.primaryColor, AppColors.highlightColor],
 //                   borderRadius: 10,
 //                   child: ClipRRect(
 //                     borderRadius: BorderRadius.circular(8.0),
 //                     child: Image.network(
 //                       widget.channel.banner,
 //                       fit: BoxFit.cover,
-//                       width: _focusNode.hasFocus ? 110 : 70,
-//                       height: _focusNode.hasFocus ? 90 : 70,
+//                       width: _focusNode.hasFocus ? 180 : 100,
+//                       height: _focusNode.hasFocus ? 130 : 100,
 //                     ),
 //                   ),
 //                 ),
@@ -441,19 +523,21 @@
 //               const SizedBox(height: 2),
 //               Container(
 //                 width: _focusNode.hasFocus ? 100 : 80,
-//                 child: Text(
-//                   widget.channel.name,
-//                   style: TextStyle(
-//                     fontSize: 20,
-//                     color: _isFocused
-//                         ? AppColors.highlightColor
-//                         // GradientColor.fromLinearGradient(myGradient)
-
-//                         : AppColors.hintColor,
-//                     // Yellow color when focused, white otherwise
+//                 child: Center(
+//                   child: Text(
+//                     widget.channel.name,
+//                     style: TextStyle(
+//                       fontSize: 20,
+//                       color: _isFocused
+//                           ? AppColors.highlightColor
+//                           // GradientColor.fromLinearGradient(myGradient)
+                  
+//                           : AppColors.hintColor,
+//                       // Yellow color when focused, white otherwise
+//                     ),
+//                     maxLines: 1,
+//                     overflow: TextOverflow.ellipsis,
 //                   ),
-//                   maxLines: 1,
-//                   overflow: TextOverflow.ellipsis,
 //                 ),
 //               ),
 //             ],

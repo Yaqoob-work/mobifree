@@ -9,6 +9,16 @@ import 'dart:convert';
 
 import 'package:video_player/video_player.dart';
 
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 class VOD extends StatefulWidget {
   @override
   _VODState createState() => _VODState();
@@ -62,7 +72,6 @@ class _VODState extends State<VOD> {
       setState(() {
         isLoading = false;
       });
-      print('Error fetching movies: $e');
     }
   }
 
@@ -79,7 +88,7 @@ class _VODState extends State<VOD> {
         final data = json.decode(response.body);
 
         if (data is List && data.isNotEmpty && data[0].containsKey('url')) {
-          return data[0]['url'];
+          return data[0]['url']??'';
         } else {
           throw Exception('No valid URL found');
         }
@@ -87,7 +96,6 @@ class _VODState extends State<VOD> {
         throw Exception('Failed to load video URL');
       }
     } catch (e) {
-      print('Error fetching video URL: $e');
       return '';
     }
   }
@@ -98,9 +106,9 @@ class _VODState extends State<VOD> {
       List<dynamic> channelList = [
         {
           'banner': movies
-              .firstWhere((movie) => movie['id'].toString() == id)['banner'],
+              .firstWhere((movie) => movie['id'].toString() == id)['banner']??'',
           'name': movies
-              .firstWhere((movie) => movie['id'].toString() == id)['name'],
+              .firstWhere((movie) => movie['id'].toString() == id)['name']??'',
         }
       ];
 
@@ -115,7 +123,6 @@ class _VODState extends State<VOD> {
         ),
       );
     } else {
-      print('No video URL found for ID: $id');
     }
   }
 
@@ -140,81 +147,87 @@ class _VODState extends State<VOD> {
         
              GestureDetector(
               onTap: () => playVideo(movie['id'].toString()),
-              child: Column(
-                // mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                    
-                      width: focusNodes[index].hasFocus ? 200 : 120,
-                      height: focusNodes[index].hasFocus ? 150 : 120,
-                      margin: EdgeInsets.all(5),
-                      // decoration: BoxDecoration(
-                      //   border: Border.all(
-                      //     color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
-                      //     width: 5.0,
-                      //   ),
-                      //   borderRadius: BorderRadius.circular(18),
-                      // ),
-                      child: ContainerGradientBorder(
-                        width: focusNodes[index].hasFocus ? 180 : 110,
-                        height: focusNodes[index].hasFocus ? 140 : 110,
-                        start: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        borderWidth: 7,
-                        colorList: focusNodes[index].hasFocus
-                            ? [
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                                AppColors.primaryColor,
-                                AppColors.highlightColor,
-                              ]
-                            : [AppColors.primaryColor, AppColors.highlightColor],
-                        borderRadius: 10,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: Image.network(
-                            movie['banner'],
-                            fit: BoxFit.cover,
-                            width: focusNodes[index].hasFocus ? 160 : 100,
-                            height: focusNodes[index].hasFocus ? 130 : 100,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Center(child: Text('Image not available'));
-                            },
+              child: Container(
+                child: Column(
+                  // mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                      
+                        width: focusNodes[index].hasFocus ? 200 : 120,
+                        height: focusNodes[index].hasFocus ? 150 : 120,
+                        margin: EdgeInsets.all(5),
+                        // decoration: BoxDecoration(
+                        //   border: Border.all(
+                        //     color: focusNodes[index].hasFocus ?AppColors.primaryColor : Colors.transparent,
+                        //     width: 5.0,
+                        //   ),
+                        //   borderRadius: BorderRadius.circular(18),
+                        // ),
+                        child: ContainerGradientBorder(
+                          width: focusNodes[index].hasFocus ? 190 : 110,
+                          height: focusNodes[index].hasFocus ? 140 : 110,
+                          start: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          borderWidth: 7,
+                          colorList: focusNodes[index].hasFocus
+                              ? [
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                  AppColors.primaryColor,
+                                  AppColors.highlightColor,
+                                ]
+                              : [AppColors.primaryColor, AppColors.highlightColor],
+                          borderRadius: 10,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12.0),
+                            child: Image.network(
+                              movie['banner']??'',
+                              fit: BoxFit.cover,
+                              width: focusNodes[index].hasFocus ? 180 : 100,
+                              height: focusNodes[index].hasFocus ? 130 : 100,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(child: Text('Image not available'));
+                              },
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  // SizedBox(height: 5),
-                  Text(
-                    movie['name'],
-                    style: TextStyle(
-                      color: focusNodes[index].hasFocus
-                          ? AppColors.highlightColor
-                          : AppColors.hintColor,
-                      fontSize: focusNodes[index].hasFocus ? 20 : 20,
+                    // SizedBox(height: 5),
+                    Container(
+                      width: focusNodes[index].hasFocus ? 180 : 100,
+                      child: Text(
+                        movie['name']??'',
+                        style: TextStyle(
+                          color: focusNodes[index].hasFocus
+                              ? AppColors.highlightColor
+                              : AppColors.hintColor,
+                          fontSize: focusNodes[index].hasFocus ? 20 : 20,
+                        ),
+                        
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -236,7 +249,7 @@ class _VODState extends State<VOD> {
               : GridView.builder(
                   padding: EdgeInsets.all(10),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
+                    crossAxisCount: 3,
                     // crossAxisSpacing: 10,
                     // mainAxisSpacing: 10,
                   ),

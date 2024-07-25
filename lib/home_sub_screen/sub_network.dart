@@ -1,11 +1,19 @@
 import 'dart:convert';
-import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/home_sub_screen/network_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:container_gradient_border/container_gradient_border.dart';
+import 'dart:io';
 
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
 class SubNetwork extends StatefulWidget {
   @override
   _SubNetworkState createState() => _SubNetworkState();
@@ -30,14 +38,7 @@ class _SubNetworkState extends State<SubNetwork> {
     if (response.statusCode == 200) {
       setState(() {
         networks = json.decode(response.body);
-        // Create focus nodes for each network item
         _focusNodes = List.generate(networks.length, (_) => FocusNode());
-        // Request focus for the first item
-        if (_focusNodes.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            FocusScope.of(context).requestFocus(_focusNodes[0]);
-          });
-        }
       });
     } else {
       throw Exception('Failed to load networks');
@@ -60,24 +61,27 @@ class _SubNetworkState extends State<SubNetwork> {
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                SizedBox(height: 20.0), // Add some spacing at the top
                 Expanded(
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: networks.length,
-                    itemBuilder: (context, index) {
-                      final network = networks[index];
-                      return FocusableItem(
-                        network: network,
-                        focusNode: _focusNodes[index],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => NetworkCategory()),
-                          );
-                        },
-                      );
-                    },
+                  child: FocusTraversalGroup(
+                    policy: OrderedTraversalPolicy(),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: networks.length,
+                      itemBuilder: (context, index) {
+                        final network = networks[index];
+                        return FocusableItem(
+                          network: network,
+                          focusNode: _focusNodes[index],
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => NetworkCategory()),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -91,7 +95,11 @@ class FocusableItem extends StatefulWidget {
   final FocusNode focusNode;
   final VoidCallback onTap;
 
-  FocusableItem({required this.network, required this.focusNode, required this.onTap});
+  FocusableItem({
+    required this.network,
+    required this.focusNode,
+    required this.onTap,
+  });
 
   @override
   _FocusableItemState createState() => _FocusableItemState();
@@ -115,75 +123,71 @@ class _FocusableItemState extends State<FocusableItem> {
       },
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Container(
-          margin: const EdgeInsets.all(8.0),
-          
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: widget.focusNode.hasFocus ? 200 : 120,
-                height: widget.focusNode.hasFocus ? 150 : 120,
-          //       decoration: BoxDecoration(
-          //   border: Border.all(
-          //     color: widget.focusNode.hasFocus ? AppColors.primaryColor : AppColors.cardColor,
-          //     width: 5,
-          //   ),
-          // ),
-          child: ContainerGradientBorder(
-                  width: widget.focusNode.hasFocus ? 190 : 110,
-                  height: widget.focusNode.hasFocus ? 140 : 110,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList:  widget.focusNode.hasFocus ? [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                    AppColors.primaryColor,
-                    AppColors.highlightColor,
-                  ]
-                  :
-                  [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
-                  ],
-                  borderRadius: 10,
-                child: 
-                   ClipRRect(
-                     child: Image.network(
-                      widget.network['logo'],
-                      fit: BoxFit.cover,
-                      width:widget.focusNode.hasFocus ? MediaQuery.of(context).size.width * 0.25: MediaQuery.of(context).size.width * 0.2,
-                      height: 150 ,
-                                       ),
-                   ),
-          ),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                widget.network['name'],
-                style: TextStyle(
-                  color: widget.focusNode.hasFocus ? AppColors.highlightColor : AppColors.hintColor,
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: EdgeInsets.only(left: 60.0),
+          child: Container(
+          padding: const EdgeInsets.only(left: 20.0),
+
+            margin: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: widget.focusNode.hasFocus ? 200 : 120,
+                  height: widget.focusNode.hasFocus ? 150 : 120,
+                  child: ContainerGradientBorder(
+                    width: widget.focusNode.hasFocus ? 190 : 110,
+                    height: widget.focusNode.hasFocus ? 140 : 110,
+                    start: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    borderWidth: 7,
+                    colorList: widget.focusNode.hasFocus
+                        ? [
+                            AppColors.primaryColor,
+                            AppColors.highlightColor,
+                            AppColors.primaryColor,
+                            AppColors.highlightColor,
+                          ]
+                        : [AppColors.primaryColor, AppColors.highlightColor],
+                    borderRadius: 10,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        widget.network['logo'],
+                        fit: BoxFit.cover,
+                        width: widget.focusNode.hasFocus ? 190 : 100,
+                    height: widget.focusNode.hasFocus ? 130 : 100
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(height: 10.0),
+                Container(
+                 width: widget.focusNode.hasFocus ? 190 : 100,
+
+                  child: Center(
+                    child: Text(
+                      widget.network['name'],
+                      style: TextStyle(
+                        color: widget.focusNode.hasFocus
+                            ? AppColors.highlightColor
+                            : AppColors.hintColor,
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                        
+                      ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        // ),
+      ),
       ),
     );
   }

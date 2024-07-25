@@ -162,8 +162,10 @@ class _EntertainmentSubScreenState extends State<EntertainmentSubScreen> {
         builder: (context) => VideoScreen(
           videoUrl: entertainmentItem['url'],
           videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '', url: '',
-          playUrl: '',playVideo: (String id) {  }, id: '',channels: [], initialIndex: 1,
+          channelList: entertainmentList, onFabFocusChanged: (bool ) {  }, genres: '',
+          //  url: '',
+          // playUrl: '',playVideo: (String id) {  }, id: '',
+          // channels: [], initialIndex: 1,
         ),
       ),
     );
