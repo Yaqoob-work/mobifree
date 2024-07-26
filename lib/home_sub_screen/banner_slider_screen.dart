@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 
 import '../screens/v_o_d.dart';
-// import '../video_widget/video_screen.dart';
 
 class BannerSliderPage extends StatefulWidget {
   @override
@@ -28,6 +27,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
   List<FocusNode> _smallBannerFocusNodes = [];
   bool _isSmallBannerFocused = false;
   int _focusedSmallBannerIndex = 0;
+  bool _isPageViewBuilt = false;
 
   // @override
   // void initState() {
@@ -54,6 +54,9 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
     super.initState();
     _pageController = PageController();
     fetchBanners();
+    setState(() {
+      _isPageViewBuilt = true;
+    });
     _startAutoSlide();
     _titleFocusNode.addListener(_onTitleFocusChange);
     _emptytextFocusNode.addListener(_onTitleFocusChange);
@@ -74,20 +77,22 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
   }
 
   void _startAutoSlide() {
-    _timer = Timer.periodic(Duration(seconds: 5), (Timer timer) {
-      if (_pageController.page == bannerList.length - 1) {
-        _pageController.animateToPage(
-          0,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeIn,
-        );
-      } else {
-        _pageController.nextPage(
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeIn,
-        );
-      }
-    });
+    if (_isPageViewBuilt) {
+      _timer = Timer.periodic(Duration(seconds: 5), (Timer timer) {
+        if (_pageController.page == bannerList.length - 1) {
+          _pageController.animateToPage(
+            0,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeIn,
+          );
+        } else {
+          _pageController.nextPage(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeIn,
+          );
+        }
+      });
+    }
   }
 
   Future<void> fetchBanners() async {
@@ -156,7 +161,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                 videoTitle: filteredData['title'] ?? 'No Title',
                 channelList: [],
                 onFabFocusChanged: (bool focused) {},
-                genres: '', videoBanner: '',
+                genres: '',
+                videoBanner: '',
               ),
             ),
           );
@@ -240,7 +246,6 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                     ),
                                   ),
                                 ),
-                              
                                 Positioned(
                                   top: 30.0,
                                   left: 30.0,
@@ -251,8 +256,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                       banner['title'] ??
                                           'No Title', // Handle null title here
                                       style: const TextStyle(
-                                        color:
-                                           AppColors.highlightColor,
+                                        color: AppColors.highlightColor,
                                         fontSize: 40.0,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -277,7 +281,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                               ),
                               itemCount: bannerList.length,
                               itemBuilder: (context, index) {
-                                final smallBanner = bannerList[index]??'';
+                                final smallBanner = bannerList[index] ?? '';
                                 return Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Focus(
@@ -301,7 +305,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                               LogicalKeyboardKey.select) {
                                         // _navigateToVideoScreen(context, entertainmentList[index]);
                                         fetchAndPlayVideo(
-                                            smallBanner['content_id']??'');
+                                            smallBanner['content_id'] ?? '');
 
                                         return KeyEventResult.handled;
                                       }
@@ -310,7 +314,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                     child: GestureDetector(
                                       onTap: () {
                                         fetchAndPlayVideo(
-                                            smallBanner['content_id']??'');
+                                            smallBanner['content_id'] ?? '');
                                       },
                                       child: Container(
                                         decoration: BoxDecoration(

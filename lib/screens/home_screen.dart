@@ -16,8 +16,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  FocusNode _liveFocusNode = FocusNode();
-  FocusNode _subNetworkNode = FocusNode();
 
   @override
   void initState() {
@@ -30,8 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     // Dispose of the ScrollController
     _scrollController.dispose();
-    FocusNode _liveFocusNode = FocusNode();
-    FocusNode _subNetworkNode = FocusNode();
     super.dispose();
   }
 
