@@ -8,16 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
-// import '../video_widget/video_screen.dart';
-import 'dart:io';
-
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  }
-}
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -166,8 +156,8 @@ class _ChannelWidgetState extends State<ChannelWidget> {
         },
         child: Container(
           // padding: EdgeInsets.all(10) ,
-          width: 210,
-          height: 210,
+          width:  220 ,
+                // height: isFocused ? 170 : 120,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -175,8 +165,8 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 
                  AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: isFocused ? 200 : 120,
-                height: isFocused ? 150 : 120,
+                width: isFocused ? 220 : 120,
+                height: isFocused ? 170 : 120,
                 // decoration: BoxDecoration(
                 //   border: Border.all(
                 //     color: _isFocused
@@ -190,8 +180,8 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 //   borderRadius: BorderRadius.circular(13.0),
                 // ),
                 child: ContainerGradientBorder(
-                  width: isFocused ? 190 : 110,
-                  height: isFocused ? 140 : 110,
+                  width: isFocused ? 200 : 110,
+                  height: isFocused ? 150 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,

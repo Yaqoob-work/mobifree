@@ -9,15 +9,8 @@ import 'dart:convert';
 
 import 'package:video_player/video_player.dart';
 
-import 'dart:io';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  }
-}
+
 
 class VOD extends StatefulWidget {
   @override
@@ -118,7 +111,7 @@ class _VODState extends State<VOD> {
           builder: (context) => VideoScreen(
             videoUrl: videoUrl,
             videoTitle: 'Video Title', // Set appropriate title
-            channelList: channelList, // Pass your channel list data here
+            channelList: channelList, videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', // Pass your channel list data here
           ),
         ),
       );
@@ -150,15 +143,16 @@ class _VODState extends State<VOD> {
               child: Container(
                 child: Column(
                   // mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: AnimatedContainer(
                                       duration: const Duration(milliseconds: 300),
                       
-                        width: focusNodes[index].hasFocus ? 200 : 120,
-                        height: focusNodes[index].hasFocus ? 150 : 120,
+                        width: focusNodes[index].hasFocus ? 220 : 120,
+                        height: focusNodes[index].hasFocus ? 170 : 120,
                         margin: EdgeInsets.all(5),
                         // decoration: BoxDecoration(
                         //   border: Border.all(
@@ -168,8 +162,8 @@ class _VODState extends State<VOD> {
                         //   borderRadius: BorderRadius.circular(18),
                         // ),
                         child: ContainerGradientBorder(
-                          width: focusNodes[index].hasFocus ? 190 : 110,
-                          height: focusNodes[index].hasFocus ? 140 : 110,
+                          width: focusNodes[index].hasFocus ? 200 : 110,
+                          height: focusNodes[index].hasFocus ? 150 : 110,
                           start: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           borderWidth: 7,
@@ -269,7 +263,7 @@ class VideoScreen extends StatefulWidget {
   VideoScreen(
       {required this.videoUrl,
       required this.videoTitle,
-      required this.channelList});
+      required this.channelList, required String videoBanner, required Null Function(bool focused) onFabFocusChanged, required String genres});
 
   @override
   _VideoScreenState createState() => _VideoScreenState();

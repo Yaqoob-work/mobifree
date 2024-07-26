@@ -3,19 +3,9 @@ import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart'
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_network.dart';
-import 'dart:io';
-
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:mobi_tv_entertainment/screens/live_screen.dart';
-import 'package:mobi_tv_entertainment/screens/network.dart';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  }
-}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 

@@ -7,15 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_screen.dart';
-import 'dart:io';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  }
-}
+
 
 
 class SearchScreen extends StatefulWidget {
@@ -215,7 +208,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       color: selectedIndex == index
-                          ? AppColors.primaryColor
+                          ? AppColors.highlightColor
                           : AppColors.hintColor,
                     ),
                     textAlign: TextAlign.center,
@@ -288,10 +281,7 @@ class _SearchScreenState extends State<SearchScreen> {
           channelList: searchResults,
           onFabFocusChanged: _handleFabFocusChanged,
           genres: '',
-          // url: '',
-          // playUrl: '',
-          // playVideo: (String id) {}, id: '',
-          // channels: [], initialIndex: 1,
+          
         ),
       ),
     );
