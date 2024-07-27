@@ -21,7 +21,7 @@ class YoutubeVideoPlayer extends StatefulWidget {
 class _YoutubeVideoScreenState extends State<YoutubeVideoPlayer> {
   late YoutubePlayerController _controller;
   late FocusNode _focusNode;
-  bool _isLoading = true;
+  // bool _isLoading = true;
 
   @override
   void initState() {
@@ -37,13 +37,13 @@ class _YoutubeVideoScreenState extends State<YoutubeVideoPlayer> {
 
     _focusNode.requestFocus();
 
-    _controller.addListener(() {
-      if (_controller.value.isReady && _isLoading) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
+    // _controller.addListener(() {
+    //   if (_controller.value.isReady && _isLoading) {
+    //     setState(() {
+    //       _isLoading = false;
+    //     });
+    //   }
+    // });
   }
 
   @override
@@ -112,10 +112,10 @@ class _YoutubeVideoScreenState extends State<YoutubeVideoPlayer> {
                 });
               },
             ),
-            if (_isLoading)
-              Center(
-                child: CircularProgressIndicator(),
-              ),
+            // if (_isLoading)
+            //   Center(
+            //     child: CircularProgressIndicator(),
+            //   ),
           ],
         ),
       ),
