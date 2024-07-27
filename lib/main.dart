@@ -148,7 +148,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.19, // Adjust percentage as needed
+      width: MediaQuery.of(context).size.width * 0.24, // Adjust percentage as needed
       // color: const Color.fromARGB(255, 136, 51, 122),
        decoration: BoxDecoration(
     gradient: LinearGradient(
@@ -245,20 +245,22 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
           widget.onPageSelected(index);
           focusNode.requestFocus();
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          // color: isSelected ? Colors.black : const Color.fromARGB(255, 136, 51, 122),
-          child: ListTile(
-            leading: Icon(
-              iconData,
-              color: focusNode.hasFocus   ? Colors.yellow :isSelected?AppColors.highlightColor:AppColors.hintColor,
-              size:focusNode.hasFocus || isSelected ? 30:25,
-            ),
-            title: Text(
-              title,
-              style: TextStyle(
-                color: focusNode.hasFocus   ? Colors.yellow :isSelected?AppColors.highlightColor:AppColors.hintColor ,
-                fontSize: focusNode.hasFocus || isSelected ?22:18,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            // color: isSelected ? Colors.black : const Color.fromARGB(255, 136, 51, 122),
+            child: ListTile(
+              leading: Icon(
+                iconData,
+                color: isSelected  ? Colors.yellow :AppColors.hintColor,
+                size:focusNode.hasFocus || isSelected ? 40:25,
+              ),
+              title: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected  ? Colors.yellow :AppColors.hintColor ,
+                  fontSize: focusNode.hasFocus || isSelected ?32:18,
+                ),
               ),
             ),
           ),

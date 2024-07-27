@@ -4,8 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:mobi_tv_entertainment/main.dart';
-
-import 'v_o_d.dart';
+import 'package:mobi_tv_entertainment/video_widget/youtube_video_player.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:video_player/video_player.dart';
 
 // Models
 class NetworkApi {
@@ -106,7 +107,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
   }
 }
 
-Future<String> fetchMoviePlayLink(int movieId) async {
+Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final response = await http.get(
     Uri.parse('https://mobifreetv.com/android/getMoviePlayLinks/$movieId/0'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
@@ -116,9 +117,12 @@ Future<String> fetchMoviePlayLink(int movieId) async {
     final List<dynamic> body = json.decode(response.body);
     if (body.isNotEmpty) {
       final Map<String, dynamic> firstItem = body.first as Map<String, dynamic>;
-      return firstItem['url'] ?? '';
+      return {
+        'url': firstItem['url'] ?? '',
+        'type': firstItem['type'] ?? ''
+      };
     }
-    return '';
+    return {'url': '', 'type': ''};
   } else {
     throw Exception('Failed to load movie play link');
   }
@@ -167,17 +171,9 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
       },
       child: GestureDetector(
         onTap: widget.onTap,
-        // child: Container(
-        //   decoration: BoxDecoration(
-        //     border: Border.all(
-        //       color: _focusNode.hasFocus ? Colors.yellow : Colors.transparent,
-        //       width: 3.0,
-        //     ),
-        //   ),
-
-        // margin: EdgeInsets.all(5),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
@@ -191,23 +187,6 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                 borderWidth: 7,
                 colorList: _focusNode.hasFocus
                     ? [
-                          AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
                         AppColors.primaryColor,
                         AppColors.highlightColor,
                         AppColors.primaryColor,
@@ -224,7 +203,22 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                         AppColors.highlightColor,
                         AppColors.primaryColor,
                         AppColors.highlightColor,
-    
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
+                        AppColors.primaryColor,
+                        AppColors.highlightColor,
                       ]
                     : [
                         AppColors.primaryColor,
@@ -313,60 +307,55 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          // decoration: BoxDecoration(
-          //   border: Border.all(
-          //     color: _focusNode.hasFocus ? Colors.yellow : Colors.transparent,
-          //     width: 3.0,
-          //   ),
-          // ),
-
+          
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: _focusNode.hasFocus ? 220 : 120,
-                height: _focusNode.hasFocus ? 170 : 120,
+                width: _focusNode.hasFocus ? 180 : 120,
+                height: _focusNode.hasFocus ? 150 : 120,
                 child: ContainerGradientBorder(
-                  width: _focusNode.hasFocus ? 200 : 110,
-                  height: _focusNode.hasFocus ? 150 : 110,
+                  width: _focusNode.hasFocus ? 160 : 110,
+                  height: _focusNode.hasFocus ? 140 : 110,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
                   colorList: _focusNode.hasFocus
                       ? [
-                         AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
+                          AppColors.primaryColor,
+                          AppColors.highlightColor,
                         ]
                       : [
                           AppColors.primaryColor,
@@ -375,23 +364,20 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                   borderRadius: 10,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.0),
-                      child: Image.network(
-                        widget.content.banner,
-                        fit: BoxFit.cover,
-                        width: _focusNode.hasFocus ? 180 : 100,
-                        height: _focusNode.hasFocus ? 130 : 100,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(child: Text('Image not available'));
-                        },
-                      ),
+                    child: Image.network(
+                      widget.content.banner,
+                      fit: BoxFit.cover,
+                      width: _focusNode.hasFocus ? 140 : 100,
+                      height: _focusNode.hasFocus ? 130 : 100,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(child: Text('Image not available'));
+                      },
                     ),
                   ),
                 ),
               ),
               Container(
-                width: _focusNode.hasFocus ? 160 : 100,
+                width: _focusNode.hasFocus ? 180 : 100,
                 child: Text(
                   widget.content.name,
                   textAlign: TextAlign.center,
@@ -414,146 +400,227 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
   }
 }
 
-// Pages
 class Network extends StatefulWidget {
   @override
   _NetworkState createState() => _NetworkState();
 }
 
 class _NetworkState extends State<Network> {
-  List<NetworkApi> networks = [];
-  bool isLoading = true;
+  late Future<List<NetworkApi>> futureNetworks;
 
   @override
   void initState() {
     super.initState();
-    fetchNetworks().then((data) {
-      setState(() {
-        networks = data;
-        isLoading = false;
-      });
-    }).catchError((error) {
-      setState(() {
-        isLoading = false;
-      });
-    });
-  }
-
-  void navigateToContent(int networkId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ContentScreen(networkId: networkId),
-      ),
-    );
+    futureNetworks = fetchNetworks();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardColor,
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          :
-          // Expanded(
-          // child:
-          GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                // childAspectRatio: 2 / 1,
-              ),
-              itemCount: networks.length,
-              itemBuilder: (context, index) {
-                return FocusableGridItem(
-                  network: networks[index],
-                  onTap: () => navigateToContent(networks[index].id),
-                );
-              },
-            ),
-      // ),
+      backgroundColor: Colors.black,
+      body: Center(
+        child: FutureBuilder<List<NetworkApi>>(
+          future: futureNetworks,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (snapshot.hasData) {
+              final networks = snapshot.data!;
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  // mainAxisSpacing: 10,
+                  // crossAxisSpacing: 10,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: networks.length,
+                itemBuilder: (context, index) {
+                  final network = networks[index];
+                  return FocusableGridItem(
+                    network: network,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              NetworkContentsScreen(networkId: network.id),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            } else {
+              return Text('No data available');
+            }
+          },
+        ),
+      ),
     );
   }
 }
 
-class ContentScreen extends StatefulWidget {
+class NetworkContentsScreen extends StatefulWidget {
   final int networkId;
 
-  ContentScreen({required this.networkId});
+  NetworkContentsScreen({required this.networkId});
 
   @override
-  _ContentScreenState createState() => _ContentScreenState();
+  _NetworkContentsScreenState createState() => _NetworkContentsScreenState();
 }
 
-class _ContentScreenState extends State<ContentScreen> {
+class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
+  late Future<List<ContentApi>> futureContent;
+
+  @override
+  void initState() {
+    super.initState();
+    futureContent = fetchContent(widget.networkId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardColor,
-      body: FutureBuilder<List<ContentApi>>(
-        future: fetchContent(widget.networkId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+      backgroundColor:Colors.black,
+      body: 
+        Center(
+          child: FutureBuilder<List<ContentApi>>(
+            future: futureContent,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else if (snapshot.hasData) {
+                final contents = snapshot.data!;
+                return GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    // mainAxisSpacing: 10,
+                    // crossAxisSpacing: 10,
+                    childAspectRatio: 0.90,
+                  ),
+                  itemCount: contents.length,
+                  itemBuilder: (context, index) {
+                    final content = contents[index];
+                    return FocusableGridItemContent(
+                      content: content,
+                      // onTap: () async {
+                      //   final movieDetails = await fetchMovieDetails(content.id);
+                      //   final playLink = await fetchMoviePlayLink(movieDetails.id);
+                      //   Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(
+                      //       builder: (context) => VideoScreen(
+                      //         videoUrl: playLink['url']!,
+                      //         videoType: playLink['type']!,
+                      //       ),
+                      //     ),
+                      //   );
+                      // },
+                      onTap: () async {
+          final movieDetails = await fetchMovieDetails(content.id);
+          final playLink = await fetchMoviePlayLink(movieDetails.id);
+          
+          if (playLink['type'] == 'Youtube') {
+            Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => YoutubeVideoPlayer(
+            videoUrl: playLink['url']!, videoTitle: '', channelList: [], url: '',
+          ),
+        ),
+            );
           } else {
-            final contentList = snapshot.data ?? [];
-            return
-                // Expanded(
-                // child:
-                GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                // childAspectRatio: 2 / 1,
-              ),
-              itemCount: contentList.length,
-              itemBuilder: (context, index) {
-                final content = contentList[index];
-                return FocusableGridItemContent(
-                  content: content,
-                  onTap: () async {
-                    try {
-                      final movieDetails = await fetchMovieDetails(content.id);
-                      final videoUrl =
-                          await fetchMoviePlayLink(movieDetails.id);
-                      if (videoUrl.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoScreen(
-                              videoUrl: videoUrl,
-                              videoTitle: movieDetails.name,
-                              channelList: [],
-                              videoBanner: '',
-                              onFabFocusChanged: (bool focused) {},
-                              genres: '',
-                            ),
-                          ),
-                        );
-                      } else {
-                        print('Video URL is empty');
-                      }
-                    } catch (error) {
-                      print('Error fetching video URL: $error');
-                    }
-                  },
-                );
-              },
-              // ),
+            Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoScreen(
+            videoUrl: playLink['url']!,
+            videoType: playLink['type']!,
+          ),
+        ),
             );
           }
-        },
-      ),
+        }
+        
+                    );
+                  },
+                );
+              } else {
+                return Text('No data available');
+              }
+            },
+          ),
+        ),
+      
     );
   }
 }
 
-void main() {
-  runApp(MaterialApp(
-    home: Network(),
-  ));
+class VideoScreen extends StatefulWidget {
+  final String videoUrl;
+  final String videoType;
+
+  VideoScreen({required this.videoUrl, required this.videoType});
+
+  @override
+  _VideoScreenState createState() => _VideoScreenState();
+}
+
+class _VideoScreenState extends State<VideoScreen> {
+  late VideoPlayerController _videoPlayerController;
+  late YoutubePlayerController _youtubePlayerController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.videoType == 'Youtube') {
+      _youtubePlayerController = YoutubePlayerController(
+        initialVideoId: YoutubePlayer.convertUrlToId(widget.videoUrl) ?? '',
+        flags: YoutubePlayerFlags(
+          autoPlay: true,
+          mute: false,
+        ),
+      );
+    } else {
+      _videoPlayerController = VideoPlayerController.network(widget.videoUrl)
+        ..initialize().then((_) {
+          setState(() {});
+          _videoPlayerController.play();
+        });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.videoType == 'Youtube') {
+      _youtubePlayerController.dispose();
+    } else {
+      _videoPlayerController.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: widget.videoType == 'Youtube'
+            ? YoutubePlayer(
+                controller: _youtubePlayerController,
+                showVideoProgressIndicator: true,
+              )
+            : _videoPlayerController.value.isInitialized
+                ? AspectRatio(
+                    aspectRatio: _videoPlayerController.value.aspectRatio,
+                    child: VideoPlayer(_videoPlayerController),
+                  )
+                : CircularProgressIndicator(),
+      ),
+    );
+  }
 }
