@@ -58,6 +58,7 @@ class _LiveScreenState extends State<LiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -101,57 +102,76 @@ class _LiveScreenState extends State<LiveScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedContainer(
-            width: entertainmentList[index]['isFocused']
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: entertainmentList[index]['isFocused']
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-            duration: const Duration(milliseconds: 400),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: entertainmentList[index]['isFocused']
-                    ? primaryColor
-                    : Colors.transparent,
-                width: 10.0,
-              ),
+          // Padding(
+            // padding: const EdgeInsets.all(10.0),
+            // child: 
+            Material(
+              elevation: 0,
+              // child: Container(
+                // decoration: BoxDecoration(boxShadow: entertainmentList[index]['isFocused']?[]:[]),
+                child: AnimatedContainer(
+                  curve: Curves.easeInOut,
+                  width: entertainmentList[index]['isFocused']
+                      ? screenwdt * 0.35
+                      : screenwdt * 0.3,
+                  height: entertainmentList[index]['isFocused']
+                      ? screenhgt * 0.23
+                      : screenhgt * 0.2,
+                  duration: const Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: entertainmentList[index]['isFocused']
+                          ? hintColor
+                          : Colors.white,
+                      width: 10.0,
+                      
+                    ),
+                    // boxShadow:entertainmentList[index]['isFocused']? []:[],
+                    
+                  ),
+                  
+                  // child: Opacity(
+                    // opacity: entertainmentList[index]['isFocused'] ? 1 : 0.7,
+                    // child: Card(
+                    //   elevation:entertainmentList[index]['isFocused']? 0:0,
+                      child: Image.network(
+                        
+                        entertainmentList[index]['banner'],
+                        width: entertainmentList[index]['isFocused']
+                            ? screenwdt * 0.3
+                            : screenwdt * 0.27,
+                        height: entertainmentList[index]['isFocused']
+                            ? screenhgt * 0.23
+                            : screenhgt * 0.2,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+              // ),
             ),
-            child: Opacity(
-              opacity: entertainmentList[index]['isFocused'] ? 1 : 0.7,
-              child: Image.network(
-                entertainmentList[index]['banner'],
-                width: entertainmentList[index]['isFocused']
-                    ? screenwdt * 0.3
-                    : screenwdt * 0.27,
-                height: entertainmentList[index]['isFocused']
-                    ? screenhgt * 0.23
-                    : screenhgt * 0.2,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
+              // ),
+            // ),
+          // ),
           
 
           // const SizedBox(height: 8.0),
-          Container(
-            width: entertainmentList[index]['isFocused'] ? 180 : 120,
-            child: Text(
-              // entertainmentList[index]['name'] ?? 'Unknown',
-              (entertainmentList[index]['name'] ?? 'UNKNOWN').toUpperCase(),
+          // Container(
+          //   width: entertainmentList[index]['isFocused'] ? 180 : 120,
+          //   child: Text(
+          //     // entertainmentList[index]['name'] ?? 'Unknown',
+          //     (entertainmentList[index]['name'] ?? 'UNKNOWN').toUpperCase(),
 
-              style: TextStyle(
-                fontSize: 20,
-                color: entertainmentList[index]['isFocused']
-                    ? highlightColor
-                    : Colors.white,
-              ),
+          //     style: TextStyle(
+          //       fontSize: 20,
+          //       color: entertainmentList[index]['isFocused']
+          //           ? highlightColor
+          //           : Colors.white,
+          //     ),
 
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          //     textAlign: TextAlign.center,
+          //     maxLines: 1,
+          //     overflow: TextOverflow.ellipsis,
+          //   ),
+          // ),
         ],
       ),
     );

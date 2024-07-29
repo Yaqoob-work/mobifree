@@ -166,7 +166,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
             height: isFocused
                 ? screenhgt * 0.23
                 : screenhgt * 0.2,
-            duration: const Duration(milliseconds: 400),
+            duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
               border: Border.all(
                 color: isFocused

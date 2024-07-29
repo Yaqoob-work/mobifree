@@ -141,77 +141,29 @@ class _SearchScreenState extends State<SearchScreen> {
           selectedIndex = hasFocus ? index : -1;
         });
       },
-      child: Container(
-        // margin: const EdgeInsets.all(8.0),
-        width: 250,
-        height: 200,
-          child: Column(
+      child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: selectedIndex == index ? 200 : 130,
-                height: selectedIndex == index ? 170 : 130,
-                child: ContainerGradientBorder(
-                  width: selectedIndex == index ? 180 : 120,
-                  height: selectedIndex == index ? 150 : 120,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                   colorList: selectedIndex == index ? [
-                     primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-    
-                  ]
-                  :
-                  [
-                    primaryColor,
-                    highlightColor
-                  ],
-                  borderRadius: 14,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Image.network(
+                
+            width: selectedIndex == index 
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height: selectedIndex == index 
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 400),
+            
+               child: Image.network(
                       searchResults[index]['banner'] ?? '',
                       width: selectedIndex == index ? 160 : 100,
                       height: selectedIndex == index ? 130 : 100,
                       fit: BoxFit.cover,
                     ),
                   ),
-                ),
-              ),
+                
+              
                  Container(
                   width: selectedIndex == index ? 150 : 100,
                   child: Text(
@@ -231,7 +183,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ],
           ),
         
-      ),
+      
     );
   }
 

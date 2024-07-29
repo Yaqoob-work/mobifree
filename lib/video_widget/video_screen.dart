@@ -3,7 +3,6 @@
 
 
 import 'dart:async';
-import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/main.dart';
@@ -273,22 +272,14 @@ class _VideoScreenState extends State<VideoScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                child: Container(
-                                  width: widget.channelList[index]['isFocused']
-                                        ? 210
-                                        : 140,
-                                    height: widget.channelList[index]['isFocused']
-                                        ? 160
-                                        : 140,
-                                  child: AnimatedContainer(
+                              
+                                  AnimatedContainer(
                                     width: widget.channelList[index]['isFocused']
-                                        ? 200
-                                        : 100,
-                                    height: widget.channelList[index]['isFocused']
-                                        ? 150
-                                        : 100,
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height:  widget.channelList[index]['isFocused']
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
                                     duration:
                                         const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
@@ -301,88 +292,41 @@ class _VideoScreenState extends State<VideoScreen> {
                                     //   ),
                                     //   borderRadius: BorderRadius.circular(25.0),
                                     // ),
-                                    child: ContainerGradientBorder(
-                                      width: widget.channelList[index]
-                                              ['isFocused']
-                                          ? 190
-                                          : 110,
-                                      height: widget.channelList[index]
-                                              ['isFocused']
-                                          ? 140
-                                          : 110,
-                                      start: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      borderWidth: 7,
-                                      colorList: widget.channelList[index]
-                                              ['isFocused']
-                                          ? [
-                                                primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-                        primaryColor,
-                        highlightColor,
-    
-                                            ]
-                                          : [
-                                              primaryColor,
-                                              highlightColor
-                                            ],
-                                      borderRadius: 14,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Image.network(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: widget.channelList[index]['isFocused']
+                    ? primaryColor
+                    : Colors.transparent,
+                width: 10.0,
+              ),
+            ),
+            child: Opacity(
+              opacity: widget.channelList[index]['isFocused'] ? 1 : 0.7,
+              child: Image.network(
                                           widget.channelList[index]['banner'] ??
                                               '',
                                           fit: BoxFit.cover,
                                           width: widget.channelList[index]
                                                   ['isFocused']
-                                              ? 180
-                                              : 100,
-                                          height: widget.channelList[index]
+                                              ? screenwdt * 0.3
+                    : screenwdt * 0.27,
+                height: widget.channelList[index]
                                                   ['isFocused']
-                                              ? 130
-                                              : 100,
+                    ? screenhgt * 0.23
+                    : screenhgt * 0.2,
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ),
+                                  
+                                
+                            
                               Container(
                                 width: widget.channelList[index]['isFocused']
                                     ? 180
                                     : 100,
                                 child: Text(
-                                  widget.channelList[index]['name'] ??
-                                      'Unknown',
+                                  (widget.channelList[index]['name'] ??
+                                      'Unknown').toString().toUpperCase(),
                                   style: TextStyle(
                                     color: widget.channelList[index]
                                             ['isFocused']
