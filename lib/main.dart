@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
@@ -9,33 +7,35 @@ import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
 
-
-
 void main() {
   runApp(MyApp());
 }
-class AppColors {
-  static const Color primaryColor = Color.fromARGB(255, 247, 3, 3);
-  static const Color highlightColor = Colors.blue;
-  static const Color cardColor = Colors.black;
-  static const Color hintColor = Colors.white;
-}
 
+var primaryColor ;
+var highlightColor ;
+var cardColor ;
+var hintColor  ;
+
+var screenhgt ;
+var screenwdt ;
+var screensz ;
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+     screenhgt = MediaQuery.of(context).size.height;
+     screenwdt = MediaQuery.of(context).size.height;
+     screensz = MediaQuery.of(context).size;
+      primaryColor = Color.fromARGB(255, 248, 8, 128);
+   highlightColor = Colors.blue;
+   cardColor = Color.fromARGB(255, 8, 1, 34);
+   hintColor = Colors.white;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Side Navigation Bar',
-      theme: ThemeData(
-        primaryColor: AppColors.primaryColor,
-        cardColor:AppColors.cardColor,
-        highlightColor: AppColors.highlightColor,
-        hintColor: AppColors.hintColor,
-        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue),
-      ),
-   initialRoute: '/',
+     
+      initialRoute: '/',
       routes: {
         '/': (context) => MyHomePage(),
         // '/videoPlayer': (context) => VideoPlayerScreen(),
@@ -94,10 +94,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   _selectedPage = index;
                 });
               },
-              children: 
-              <Widget>
-              [
-                 HomeScreen(),
+              children: <Widget>[
+                HomeScreen(),
                 SearchScreen(),
                 LiveScreen(),
                 VOD(),
@@ -148,32 +146,36 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.24, // Adjust percentage as needed
+      width: MediaQuery.of(context).size.width *
+          0.24, // Adjust percentage as needed
       // color: const Color.fromARGB(255, 136, 51, 122),
-       decoration: BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [Colors.red,Colors.blue ],
-      stops: [0.0, 1.0],
-      tileMode: TileMode.clamp,
-    ),),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [primaryColor, Colors.blue],
+          stops: [0.0, 1.0],
+          tileMode: TileMode.clamp,
+        ),
+      ),
       child: Column(
         children: <Widget>[
           Container(
             // color: Colors.white,
             decoration: BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [Colors.red,Colors.blue],
-      stops: [0.0, 1.0],
-      tileMode: TileMode.clamp,
-    ),),
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [primaryColor, Colors.blue],
+                stops: [0.0, 1.0],
+                tileMode: TileMode.clamp,
+              ),
+            ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
               // borderRadius: BorderRadius.circular(40),
-              child: Image.asset('assets/logo.png', width: MediaQuery.of(context).size.width * 0.5),
+              child: Image.asset('assets/logo.png',
+                  width: MediaQuery.of(context).size.width * 0.5),
             ),
           ),
           Expanded(
@@ -181,38 +183,37 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
               children: <Widget>[
                 _buildNavigationItem(
                   Icons.home,
-                  'Home',
+                  'HOME',
                   0,
                   _focusNodes[0],
                 ),
                 _buildNavigationItem(
                   Icons.search,
-                  'Search',
+                  'SEARCH',
                   1,
                   _focusNodes[1],
                 ),
                 _buildNavigationItem(
                   Icons.tv,
-                  'Live TV',
+                  'LIVE TV',
                   2,
                   _focusNodes[2],
                 ),
-                
                 _buildNavigationItem(
-                  Icons.movie,
-                  'vod',
+                  Icons.video_camera_front,
+                  'VOD',
                   3,
                   _focusNodes[3],
                 ),
                 _buildNavigationItem(
                   Icons.network_wifi_rounded,
-                  'Network',
+                  'NETWORK',
                   4,
                   _focusNodes[4],
                 ),
                 _buildNavigationItem(
                   Icons.category,
-                  'Category',
+                  'CATEGORY',
                   5,
                   _focusNodes[5],
                 ),
@@ -224,7 +225,8 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     );
   }
 
-  Widget _buildNavigationItem(IconData iconData, String title, int index, FocusNode focusNode) {
+  Widget _buildNavigationItem(
+      IconData iconData, String title, int index, FocusNode focusNode) {
     bool isSelected = widget.selectedPage == index;
     return Focus(
       focusNode: focusNode,
@@ -234,7 +236,8 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         }
       },
       onKey: (node, event) {
-        if (event.isKeyPressed(LogicalKeyboardKey.select) || event.isKeyPressed(LogicalKeyboardKey.enter)) {
+        if (event.isKeyPressed(LogicalKeyboardKey.select) ||
+            event.isKeyPressed(LogicalKeyboardKey.enter)) {
           widget.onPageSelected(index);
           return KeyEventResult.handled;
         }
@@ -252,14 +255,15 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             child: ListTile(
               leading: Icon(
                 iconData,
-                color: isSelected  ? Colors.yellow :AppColors.hintColor,
-                size:focusNode.hasFocus || isSelected ? 40:25,
+                color: isSelected ? Colors.yellow : hintColor,
+                size: focusNode.hasFocus || isSelected ? 40 : 25,
               ),
               title: Text(
                 title,
                 style: TextStyle(
-                  color: isSelected  ? Colors.yellow :AppColors.hintColor ,
-                  fontSize: focusNode.hasFocus || isSelected ?32:18,
+                  color: isSelected ? Colors.yellow : hintColor,
+                  fontSize: focusNode.hasFocus || isSelected ? 25 : 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),

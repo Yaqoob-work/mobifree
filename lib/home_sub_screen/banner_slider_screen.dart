@@ -218,7 +218,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                 Container(
                                   width: MediaQuery.of(context).size.width,
                                   height:
-                                      MediaQuery.of(context).size.height * 0.9,
+                                      screenhgt* 0.8,
                                   child: GestureDetector(
                                     onTap: () {
                                       if (selectedContentId != null) {
@@ -253,10 +253,10 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10.0, vertical: 5.0),
                                     child: Text(
-                                      banner['title'] ??
-                                          'No Title', // Handle null title here
-                                      style: const TextStyle(
-                                        color: AppColors.highlightColor,
+                                      (banner['title'] ??
+                                          'No Title').toString().toUpperCase(), // Handle null title here
+                                      style:  TextStyle(
+                                        color: highlightColor ,
                                         fontSize: 40.0,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -268,11 +268,12 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                           },
                         ),
                         Positioned(
-                          bottom: 30.0,
+                          top: screenhgt * 0.8,
                           left: 0.0,
                           right: 0.0,
                           child: Container(
-                            height: MediaQuery.of(context).size.height * 0.1,
+                            color: cardColor,
+                            height: screenhgt* 0.1,
                             child: GridView.builder(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
@@ -322,7 +323,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                             color: _isSmallBannerFocused &&
                                                     _focusedSmallBannerIndex ==
                                                         index
-                                                ? AppColors.primaryColor
+                                                ? primaryColor
                                                 : Colors.transparent,
                                             width: 5.0,
                                           ),
@@ -652,26 +653,26 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
 //           //                             colorList: widget.channelList[index]
 //           //                                     ['isFocused']
 //           //                                 ? [
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
+//           //                                     primaryColor,
+//           //                                     highlightColor,
 //           //                                   ]
 //           //                                 : [
-//           //                                     AppColors.primaryColor,
-//           //                                     AppColors.highlightColor
+//           //                                     primaryColor,
+//           //                                     highlightColor
 //           //                                   ],
 //           //                             borderRadius: 14,
 //           //                             child: ClipRRect(

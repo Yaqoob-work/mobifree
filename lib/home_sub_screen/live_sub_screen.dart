@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +6,9 @@ import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
 
+
+
+var liveHeight;
 class LiveSubScreen extends StatefulWidget {
   @override
   _LiveSubScreenState createState() => _LiveSubScreenState();
@@ -60,131 +62,105 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Center(child: Text('Error: $errorMessage'))
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
-                  : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: entertainmentList.length,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () => _navigateToVideoScreen(
-                              context, entertainmentList[index]),
-                          child: Focus(
-                            onFocusChange: (isFocused) {
-                              setState(() {
-                                entertainmentList[index]['isFocused'] = isFocused;
-                              });
-                            },
-                            onKey: (node, event) {
-                              if (event is RawKeyDownEvent &&
-                                  (event.logicalKey == LogicalKeyboardKey.select ||
-                                      event.logicalKey == LogicalKeyboardKey.enter)) {
-                                _navigateToVideoScreen(context, entertainmentList[index]);
-                                return KeyEventResult.handled;
-                              }
-                              return KeyEventResult.ignored;
-                            },
-                            child: _buildListViewItem(index),
-                          ),
-                        );
-                      },
-                    ),
+                  : LayoutBuilder(builder: (context, constraints) {
+                     liveHeight = constraints.maxHeight;
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: entertainmentList.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () => _navigateToVideoScreen(
+                                context, entertainmentList[index]),
+                            child: Focus(
+                              onFocusChange: (isFocused) {
+                                setState(() {
+                                  entertainmentList[index]['isFocused'] =
+                                      isFocused;
+                                });
+                              },
+                              onKey: (node, event) {
+                                if (event is RawKeyDownEvent &&
+                                    (event.logicalKey ==
+                                            LogicalKeyboardKey.select ||
+                                        event.logicalKey ==
+                                            LogicalKeyboardKey.enter)) {
+                                  _navigateToVideoScreen(
+                                      context, entertainmentList[index]);
+                                  return KeyEventResult.handled;
+                                }
+                                return KeyEventResult.ignored;
+                              },
+                              child: _buildListViewItem(index),
+                            ),
+                          );
+                        },
+                      );
+                    }),
     );
   }
 
   Widget _buildListViewItem(int index) {
-    return Container(
-      width: 240,
-      height: 200,
-      margin: const EdgeInsets.all(8.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: entertainmentList[index]['isFocused'] ? 200 : 120,
-              height: entertainmentList[index]['isFocused'] ? 150 : 120,
-              child: ContainerGradientBorder(
-                width: entertainmentList[index]['isFocused'] ? 190 : 110,
-                height: entertainmentList[index]['isFocused'] ? 140 : 110,
-                start: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                borderWidth: 7,
-                colorList: entertainmentList[index]['isFocused']
-                    ? [
-                           AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-    
-                        ]
-                      : [AppColors.primaryColor, AppColors.highlightColor],
-                borderRadius: 10,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Image.network(
-                    entertainmentList[index]['banner'],
-                    width: entertainmentList[index]['isFocused'] ? 180 : 100,
-                    height: entertainmentList[index]['isFocused'] ? 130 : 100,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedContainer(
+          width: entertainmentList[index]['isFocused']
+              ? screenwdt * 0.3
+              : screenwdt * 0.27,
+          height: entertainmentList[index]['isFocused']
+              ? screenhgt * 0.23
+              : screenhgt * 0.2,
+          duration: const Duration(milliseconds: 400),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: entertainmentList[index]['isFocused']
+                  ? primaryColor
+                  : Colors.transparent,
+              width: 10.0,
             ),
-            Container(
-              width: entertainmentList[index]['isFocused'] ? 180 : 100,
-              child: Text(
-                entertainmentList[index]['name'] ?? 'Unknown',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: entertainmentList[index]['isFocused']
-                      ? AppColors.highlightColor
-                      : Colors.white,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+          ),
+          child: Opacity(
+            opacity: entertainmentList[index]['isFocused'] ? 1 : 0.7,
+            child: Image.network(
+              entertainmentList[index]['banner'],
+              width: entertainmentList[index]['isFocused']
+                  ? screenwdt * 0.3
+                  : screenwdt * 0.27,
+              height: entertainmentList[index]['isFocused']
+                  ? screenhgt * 0.23
+                  : screenhgt * 0.2,
+              fit: BoxFit.cover,
             ),
-          ],
+          ),
         ),
-      ),
+        Container(
+          width: entertainmentList[index]['isFocused']
+              ? screenwdt * 0.3
+              : screenwdt * 0.25,
+          child: Text(
+            (entertainmentList[index]['name'] ?? 'Unknown')
+                .toString()
+                .toUpperCase(),
+            style: TextStyle(
+              fontSize: 20,
+              color: entertainmentList[index]['isFocused']
+                  ? highlightColor
+                  : Colors.white,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

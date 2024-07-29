@@ -1,13 +1,13 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
+double categoryheight = 0;
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -21,6 +21,11 @@ class _HomeCategoryState extends State<HomeCategory> {
   void initState() {
     super.initState();
     _categories = fetchCategories();
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        categoryheight = MediaQuery.of(context).size.height;
+      });
+    });
   }
 
   Future<List<Category>> fetchCategories() async {
@@ -76,23 +81,20 @@ class CategoryWidget extends StatelessWidget {
 
     return filteredChannels.isNotEmpty
         ? Container(
-            color: Colors.black,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
+            color: cardColor,
+           child:  Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    category.text,
-                    style: const TextStyle(
-                      color: AppColors.hintColor,
-                      fontSize: 18,
+                    (category.text).toUpperCase(),
+                    style:  TextStyle(
+                      color: primaryColor,
+                      fontSize: 25,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
                   SizedBox(
-                    height: 200,
+                    height: screenhgt * 0.3,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: filteredChannels.length,
@@ -117,8 +119,7 @@ class CategoryWidget extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          )
+        )
         : const SizedBox.shrink();
   }
 }
@@ -154,100 +155,51 @@ class _ChannelWidgetState extends State<ChannelWidget> {
           }
           return KeyEventResult.ignored;
         },
-        child: Container(
-          // padding: EdgeInsets.all(10) ,
-          width:  220 ,
-                // height: isFocused ? 170 : 120,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-                
-                 AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: isFocused ? 220 : 120,
-                height: isFocused ? 170 : 120,
-                // decoration: BoxDecoration(
-                //   border: Border.all(
-                //     color: _isFocused
-                //         ?
-                //          AppColors.primaryColor
-                //         // GradientColor.fromLinearGradient(myGradient)
-
-                //         : Colors.transparent,
-                //     width: 5.0,
-                //   ),
-                //   borderRadius: BorderRadius.circular(13.0),
-                // ),
-                child: ContainerGradientBorder(
-                  width: isFocused ? 200 : 110,
-                  height: isFocused ? 150 : 110,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList: isFocused ? [
-                     AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-    
-                  ]
-                  :
-                  [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
-                  ],
-                  borderRadius: 14,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
+         child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            width: isFocused
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height: isFocused
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 400),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: isFocused
+                    ? primaryColor
+                    : Colors.transparent,
+                width: 10.0,
+              ),
+            ),
+            child: Opacity(
+              opacity: isFocused ? 1 : 0.7,
+                 child: Image.network(
                     widget.channel.banner,
                     fit: BoxFit.cover,
-                    width: isFocused ? 180 : 100,
-                  height: isFocused ? 130 : 100,
+                    width: isFocused
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height: isFocused
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
                   ),
                 ),
                  ),
-              ),
-              // Padding(
-                // padding: const EdgeInsets.all(8.0),
-                // child: 
+              
                 Container(
-                    width: isFocused ? 180 : 100,
+                    width: isFocused
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+           
 
                   child: Text(
                     widget.channel.name,
                     style: TextStyle(
-                      color: isFocused ?AppColors.highlightColor : AppColors.hintColor,
+                      color: isFocused ?highlightColor : hintColor,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -256,11 +208,10 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                     maxLines: 1,
                   ),
                 ),
-              // ),
-                // ),
+            
+              
             ],
           ),
-        ),
       ),
     );
   }

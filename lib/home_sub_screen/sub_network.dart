@@ -176,92 +176,62 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
 
         // margin: EdgeInsets.all(5),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: _focusNode.hasFocus ? 220 : 120,
-              height: _focusNode.hasFocus ? 170 : 120,
-              child: ContainerGradientBorder(
-                width: _focusNode.hasFocus ? 200 : 110,
-                height: _focusNode.hasFocus ? 150 : 110,
-                start: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                borderWidth: 7,
-                colorList: _focusNode.hasFocus
-                    ? [
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                      ]
-                    : [
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                      ],
-                borderRadius: 10,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Image.network(
-                    widget.network.logo,
-                    fit: BoxFit.cover,
-                    width: _focusNode.hasFocus ? 180 : 100,
-                    height: _focusNode.hasFocus ? 130 : 100,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(child: Text('Image not available'));
-                    },
-                  ),
-                ),
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            width: _focusNode.hasFocus
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height: _focusNode.hasFocus
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 400),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _focusNode.hasFocus
+                    ? primaryColor
+                    : Colors.transparent,
+                width: 10.0,
               ),
             ),
-            SizedBox(height: 8),
-            Container(
-              width: _focusNode.hasFocus ? 180 : 100,
-              child: Text(
-                widget.network.name,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: TextStyle(
-                  color: _focusNode.hasFocus
-                      ? AppColors.highlightColor
-                      : Colors.white,
-                  fontSize: _focusNode.hasFocus ? 20 : 18,
-                  fontWeight: FontWeight.bold,
-                ),
+            child: Opacity(
+              opacity: _focusNode.hasFocus ? 1 : 0.7,
+              child: Image.network(
+                widget.network.logo,
+                width: _focusNode.hasFocus
+                    ? screenwdt * 0.3
+                    : screenwdt * 0.27,
+                height: _focusNode.hasFocus
+                    ? screenhgt * 0.23
+                    : screenhgt * 0.2,
+                fit: BoxFit.cover,
               ),
             ),
-          ],
-        ),
+          ),
+
+
+          // const SizedBox(height: 8.0),
+          Container(
+            width: _focusNode.hasFocus ? 180 : 120,
+            child: Text(
+              // entertainmentList[index]['name'] ?? 'Unknown',
+                (widget.network.name).toUpperCase(),
+
+              style: TextStyle(
+                fontSize: 20,
+                color: _focusNode.hasFocus
+                    ? highlightColor
+                    : Colors.white,
+              ),
+
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
       ),
     );
   }
@@ -319,90 +289,62 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
           // ),
 
           child: Column(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: _focusNode.hasFocus ? 220 : 120,
-                height: _focusNode.hasFocus ? 170 : 120,
-                child: ContainerGradientBorder(
-                  width: _focusNode.hasFocus ? 200 : 110,
-                  height: _focusNode.hasFocus ? 150 : 110,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList: _focusNode.hasFocus
-                      ? [
-                          AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        ]
-                      : [
-                          AppColors.primaryColor,
-                          AppColors.highlightColor,
-                        ],
-                  borderRadius: 10,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Image.network(
-                      widget.content.banner,
-                      fit: BoxFit.cover,
-                      width: _focusNode.hasFocus ? 180 : 100,
-                      height: _focusNode.hasFocus ? 130 : 100,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(child: Text('Image not available'));
-                      },
-                    ),
-                  ),
-                ),
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            width: _focusNode.hasFocus
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height: _focusNode.hasFocus
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 400),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _focusNode.hasFocus
+                    ? primaryColor
+                    : Colors.transparent,
+                width: 10.0,
               ),
-              Container(
-                width: _focusNode.hasFocus ? 160 : 100,
-                child: Text(
-                  widget.content.name,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: _focusNode.hasFocus
-                        ? AppColors.highlightColor
-                        : Colors.white,
-                    fontSize: _focusNode.hasFocus ? 20 : 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            ),
+            child: Opacity(
+              opacity: _focusNode.hasFocus ? 1 : 0.7,
+              child: Image.network(
+                widget.content.banner,
+                width: _focusNode.hasFocus
+                    ? screenwdt * 0.3
+                    : screenwdt * 0.27,
+                height: _focusNode.hasFocus
+                    ? screenhgt * 0.23
+                    : screenhgt * 0.2,
+                fit: BoxFit.cover,
               ),
-            ],
+            ),
           ),
+
+
+          // const SizedBox(height: 8.0),
+          Container(
+            width: _focusNode.hasFocus ? 180 : 120,
+            child: Text(
+              // entertainmentList[index]['name'] ?? 'Unknown',
+                (widget.content.name).toUpperCase(),
+
+              style: TextStyle(
+                fontSize: 20,
+                color: _focusNode.hasFocus
+                    ? highlightColor
+                    : Colors.white,
+              ),
+
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
         ),
       ),
     );
@@ -446,7 +388,7 @@ class _SubNetworkState extends State<SubNetwork> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardColor,
+      backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           :
@@ -495,7 +437,7 @@ class _ContentScreenState extends State<ContentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardColor,
+      backgroundColor: cardColor,
       body: FutureBuilder<List<ContentApi>>(
         future: fetchContent(widget.networkId),
         builder: (context, snapshot) {
@@ -506,13 +448,11 @@ class _ContentScreenState extends State<ContentScreen> {
           } else {
             final contentList = snapshot.data ?? [];
             return
-                // Expanded(
-                // child:
                 GridView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
+                crossAxisCount: 5,
                 // childAspectRatio: 2 / 1,
               ),
               itemCount: contentList.length,
@@ -549,7 +489,6 @@ class _ContentScreenState extends State<ContentScreen> {
                 );
               },
             );
-            // );
           }
         },
       ),

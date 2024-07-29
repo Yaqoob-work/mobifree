@@ -64,39 +64,41 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 0,
               child: Text(''),
             ),
-            // Banner Slider at the top
 
             Container(
               height: MediaQuery.of(context).size.height * 0.9,
               child: BannerSliderPage(),
             ),
 
-            // Container(
-            //   height: MediaQuery.of(context).size.height * 0.5,
-            //   child: SubNetwork(),
-            // ),
+            
 
               Container(
               
                     child: Column(
-                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Network",
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: AppColors.hintColor,
-                              ),
-                            ),
-                            Text('')
-                          ],
+                        Container(
+                          color: cardColor,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                               Container(
+                                
+                                 child: Text(
+                                  "NETWORK",
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                                             ),
+                               ),
+                              Text('')
+                            ],
+                          ),
                         ),
                         SizedBox(
-              height: 250,
+              height: 200,
               child: SubNetwork(),
             ),
                       ],
@@ -111,22 +113,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                          children: [
-                            const Text(
-                              "Live",
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: AppColors.hintColor,
+                        Container(
+                          color: cardColor,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          
+                            children: [
+                               Text(
+                                "LIVE",
+                                style: TextStyle(
+                                  fontSize: 25,
+                                  color:primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            Text('')
-                          ],
+                              Text('')
+                            ],
+                          ),
                         ),
                          SizedBox(
-              height: 250,
+              height: 200,
               child: LiveSubScreen(),
             ),
                       ],

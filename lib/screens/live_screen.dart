@@ -1,13 +1,9 @@
 import 'dart:convert';
-import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
-
-
-
 
 class LiveScreen extends StatefulWidget {
   @override
@@ -62,7 +58,7 @@ class _LiveScreenState extends State<LiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
@@ -72,7 +68,7 @@ class _LiveScreenState extends State<LiveScreen> {
                   : GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 4,
-                        childAspectRatio: 0.75,
+                        // childAspectRatio: 0.75,
                       ),
                       itemCount: entertainmentList.length,
                       itemBuilder: (context, index) {
@@ -101,107 +97,62 @@ class _LiveScreenState extends State<LiveScreen> {
           entertainmentList[index]['isFocused'] = hasFocus;
         });
       },
-      child: Container(
-        
-        margin: const EdgeInsets.all(8.0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                width: entertainmentList[index]['isFocused'] ? 200 : 120,
-                  height: entertainmentList[index]['isFocused'] ? 150 : 120,
-                duration: const Duration(milliseconds: 300),
-                // decoration: BoxDecoration(
-                //   border: Border.all(
-                //     color: entertainmentList[index]['isFocused'] ? AppColors.primaryColor: Colors.transparent,
-                //     width: 5.0,
-                //   ),
-                //   borderRadius: BorderRadius.circular(15.0),
-                // ),
-                child: ContainerGradientBorder(
-                  width: entertainmentList[index]['isFocused'] ? 190 : 110,
-                  height: entertainmentList[index]['isFocused'] ? 140 : 110,
-                  start: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  borderWidth: 7,
-                  colorList:  entertainmentList[index]['isFocused'] ? [
-                     AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-    
-                  ]
-                  :
-                  [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
-                  ],
-                  borderRadius: 10,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: Image.network(
-                      entertainmentList[index]['banner'],
-                      width: entertainmentList[index]['isFocused'] ? 160 : 100,
-                      height: entertainmentList[index]['isFocused'] ? 130 : 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            width: entertainmentList[index]['isFocused']
+                ? screenwdt * 0.3
+                : screenwdt * 0.27,
+            height: entertainmentList[index]['isFocused']
+                ? screenhgt * 0.23
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 400),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: entertainmentList[index]['isFocused']
+                    ? primaryColor
+                    : Colors.transparent,
+                width: 10.0,
               ),
-              const SizedBox(height: 8.0),
-              Container(
-                      width: entertainmentList[index]['isFocused'] ? 180 : 120,
-
-                child: Text(
-                  entertainmentList[index]['name'] ?? 'Unknown',
-                  style: TextStyle(
-                    fontSize: 20,
-                    
-                    color: entertainmentList[index]['isFocused']
-                        ? AppColors.highlightColor
-                        : Colors.white,
-                  ),
-                  
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            ),
+            child: Opacity(
+              opacity: entertainmentList[index]['isFocused'] ? 1 : 0.7,
+              child: Image.network(
+                entertainmentList[index]['banner'],
+                width: entertainmentList[index]['isFocused']
+                    ? screenwdt * 0.3
+                    : screenwdt * 0.27,
+                height: entertainmentList[index]['isFocused']
+                    ? screenhgt * 0.23
+                    : screenhgt * 0.2,
+                fit: BoxFit.cover,
               ),
-            ],
+            ),
           ),
-        ),
+          
+
+          // const SizedBox(height: 8.0),
+          Container(
+            width: entertainmentList[index]['isFocused'] ? 180 : 120,
+            child: Text(
+              // entertainmentList[index]['name'] ?? 'Unknown',
+              (entertainmentList[index]['name'] ?? 'UNKNOWN').toUpperCase(),
+
+              style: TextStyle(
+                fontSize: 20,
+                color: entertainmentList[index]['isFocused']
+                    ? highlightColor
+                    : Colors.white,
+              ),
+
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -216,7 +167,6 @@ class _LiveScreenState extends State<LiveScreen> {
           channelList: entertainmentList,
           onFabFocusChanged: (bool) {},
           genres: '',
-         
         ),
       ),
     );

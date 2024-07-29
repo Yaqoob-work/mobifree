@@ -50,6 +50,7 @@ dependencies:
   # gradient_borders: ^1.0.1
   container_gradient_border: ^0.0.2
   youtube_player_flutter: ^9.0.1
+  webview_flutter: ^4.8.0
 
 dev_dependencies:
   flutter_test:

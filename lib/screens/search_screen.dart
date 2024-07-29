@@ -50,36 +50,28 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.cardColor,
-        toolbarHeight: MediaQuery.of(context).size.height * 0.1,
+        backgroundColor: cardColor,
+        toolbarHeight: MediaQuery.of(context).size.height * 0.25,
         title: Container(
-          child: ContainerGradientBorder(
             width: MediaQuery.of(context).size.width - 20,
-            height: MediaQuery.of(context).size.height * 0.1,
-            containerColor: AppColors.cardColor,
-            start: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            borderWidth: 7,
-            colorList: const [
-              AppColors.primaryColor,
-              AppColors.highlightColor
-            ],
-            borderRadius: 10,
+            height: MediaQuery.of(context).size.height * 0.2,
+            
+            
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1),
+              padding: const EdgeInsets.all( 10),
               child: TextField(
                 controller: _searchController,
                 focusNode: _focusNode,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(
-                        color: AppColors.primaryColor, width: 4.0),
+                    borderSide:  BorderSide(
+                        color: primaryColor, width: 4.0),
                   ),
                   labelText: 'Search By Channel Name',
-                  labelStyle: TextStyle(color: AppColors.hintColor),
+                  labelStyle: TextStyle(color: hintColor),
                 ),
-                style: const TextStyle(color: AppColors.hintColor),
+                style:  TextStyle(color: hintColor),
                 textInputAction: TextInputAction.search,
                 textAlignVertical:
                     TextAlignVertical.center, // Vertical center alignment
@@ -88,25 +80,25 @@ class _SearchScreenState extends State<SearchScreen> {
                 },
               ),
             ),
-          ),
+          // ),
         ),
       ),
-      backgroundColor: AppColors.cardColor,
+      backgroundColor: cardColor,
       body: Column(
         children: [
           isLoading
-              ? const Expanded(
+              ?  Expanded(
                   child: Center(child: CircularProgressIndicator()),
                 )
               : searchResults.isEmpty
-                  ? const Expanded(
+                  ?  Expanded(
                       child: Center(
                           child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             'No results found',
-                            style: TextStyle(color: AppColors.hintColor),
+                            style: TextStyle(color: hintColor),
                           ),
                         ],
                       )),
@@ -115,7 +107,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
+                          crossAxisCount: 3,
+                          // childAspectRatio: 0.9,
                         ),
                         itemCount: searchResults.length,
                         itemBuilder: (context, index) {
@@ -159,60 +152,60 @@ class _SearchScreenState extends State<SearchScreen> {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 width: selectedIndex == index ? 200 : 130,
-                height: selectedIndex == index ? 150 : 130,
+                height: selectedIndex == index ? 170 : 130,
                 child: ContainerGradientBorder(
-                  width: selectedIndex == index ? 190 : 120,
-                  height: selectedIndex == index ? 140 : 120,
+                  width: selectedIndex == index ? 180 : 120,
+                  height: selectedIndex == index ? 150 : 120,
                   start: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   borderWidth: 7,
                    colorList: selectedIndex == index ? [
-                     AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
+                     primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
                         
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
-                        AppColors.primaryColor,
-                        AppColors.highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
+                        primaryColor,
+                        highlightColor,
     
                   ]
                   :
                   [
-                    AppColors.primaryColor,
-                    AppColors.highlightColor
+                    primaryColor,
+                    highlightColor
                   ],
                   borderRadius: 14,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
                     child: Image.network(
                       searchResults[index]['banner'] ?? '',
-                      width: selectedIndex == index ? 180 : 100,
+                      width: selectedIndex == index ? 160 : 100,
                       height: selectedIndex == index ? 130 : 100,
                       fit: BoxFit.cover,
                     ),
@@ -220,14 +213,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
                  Container(
-                  width: selectedIndex == index ? 180 : 100,
+                  width: selectedIndex == index ? 150 : 100,
                   child: Text(
                     searchResults[index]['name'] ?? 'Unknown',
                     style: TextStyle(
                       fontSize: 20,
                       color: selectedIndex == index
-                          ? AppColors.highlightColor
-                          : AppColors.hintColor,
+                          ? highlightColor
+                          : hintColor,
                     ),
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
