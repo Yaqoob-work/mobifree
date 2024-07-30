@@ -141,30 +141,44 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
             ),
           ),
         ),
-        Container(
-          width: entertainmentList[index]['isFocused']
-              ? screenwdt * 0.3
-              : screenwdt * 0.25,
-          child: Text(
-            (entertainmentList[index]['name'] ?? 'Unknown')
-                .toString()
-                .toUpperCase(),
-            style: TextStyle(
-              fontSize: 20,
-              color: entertainmentList[index]['isFocused']
-                  ? highlightColor
-                  : Colors.white,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
+        // Container(
+        //   width: entertainmentList[index]['isFocused']
+        //       ? screenwdt * 0.3
+        //       : screenwdt * 0.25,
+        //   child: Text(
+        //     (entertainmentList[index]['name'] ?? 'Unknown')
+        //         .toString()
+        //         .toUpperCase(),
+        //     style: TextStyle(
+        //       fontSize: 20,
+        //       color: entertainmentList[index]['isFocused']
+        //           ? highlightColor
+        //           : Colors.white,
+        //     ),
+        //     textAlign: TextAlign.center,
+        //     maxLines: 1,
+        //     overflow: TextOverflow.ellipsis,
+        //   ),
+        // ),
       ],
     );
   }
 
-  void _navigateToVideoScreen(BuildContext context, dynamic entertainmentItem) {
+  void _navigateToVideoScreen(BuildContext context, dynamic entertainmentItem) async{
+    if (entertainmentItem['stream_type'] == 'YoutubeLive') {
+      final response = await http.get(
+        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+            entertainmentItem['url']!),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
+
+      if (response.statusCode == 200) {
+        entertainmentItem['url'] = json.decode(response.body)['url'];
+        entertainmentItem['stream_type'] = "M3u8";
+      } else {
+        throw Exception('Failed to load networks');
+      }
+    }
     Navigator.push(
       context,
       MaterialPageRoute(

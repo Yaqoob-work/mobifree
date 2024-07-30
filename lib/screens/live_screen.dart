@@ -58,7 +58,6 @@ class _LiveScreenState extends State<LiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -103,55 +102,52 @@ class _LiveScreenState extends State<LiveScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Padding(
-            // padding: const EdgeInsets.all(10.0),
-            // child: 
-            Material(
-              elevation: 0,
-              // child: Container(
-                // decoration: BoxDecoration(boxShadow: entertainmentList[index]['isFocused']?[]:[]),
-                child: AnimatedContainer(
-                  curve: Curves.easeInOut,
-                  width: entertainmentList[index]['isFocused']
-                      ? screenwdt * 0.35
-                      : screenwdt * 0.3,
-                  height: entertainmentList[index]['isFocused']
-                      ? screenhgt * 0.23
-                      : screenhgt * 0.2,
-                  duration: const Duration(milliseconds: 300),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: entertainmentList[index]['isFocused']
-                          ? hintColor
-                          : Colors.white,
-                      width: 10.0,
-                      
-                    ),
-                    // boxShadow:entertainmentList[index]['isFocused']? []:[],
-                    
-                  ),
-                  
-                  // child: Opacity(
-                    // opacity: entertainmentList[index]['isFocused'] ? 1 : 0.7,
-                    // child: Card(
-                    //   elevation:entertainmentList[index]['isFocused']? 0:0,
-                      child: Image.network(
-                        
-                        entertainmentList[index]['banner'],
-                        width: entertainmentList[index]['isFocused']
-                            ? screenwdt * 0.3
-                            : screenwdt * 0.27,
-                        height: entertainmentList[index]['isFocused']
-                            ? screenhgt * 0.23
-                            : screenhgt * 0.2,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-              // ),
+          // padding: const EdgeInsets.all(10.0),
+          // child:
+          // Material(
+          //   elevation: 0,
+          // child: Container(
+          // decoration: BoxDecoration(boxShadow: entertainmentList[index]['isFocused']?[]:[]),
+          // child:
+          AnimatedContainer(
+            padding: EdgeInsets.all(10),
+            // curve: Curves.ease,
+            width: entertainmentList[index]['isFocused']
+                ? screenwdt * 0.35
+                : screenwdt * 0.3,
+            height: entertainmentList[index]['isFocused']
+                ? screenhgt * 0.25
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color: entertainmentList[index]['isFocused']
+                      ? hintColor
+                      : Colors.transparent,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(5)),
+
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Image.network(
+                entertainmentList[index]['banner'],
+                width: entertainmentList[index]['isFocused']
+                    ? screenwdt * 0.3
+                    : screenwdt * 0.27,
+                height: entertainmentList[index]['isFocused']
+                    ? screenhgt * 0.23
+                    : screenhgt * 0.2,
+                fit: BoxFit.cover,
+              ),
             ),
-              // ),
-            // ),
+          ),
           // ),
-          
+          // ),
+          // ),
+          // ),
+          // ),
 
           // const SizedBox(height: 8.0),
           // Container(
@@ -177,7 +173,22 @@ class _LiveScreenState extends State<LiveScreen> {
     );
   }
 
-  void _navigateToVideoScreen(BuildContext context, dynamic entertainmentItem) {
+  void _navigateToVideoScreen(
+      BuildContext context, dynamic entertainmentItem) async {
+    if (entertainmentItem['stream_type'] == 'YoutubeLive') {
+      final response = await http.get(
+        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+            entertainmentItem['url']!),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
+
+      if (response.statusCode == 200) {
+        entertainmentItem['url'] = json.decode(response.body)['url']!;
+        entertainmentItem['stream_type'] = "M3u8";
+      } else {
+        throw Exception('Failed to load networks');
+      }
+    }
     Navigator.push(
       context,
       MaterialPageRoute(

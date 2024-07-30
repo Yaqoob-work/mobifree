@@ -112,7 +112,7 @@ class _VODState extends State<VOD> {
             channelList: channelList,
             videoBanner: '',
             onFabFocusChanged: (bool focused) {},
-            genres: '', // Pass your channel list data here
+            genres: '', videoType: '', // Pass your channel list data here
           ),
         ),
       );
@@ -138,64 +138,62 @@ class _VODState extends State<VOD> {
       },
       child: GestureDetector(
         onTap: () => playVideo(movie['id'].toString()),
-        
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                width: focusNodes[index].hasFocus
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: focusNodes[index].hasFocus
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-                duration: const Duration(milliseconds: 400),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: focusNodes[index].hasFocus
-                        ? primaryColor
-                        : Colors.transparent,
-                    width: 10.0,
-                  ),
-                ),
-                child: Opacity(
-                  opacity: focusNodes[index].hasFocus ? 1 : 0.7,
-                  child: Image.network(
-                    movie['banner'] ?? '',
-                    fit: BoxFit.cover,
-                    width: focusNodes[index].hasFocus
-                        ? screenwdt * 0.3
-                        : screenwdt * 0.27,
-                    height: focusNodes[index].hasFocus
-                        ? screenhgt * 0.23
-                        : screenhgt * 0.2,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(child: Text('Image not available'));
-                    },
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              width: focusNodes[index].hasFocus
+                  ? screenwdt * 0.3
+                  : screenwdt * 0.27,
+              height: focusNodes[index].hasFocus
+                  ? screenhgt * 0.23
+                  : screenhgt * 0.2,
+              duration: const Duration(milliseconds: 400),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: focusNodes[index].hasFocus
+                      ? primaryColor
+                      : Colors.transparent,
+                  width: 10.0,
                 ),
               ),
-              // SizedBox(height: 5),
-              Container(
-                width: focusNodes[index].hasFocus
-                    ? screenwdt * 0.3
-                    : screenwdt * 0.27,
-                child: Text(
-                  movie['name'].toString().toUpperCase(),
-                  style: TextStyle(
-                    color:
-                        focusNodes[index].hasFocus ? highlightColor : hintColor,
-                    fontSize: focusNodes[index].hasFocus ? 20 : 20,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              child: Opacity(
+                opacity: focusNodes[index].hasFocus ? 1 : 0.7,
+                child: Image.network(
+                  movie['banner'] ?? '',
+                  fit: BoxFit.cover,
+                  width: focusNodes[index].hasFocus
+                      ? screenwdt * 0.3
+                      : screenwdt * 0.27,
+                  height: focusNodes[index].hasFocus
+                      ? screenhgt * 0.23
+                      : screenhgt * 0.2,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(child: Text('Image not available'));
+                  },
                 ),
               ),
-            ],
-          ),
-        
+            ),
+            // SizedBox(height: 5),
+            Container(
+              width: focusNodes[index].hasFocus
+                  ? screenwdt * 0.3
+                  : screenwdt * 0.27,
+              child: Text(
+                movie['name'].toString().toUpperCase(),
+                style: TextStyle(
+                  color:
+                      focusNodes[index].hasFocus ? highlightColor : hintColor,
+                  fontSize: focusNodes[index].hasFocus ? 20 : 20,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -236,7 +234,8 @@ class VideoScreen extends StatefulWidget {
       required this.channelList,
       required String videoBanner,
       required Null Function(bool focused) onFabFocusChanged,
-      required String genres});
+      required String genres,
+      required String videoType});
 
   @override
   _VideoScreenState createState() => _VideoScreenState();

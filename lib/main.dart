@@ -5,6 +5,7 @@ import 'package:mobi_tv_entertainment/screens/home_screen.dart';
 import 'package:mobi_tv_entertainment/screens/network.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
+import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
 
 void main() {
@@ -37,8 +38,8 @@ class MyApp extends StatelessWidget {
      
       initialRoute: '/',
       routes: {
-        '/': (context) => MyHomePage(),
-        // '/videoPlayer': (context) => VideoPlayerScreen(),
+        '/': (context) => SplashScreen(),
+        '/myhome': (context) => MyHomePage(),
         '/category': (context) => HomeCategory(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
@@ -147,7 +148,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width *
-          0.24, // Adjust percentage as needed
+          0.22, // Adjust percentage as needed
       // color: const Color.fromARGB(255, 136, 51, 122),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -175,7 +176,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             child: ClipRRect(
               // borderRadius: BorderRadius.circular(40),
               child: Image.asset('assets/logo.png',
-                  width: MediaQuery.of(context).size.width * 0.5),
+                  width: screenwdt * 0.5),
             ),
           ),
           Expanded(
@@ -256,13 +257,13 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
               leading: Icon(
                 iconData,
                 color: isSelected ? Colors.yellow : hintColor,
-                size: focusNode.hasFocus || isSelected ? 40 : 25,
+                size: focusNode.hasFocus || isSelected ? 35 : 25,
               ),
               title: Text(
                 title,
                 style: TextStyle(
                   color: isSelected ? Colors.yellow : hintColor,
-                  fontSize: focusNode.hasFocus || isSelected ? 25 : 18,
+                  fontSize: focusNode.hasFocus || isSelected ? 22 : 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),

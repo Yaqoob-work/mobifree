@@ -78,7 +78,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
 
   void _startAutoSlide() {
     if (_isPageViewBuilt) {
-      _timer = Timer.periodic(Duration(seconds: 5), (Timer timer) {
+      _timer = Timer.periodic(Duration(seconds: 4), (Timer timer) {
         if (_pageController.page == bannerList.length - 1) {
           _pageController.animateToPage(
             0,
@@ -153,16 +153,30 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
 
         if (filteredData != null) {
           final videoUrl = filteredData['url'] ?? '';
+          if (filteredData['stream_type'] == 'YoutubeLive') {
+      final response = await http.get(
+        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+            filteredData['url']!),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );    
+      if (response.statusCode == 200) {
+        filteredData['url'] = json.decode(response.body)['url'];
+        filteredData['stream_type'] = "M3u8";
+      } else {
+        throw Exception('Failed to load networks');
+      }
+    }
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => VideoScreen(
                 videoUrl: videoUrl,
                 videoTitle: filteredData['title'] ?? 'No Title',
-                channelList: [],
-                onFabFocusChanged: (bool focused) {},
-                genres: '',
-                videoBanner: '',
+                channelList: [], videoType: '',
+                 videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: ''
+                // onFabFocusChanged: (bool focused) {},
+                // genres: '',
+                // videoBanner: '',
               ),
             ),
           );
@@ -193,7 +207,7 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cardColor,
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
@@ -216,19 +230,32 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                             return Stack(
                               children: [
                                 Container(
+                                  margin: EdgeInsets.all(screenhgt * 0.05),
                                   width: MediaQuery.of(context).size.width,
                                   height:
-                                      screenhgt* 0.8,
+                                      screenhgt* 0.6,
                                   child: GestureDetector(
                                     onTap: () {
                                       if (selectedContentId != null) {
                                         fetchAndPlayVideo(selectedContentId!);
                                       }
                                     },
-                                    child: Image.network(
-                                      banner['banner'] ?? '',
-                                      fit: BoxFit.cover,
-                                      width: MediaQuery.of(context).size.width,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: _isSmallBannerFocused 
+                                            // &&
+                                                    // _focusedSmallBannerIndex ==index
+                                                ? hintColor
+                                                : Colors.transparent,
+                                            width: 3.0,
+                                          ),
+                                        ),
+                                      child: Image.network(
+                                        banner['banner'] ?? '',
+                                        fit: BoxFit.cover,
+                                        width: screenwdt,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -247,8 +274,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                   ),
                                 ),
                                 Positioned(
-                                  top: 30.0,
-                                  left: 30.0,
+                                  top: screenhgt * 0.1,
+                                  left: screenwdt * 0.12,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10.0, vertical: 5.0),
@@ -256,8 +283,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                       (banner['title'] ??
                                           'No Title').toString().toUpperCase(), // Handle null title here
                                       style:  TextStyle(
-                                        color: highlightColor ,
-                                        fontSize: 40.0,
+                                        color: hintColor ,
+                                        fontSize: 30.0,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -268,78 +295,69 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                           },
                         ),
                         Positioned(
-                          top: screenhgt * 0.8,
-                          left: 0.0,
-                          right: 0.0,
-                          child: Container(
-                            color: cardColor,
-                            height: screenhgt* 0.1,
-                            child: GridView.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: bannerList.length,
-                                childAspectRatio: 16 / 9,
-                              ),
-                              itemCount: bannerList.length,
-                              itemBuilder: (context, index) {
-                                final smallBanner = bannerList[index] ?? '';
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Focus(
-                                    focusNode: _smallBannerFocusNodes[index],
-                                    onFocusChange: (hasFocus) {
-                                      if (hasFocus) {
-                                        setState(() {
-                                          _isSmallBannerFocused = true;
-                                          _focusedSmallBannerIndex = index;
-                                          _scrollToSmallBanner(index);
-                                        });
-                                      } else {
-                                        setState(() {
-                                          _isSmallBannerFocused = false;
-                                        });
-                                      }
-                                    },
-                                    onKeyEvent: (node, event) {
-                                      if (event is KeyDownEvent &&
-                                          event.logicalKey ==
-                                              LogicalKeyboardKey.select) {
-                                        // _navigateToVideoScreen(context, entertainmentList[index]);
-                                        fetchAndPlayVideo(
-                                            smallBanner['content_id'] ?? '');
+  top: screenhgt * 0.65,
+  left: screenwdt * 0.05,
+  right:screenwdt * 0.05,
+  child: Container(
+    color: cardColor,
+    height: screenhgt * 0.15,
+    child: ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: bannerList.length,
+      itemBuilder: (context, index) {
+        final smallBanner = bannerList[index] ?? '';
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Focus(
+            focusNode: _smallBannerFocusNodes[index],
+            onFocusChange: (hasFocus) {
+              if (hasFocus) {
+                setState(() {
+                  _isSmallBannerFocused = true;
+                  _focusedSmallBannerIndex = index;
+                  _scrollToSmallBanner(index);
+                });
+              } else {
+                setState(() {
+                  _isSmallBannerFocused = false;
+                });
+              }
+            },
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.select) {
+                fetchAndPlayVideo(smallBanner['content_id'] ?? '');
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: GestureDetector(
+              onTap: () {
+                fetchAndPlayVideo(smallBanner['content_id'] ?? '');
+              },
+              child: Container(
+                width: screenhgt * 0.3, // Adjust the width as needed
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _isSmallBannerFocused && _focusedSmallBannerIndex == index
+                        ? hintColor
+                        : Colors.transparent,
+                    width: 3.0,
+                  ),
+                ),
+                child: Image.network(
+                  smallBanner['banner'] ?? '',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  ),
+),
 
-                                        return KeyEventResult.handled;
-                                      }
-                                      return KeyEventResult.ignored;
-                                    },
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        fetchAndPlayVideo(
-                                            smallBanner['content_id'] ?? '');
-                                      },
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: _isSmallBannerFocused &&
-                                                    _focusedSmallBannerIndex ==
-                                                        index
-                                                ? primaryColor
-                                                : Colors.transparent,
-                                            width: 5.0,
-                                          ),
-                                        ),
-                                        child: Image.network(
-                                          smallBanner['banner'] ?? '',
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
                       ],
                     ),
     );

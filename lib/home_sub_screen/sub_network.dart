@@ -105,7 +105,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
   }
 }
 
-Future<String> fetchMoviePlayLink(int movieId) async {
+Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final response = await http.get(
     Uri.parse('https://mobifreetv.com/android/getMoviePlayLinks/$movieId/0'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
@@ -115,9 +115,9 @@ Future<String> fetchMoviePlayLink(int movieId) async {
     final List<dynamic> body = json.decode(response.body);
     if (body.isNotEmpty) {
       final Map<String, dynamic> firstItem = body.first as Map<String, dynamic>;
-      return firstItem['url'] ?? '';
+      return {'url': firstItem['url'] ?? '', 'type': firstItem['type'] ?? ''};
     }
-    return '';
+    return {'url': '', 'type': ''};
   } else {
     throw Exception('Failed to load movie play link');
   }
@@ -176,62 +176,54 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
 
         // margin: EdgeInsets.all(5),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            width: _focusNode.hasFocus
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: _focusNode.hasFocus
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-            duration: const Duration(milliseconds: 400),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _focusNode.hasFocus
-                    ? primaryColor
-                    : Colors.transparent,
-                width: 10.0,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+              height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+              duration: const Duration(milliseconds: 400),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color:
+                      _focusNode.hasFocus ? primaryColor : Colors.transparent,
+                  width: 10.0,
+                ),
+              ),
+              child: Opacity(
+                opacity: _focusNode.hasFocus ? 1 : 0.7,
+                child: Image.network(
+                  widget.network.logo,
+                  width:
+                      _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                  height:
+                      _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            child: Opacity(
-              opacity: _focusNode.hasFocus ? 1 : 0.7,
-              child: Image.network(
-                widget.network.logo,
-                width: _focusNode.hasFocus
-                    ? screenwdt * 0.3
-                    : screenwdt * 0.27,
-                height: _focusNode.hasFocus
-                    ? screenhgt * 0.23
-                    : screenhgt * 0.2,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
 
+            // const SizedBox(height: 8.0),
+            // Container(
+            //   width: _focusNode.hasFocus ? 180 : 120,
+            //   child: Text(
+            //     // entertainmentList[index]['name'] ?? 'Unknown',
+            //       (widget.network.name).toUpperCase(),
 
-          // const SizedBox(height: 8.0),
-          Container(
-            width: _focusNode.hasFocus ? 180 : 120,
-            child: Text(
-              // entertainmentList[index]['name'] ?? 'Unknown',
-                (widget.network.name).toUpperCase(),
+            //     style: TextStyle(
+            //       fontSize: 20,
+            //       color: _focusNode.hasFocus
+            //           ? highlightColor
+            //           : Colors.white,
+            //     ),
 
-              style: TextStyle(
-                fontSize: 20,
-                color: _focusNode.hasFocus
-                    ? highlightColor
-                    : Colors.white,
-              ),
-
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
+            //     textAlign: TextAlign.center,
+            //     maxLines: 1,
+            //     overflow: TextOverflow.ellipsis,
+            //   ),
+            // ),
+          ],
+        ),
       ),
     );
   }
@@ -289,62 +281,57 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
           // ),
 
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            width: _focusNode.hasFocus
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: _focusNode.hasFocus
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-            duration: const Duration(milliseconds: 400),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _focusNode.hasFocus
-                    ? primaryColor
-                    : Colors.transparent,
-                width: 10.0,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                height:
+                    _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                duration: const Duration(milliseconds: 400),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color:
+                        _focusNode.hasFocus ? primaryColor : Colors.transparent,
+                    width: 10.0,
+                  ),
+                ),
+                child: Opacity(
+                  opacity: _focusNode.hasFocus ? 1 : 0.7,
+                  child: Image.network(
+                    widget.content.banner,
+                    width: _focusNode.hasFocus
+                        ? screenwdt * 0.3
+                        : screenwdt * 0.27,
+                    height: _focusNode.hasFocus
+                        ? screenhgt * 0.23
+                        : screenhgt * 0.2,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
-            child: Opacity(
-              opacity: _focusNode.hasFocus ? 1 : 0.7,
-              child: Image.network(
-                widget.content.banner,
-                width: _focusNode.hasFocus
-                    ? screenwdt * 0.3
-                    : screenwdt * 0.27,
-                height: _focusNode.hasFocus
-                    ? screenhgt * 0.23
-                    : screenhgt * 0.2,
-                fit: BoxFit.cover,
-              ),
-            ),
+
+              // const SizedBox(height: 8.0),
+              // Container(
+              //   width: _focusNode.hasFocus ? 180 : 120,
+              //   child: Text(
+              //     // entertainmentList[index]['name'] ?? 'Unknown',
+              //       (widget.content.name).toUpperCase(),
+
+              //     style: TextStyle(
+              //       fontSize: 20,
+              //       color: _focusNode.hasFocus
+              //           ? highlightColor
+              //           : Colors.white,
+              //     ),
+
+              //     textAlign: TextAlign.center,
+              //     maxLines: 1,
+              //     overflow: TextOverflow.ellipsis,
+              //   ),
+              // ),
+            ],
           ),
-
-
-          // const SizedBox(height: 8.0),
-          Container(
-            width: _focusNode.hasFocus ? 180 : 120,
-            child: Text(
-              // entertainmentList[index]['name'] ?? 'Unknown',
-                (widget.content.name).toUpperCase(),
-
-              style: TextStyle(
-                fontSize: 20,
-                color: _focusNode.hasFocus
-                    ? highlightColor
-                    : Colors.white,
-              ),
-
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
         ),
       ),
     );
@@ -447,8 +434,7 @@ class _ContentScreenState extends State<ContentScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else {
             final contentList = snapshot.data ?? [];
-            return
-                GridView.builder(
+            return GridView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -459,34 +445,41 @@ class _ContentScreenState extends State<ContentScreen> {
               itemBuilder: (context, index) {
                 final content = contentList[index];
                 return FocusableGridItemContent(
-                  content: content,
-                  onTap: () async {
-                    try {
+                    content: content,
+                    onTap: () async {
                       final movieDetails = await fetchMovieDetails(content.id);
-                      final videoUrl =
+                      final playLink =
                           await fetchMoviePlayLink(movieDetails.id);
-                      if (videoUrl.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoScreen(
-                              videoUrl: videoUrl,
-                              videoTitle: movieDetails.name,
-                              channelList: [],
-                              videoBanner: '',
-                              onFabFocusChanged: (bool focused) {},
-                              genres: '',
-                            ),
-                          ),
+
+                      if (playLink['type'] == 'Youtube') {
+                        final response = await http.get(
+                          Uri.parse(
+                              'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                  playLink['url']!),
+                          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
                         );
-                      } else {
-                        print('Video URL is empty');
+
+                        if (response.statusCode == 200) {
+                          playLink['url'] = json.decode(response.body)['url'];
+                          playLink['type'] = "M3u8";
+                        } else {
+                          throw Exception('Failed to load networks');
+                        }
                       }
-                    } catch (error) {
-                      print('Error fetching video URL: $error');
-                    }
-                  },
-                );
+                      // print('saddam $playLink');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VideoScreen(
+                            videoUrl: playLink['url']!,
+                            videoType: playLink['type']!,
+                            videoTitle: '',
+                            channelList: [],
+                            videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: ''
+                          ),
+                        ),
+                      );
+                    });
               },
             );
           }

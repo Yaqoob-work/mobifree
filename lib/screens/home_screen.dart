@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Container(
-              height: MediaQuery.of(context).size.height * 0.9,
+              height: MediaQuery.of(context).size.height * 0.82,
               child: BannerSliderPage(),
             ),
 
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   "NETWORK",
                                   textAlign: TextAlign.left,
                                   style: TextStyle(
-                                    fontSize: 25,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: primaryColor,
                                   ),
@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         SizedBox(
-              height: 200,
+              height: 150,
               child: SubNetwork(),
             ),
                       ],
@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                Text(
                                 "LIVE",
                                 style: TextStyle(
-                                  fontSize: 25,
+                                  fontSize: 20,
                                   color:primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                          SizedBox(
-              height: 200,
+              height: 150,
               child: LiveSubScreen(),
             ),
                       ],

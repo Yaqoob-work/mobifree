@@ -8,9 +8,6 @@ import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_screen.dart';
 
-
-
-
 class SearchScreen extends StatefulWidget {
   @override
   _SearchScreenState createState() => _SearchScreenState();
@@ -53,33 +50,31 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: cardColor,
         toolbarHeight: MediaQuery.of(context).size.height * 0.25,
         title: Container(
-            width: MediaQuery.of(context).size.width - 20,
-            height: MediaQuery.of(context).size.height * 0.2,
-            
-            
-            child: Padding(
-              padding: const EdgeInsets.all( 10),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _focusNode,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide:  BorderSide(
-                        color: primaryColor, width: 4.0),
-                  ),
-                  labelText: 'Search By Channel Name',
-                  labelStyle: TextStyle(color: hintColor),
+          width: MediaQuery.of(context).size.width - 20,
+          height: MediaQuery.of(context).size.height * 0.2,
+
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _focusNode,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide(color: primaryColor, width: 4.0),
                 ),
-                style:  TextStyle(color: hintColor),
-                textInputAction: TextInputAction.search,
-                textAlignVertical:
-                    TextAlignVertical.center, // Vertical center alignment
-                onSubmitted: (value) {
-                  _performSearch(value);
-                },
+                labelText: 'Search By Channel Name',
+                labelStyle: TextStyle(color: hintColor),
               ),
+              style: TextStyle(color: hintColor),
+              textInputAction: TextInputAction.search,
+              textAlignVertical:
+                  TextAlignVertical.center, // Vertical center alignment
+              onSubmitted: (value) {
+                _performSearch(value);
+              },
             ),
+          ),
           // ),
         ),
       ),
@@ -87,11 +82,11 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Column(
         children: [
           isLoading
-              ?  Expanded(
+              ? Expanded(
                   child: Center(child: CircularProgressIndicator()),
                 )
               : searchResults.isEmpty
-                  ?  Expanded(
+                  ? Expanded(
                       child: Center(
                           child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -107,16 +102,16 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
+                          crossAxisCount: 4,
                           // childAspectRatio: 0.9,
                         ),
                         itemCount: searchResults.length,
                         itemBuilder: (context, index) {
                           return GestureDetector(
                             onTap: () {
-                              _onItemTap(index);
+                              _onItemTap(context, index);
                             },
-                            child: _buildGridViewItem(index),
+                            child: _buildGridViewItem(context, index),
                           );
                         },
                       ),
@@ -126,12 +121,12 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildGridViewItem(int index) {
+  Widget _buildGridViewItem(context, int index) {
     return Focus(
       onKeyEvent: (FocusNode node, KeyEvent event) {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
-          _onItemTap(index);
+          _onItemTap(context, index);
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -142,48 +137,42 @@ class _SearchScreenState extends State<SearchScreen> {
         });
       },
       child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                
-            width: selectedIndex == index 
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: selectedIndex == index 
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            width: selectedIndex == index ? screenwdt * 0.3 : screenwdt * 0.27,
+            height: selectedIndex == index ? screenhgt * 0.23 : screenhgt * 0.2,
             duration: const Duration(milliseconds: 400),
-            
-               child: Image.network(
-                      searchResults[index]['banner'] ?? '',
-                      width: selectedIndex == index ? 160 : 100,
-                      height: selectedIndex == index ? 130 : 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                
-              
-                 Container(
-                  width: selectedIndex == index ? 150 : 100,
-                  child: Text(
-                    searchResults[index]['name'] ?? 'Unknown',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: selectedIndex == index
-                          ? highlightColor
-                          : hintColor,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              
-            ],
+            decoration: BoxDecoration(
+              border: Border.all(
+                color:
+                    selectedIndex == index ? primaryColor : Colors.transparent,
+                width: 10.0,
+              ),
+            ),
+            child: Image.network(
+              searchResults[index]['banner'] ?? '',
+              width: selectedIndex == index ? 160 : 100,
+              height: selectedIndex == index ? 130 : 100,
+              fit: BoxFit.cover,
+            ),
           ),
-        
-      
+          Container(
+            width: selectedIndex == index ? 150 : 100,
+            child: Text(
+              searchResults[index]['name'] ?? 'Unknown',
+              style: TextStyle(
+                fontSize: 20,
+                color: selectedIndex == index ? highlightColor : hintColor,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -199,6 +188,7 @@ class _SearchScreenState extends State<SearchScreen> {
       try {
         final response = await http.get(
           Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+          // Uri.parse('https://mobifreetv.com/android/searchContent/'+searchTerm+'/0'),
           headers: {
             'x-api-key': 'vLQTuPZUxktl5mVW',
           },
@@ -234,7 +224,24 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  void _onItemTap(int index) {
+  void _onItemTap(playLink, int index) async {
+    //  || searchResults[index]['type'] == 'Youtube'
+    if (searchResults[index]['stream_type'] == 'YoutubeLive') {
+      final response = await http.get(
+        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+            searchResults[index]['url']),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
+
+      if (response.statusCode == 200 &&
+          json.decode(response.body)['url'] != '') {
+        searchResults[index]['url'] = json.decode(response.body)['url'];
+        // playLink['type'] = "M3u8";
+        searchResults[index]['stream_type'] = "M3u8";
+      } else {
+        throw Exception('Failed to load networks');
+      }
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -244,7 +251,6 @@ class _SearchScreenState extends State<SearchScreen> {
           channelList: searchResults,
           onFabFocusChanged: _handleFabFocusChanged,
           genres: '',
-          
         ),
       ),
     );

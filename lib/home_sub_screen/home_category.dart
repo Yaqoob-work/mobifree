@@ -89,7 +89,7 @@ class CategoryWidget extends StatelessWidget {
                     (category.text).toUpperCase(),
                     style:  TextStyle(
                       color: primaryColor,
-                      fontSize: 25,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -101,7 +101,22 @@ class CategoryWidget extends StatelessWidget {
                       itemBuilder: (context, index) {
                         return ChannelWidget(
                           channel: filteredChannels[index],
-                          onTap: () {
+                          onTap: () async{
+    //  if (filteredChannels['stream_type'] == 'YoutubeLive') {
+    //   final response = await http.get(
+    //     Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+    //         filteredChannels['url']!),
+    //     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    //   );    
+    //   if (response.statusCode == 200) {
+    //     filteredChannels['url'] = json.decode(response.body)['url'];
+    //     filteredChannels['stream_type'] = "M3u8";
+    //   } else {
+    //     throw Exception('Failed to load networks');
+    //   }
+    // }
+
+                            
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -190,24 +205,24 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 ),
                  ),
               
-                Container(
-                    width: isFocused
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
+                // Container(
+                //     width: isFocused
+                // ? screenwdt * 0.3
+                // : screenwdt * 0.27,
            
 
-                  child: Text(
-                    widget.channel.name,
-                    style: TextStyle(
-                      color: isFocused ?highlightColor : hintColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
+                //   child: Text(
+                //     widget.channel.name,
+                //     style: TextStyle(
+                //       color: isFocused ?highlightColor : hintColor,
+                //       fontSize: 20,
+                //       fontWeight: FontWeight.bold,
+                //     ),
+                //     textAlign: TextAlign.center,
+                //     overflow: TextOverflow.ellipsis,
+                //     maxLines: 1,
+                //   ),
+                // ),
             
               
             ],

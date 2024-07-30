@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:mobi_tv_entertainment/video_widget/youtube_video_player.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+// import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:video_player/video_player.dart';
+
+import 'v_o_d.dart';
 
 // Models
 class NetworkApi {
@@ -117,10 +117,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     final List<dynamic> body = json.decode(response.body);
     if (body.isNotEmpty) {
       final Map<String, dynamic> firstItem = body.first as Map<String, dynamic>;
-      return {
-        'url': firstItem['url'] ?? '',
-        'type': firstItem['type'] ?? ''
-      };
+      return {'url': firstItem['url'] ?? '', 'type': firstItem['type'] ?? ''};
     }
     return {'url': '', 'type': ''};
   } else {
@@ -160,8 +157,8 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: _focusNode,
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent) {
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select) {
             widget.onTap();
             return KeyEventResult.handled;
@@ -176,51 +173,51 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             AnimatedContainer(
-               width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-                       height:   _focusNode.hasFocus ? screenhgt * 0.23:screenhgt * 0.2,
-                    
-                  duration: const Duration(milliseconds: 400),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _focusNode.hasFocus ? primaryColor: Colors.transparent,
-                    width: 10.0,
-                    
-                  ),
-                 ),
-                child: Opacity(
-                        opacity:_focusNode.hasFocus ? 1:0.7,
-                        
+              width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+              height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+              duration: const Duration(milliseconds: 400),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color:
+                      _focusNode.hasFocus ? hintColor : Colors.transparent,
+                  width: 10.0,
+                ),
+                  borderRadius: BorderRadius.circular(5),
+
+              ),
+              // child: Opacity(
+              //   opacity: _focusNode.hasFocus ? 1 : 0.7,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
                   child: Image.network(
                     widget.network.logo,
                     fit: BoxFit.cover,
-                    
-                    width: _focusNode.hasFocus ? screenwdt * 0.3  : screenwdt * 0.27,
-                       height:   _focusNode.hasFocus ? screenhgt * 0.23:screenhgt * 0.2,
-                          
+                    width:
+                        _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                    height:
+                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                     errorBuilder: (context, error, stackTrace) {
                       return Center(child: Text('Image not available'));
                     },
                   ),
                 ),
-              ),
-            
-            Container(
-                    width: _focusNode.hasFocus ? screenwdt * 0.3  : screenwdt * 0.27,
-
-              child: Text(
-                (widget.network.name).toUpperCase(),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: TextStyle(
-                  color: _focusNode.hasFocus
-                      ? highlightColor
-                      : Colors.white,
-                  fontSize: _focusNode.hasFocus ? 20 : 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              // ),
             ),
+            // Container(
+            //   width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+            //   child: Text(
+            //     (widget.network.name).toUpperCase(),
+            //     textAlign: TextAlign.center,
+            //     overflow: TextOverflow.ellipsis,
+            //     maxLines: 1,
+            //     style: TextStyle(
+            //       color: _focusNode.hasFocus ? highlightColor : Colors.white,
+            //       fontSize: _focusNode.hasFocus ? 20 : 18,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -272,43 +269,56 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-                          height:_focusNode.hasFocus ? screenhgt * 0.23:screenhgt * 0.2,
-                    child: Image.network(
-                      widget.content.banner,
-                      fit: BoxFit.cover,
-                      width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-                          height:_focusNode.hasFocus ? screenhgt * 0.23:screenhgt * 0.2,
-                          errorBuilder: (context, error, stackTrace) {
-                        return Center(child: Text('Image not available'));
-                      },
-                    ),
+            padding: EdgeInsets.all(10),
+
+                width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
+              height: _focusNode.hasFocus ? screenhgt * 0.25 : screenhgt * 0.2,
+              duration: const Duration(milliseconds: 400),
+              decoration: BoxDecoration(
+                color: hintColor,
+                border: Border.all(
                   
-              ),
-              Container(
-width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-                          
-                child: Text(
-                  (widget.content.name).toUpperCase(),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: _focusNode.hasFocus
-                        ? highlightColor
-                        : Colors.white,
-                    fontSize: _focusNode.hasFocus ? 20 : 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  color:
+                      _focusNode.hasFocus ? hintColor : Colors.transparent,
+                  width: 1.0,
                 ),
+                borderRadius: BorderRadius.circular(5),
+
               ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: Image.network(
+                    widget.content.banner,
+                    fit: BoxFit.cover,
+                    width:
+                        _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                    height:
+                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(child: Text('Image not available'));
+                    },
+                  ),
+              ),
+              ),
+              // Container(
+              //   width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+              //   child: Text(
+              //     (widget.content.name).toUpperCase(),
+              //     textAlign: TextAlign.center,
+              //     overflow: TextOverflow.ellipsis,
+              //     maxLines: 1,
+              //     style: TextStyle(
+              //       color: _focusNode.hasFocus ? highlightColor : Colors.white,
+              //       fontSize: _focusNode.hasFocus ? 20 : 18,
+              //       fontWeight: FontWeight.bold,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
@@ -334,7 +344,7 @@ class _NetworkState extends State<Network> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:cardColor,
+      backgroundColor: cardColor,
       body: Center(
         child: FutureBuilder<List<NetworkApi>>(
           future: futureNetworks,
@@ -400,143 +410,120 @@ class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:cardColor,
-      body: 
-        Center(
-          child: FutureBuilder<List<ContentApi>>(
-            future: futureContent,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              } else if (snapshot.hasData) {
-                final contents = snapshot.data!;
-                return GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    // mainAxisSpacing: 10,
-                    // crossAxisSpacing: 10,
-                  ),
-                  itemCount: contents.length,
-                  itemBuilder: (context, index) {
-                    final content = contents[index];
-                    return FocusableGridItemContent(
-                      content: content,
-                      // onTap: () async {
-                      //   final movieDetails = await fetchMovieDetails(content.id);
-                      //   final playLink = await fetchMoviePlayLink(movieDetails.id);
-                      //   Navigator.push(
-                      //     context,
-                      //     MaterialPageRoute(
-                      //       builder: (context) => VideoScreen(
-                      //         videoUrl: playLink['url']!,
-                      //         videoType: playLink['type']!,
-                      //       ),
-                      //     ),
-                      //   );
-                      // },
-                      onTap: () async {
-          final movieDetails = await fetchMovieDetails(content.id);
-          final playLink = await fetchMoviePlayLink(movieDetails.id);
-          
-          if (playLink['type'] == 'Youtube') {
-            Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => YoutubeVideoPlayer(
-            videoUrl: playLink['url']!, videoTitle: '', channelList: [], url: '',
-          ),
-        ),
-            );
-          } else {
-            Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoScreen(
-            videoUrl: playLink['url']!,
-            videoType: playLink['type']!,
-          ),
-        ),
-            );
-          }
-        }
-        
-                    );
-                  },
-                );
-              } else {
-                return Text('No data available');
-              }
-            },
-          ),
-        ),
-      
-    );
-  }
-}
-
-class VideoScreen extends StatefulWidget {
-  final String videoUrl;
-  final String videoType;
-
-  VideoScreen({required this.videoUrl, required this.videoType});
-
-  @override
-  _VideoScreenState createState() => _VideoScreenState();
-}
-
-class _VideoScreenState extends State<VideoScreen> {
-  late VideoPlayerController _videoPlayerController;
-  late YoutubePlayerController _youtubePlayerController;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.videoType == 'Youtube') {
-      _youtubePlayerController = YoutubePlayerController(
-        initialVideoId: YoutubePlayer.convertUrlToId(widget.videoUrl) ?? '',
-        flags: YoutubePlayerFlags(
-          autoPlay: true,
-          mute: false,
-        ),
-      );
-    } else {
-      _videoPlayerController = VideoPlayerController.network(widget.videoUrl)
-        ..initialize().then((_) {
-          setState(() {});
-          _videoPlayerController.play();
-        });
-    }
-  }
-
-  @override
-  void dispose() {
-    if (widget.videoType == 'Youtube') {
-      _youtubePlayerController.dispose();
-    } else {
-      _videoPlayerController.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cardColor,
       body: Center(
-        child: widget.videoType == 'Youtube'
-            ? YoutubePlayer(
-                controller: _youtubePlayerController,
-                showVideoProgressIndicator: true,
-              )
-            : _videoPlayerController.value.isInitialized
-                ? AspectRatio(
-                    aspectRatio: _videoPlayerController.value.aspectRatio,
-                    child: VideoPlayer(_videoPlayerController),
-                  )
-                : CircularProgressIndicator(),
+        child: FutureBuilder<List<ContentApi>>(
+          future: futureContent,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (snapshot.hasData) {
+              final contents = snapshot.data!;
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  // mainAxisSpacing: 10,
+                  // crossAxisSpacing: 10,
+                ),
+                itemCount: contents.length,
+                itemBuilder: (context, index) {
+                  final content = contents[index];
+                  return FocusableGridItemContent(
+                      content: content,
+                      
+                      onTap: () async {
+                        final movieDetails =
+                            await fetchMovieDetails(content.id);
+                        final playLink =
+                            await fetchMoviePlayLink(movieDetails.id);
+
+                        if (playLink['type'] == 'Youtube') {
+                          final response = await http.get(
+                            Uri.parse(
+                                'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                    playLink['url']!),
+                            headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                          );
+
+                          if (response.statusCode == 200) {
+                            playLink['url'] = json.decode(response.body)['url'];
+                            playLink['type'] = "M3u8";
+                            
+                          } else {
+                            throw Exception('Failed to load networks');
+                          }
+                        }
+                        // print('saddam $playLink');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoScreen(
+                              videoUrl: playLink['url']!,
+                              videoType: playLink['type']!, videoTitle: '', channelList: [], videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '',
+                            ),
+                          ),
+                        );
+                      });
+                },
+              );
+            } else {
+              return Text('No data available');
+            }
+          },
+        ),
       ),
     );
   }
 }
+
+// class VideoScreen extends StatefulWidget {
+//   final String videoUrl;
+//   final String videoType;
+
+//   VideoScreen({required this.videoUrl, required this.videoType});
+
+//   @override
+//   _VideoScreenState createState() => _VideoScreenState();
+// }
+
+// class _VideoScreenState extends State<VideoScreen> {
+//   late VideoPlayerController _videoPlayerController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+    
+//       _videoPlayerController = VideoPlayerController.network(widget.videoUrl)
+//         ..initialize().then((_) {
+//           setState(() {});
+//           _videoPlayerController.play();
+//         });
+    
+//   }
+
+//   @override
+//   void dispose() {
+    
+//       _videoPlayerController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       body: Center(
+//         child: 
+        
+//             _videoPlayerController.value.isInitialized
+//                 ? AspectRatio(
+//                     aspectRatio: _videoPlayerController.value.aspectRatio,
+//                     child: VideoPlayer(_videoPlayerController),
+//                   )
+//                 : CircularProgressIndicator(),
+//       ),
+//     );
+//   }
+// }

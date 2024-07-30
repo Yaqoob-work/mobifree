@@ -320,25 +320,25 @@ class _VideoScreenState extends State<VideoScreen> {
                                   
                                 
                             
-                              Container(
-                                width: widget.channelList[index]['isFocused']
-                                    ? 180
-                                    : 100,
-                                child: Text(
-                                  (widget.channelList[index]['name'] ??
-                                      'Unknown').toString().toUpperCase(),
-                                  style: TextStyle(
-                                    color: widget.channelList[index]
-                                            ['isFocused']
-                                        ? Color.fromARGB(255, 106, 235, 20)
-                                        : Colors.white.withOpacity(0.6),
-                                    fontSize: 20.0,
-                                  ),
-                                  maxLines: 1,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
+                              // Container(
+                              //   width: widget.channelList[index]['isFocused']
+                              //       ? 180
+                              //       : 100,
+                              //   child: Text(
+                              //     (widget.channelList[index]['name'] ??
+                              //         'Unknown').toString().toUpperCase(),
+                              //     style: TextStyle(
+                              //       color: widget.channelList[index]
+                              //               ['isFocused']
+                              //           ? Color.fromARGB(255, 106, 235, 20)
+                              //           : Colors.white.withOpacity(0.6),
+                              //       fontSize: 20.0,
+                              //     ),
+                              //     maxLines: 1,
+                              //     textAlign: TextAlign.center,
+                              //     overflow: TextOverflow.ellipsis,
+                              //   ),
+                              // ),
                             ],
                           ),
                         ),
