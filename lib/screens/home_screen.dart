@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         SizedBox(
-              height: 150,
+              height: 170,
               child: SubNetwork(),
             ),
                       ],
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                          SizedBox(
-              height: 150,
+              height: 170,
               child: LiveSubScreen(),
             ),
                       ],
@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
             
            
 
-            Container(
+            SizedBox(
               height: 1500,
               child: HomeCategory(),
             ),

@@ -85,8 +85,8 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                                       isFocused;
                                 });
                               },
-                              onKey: (node, event) {
-                                if (event is RawKeyDownEvent &&
+                              onKeyEvent: (node, event) {
+                                if (event is KeyDownEvent &&
                                     (event.logicalKey ==
                                             LogicalKeyboardKey.select ||
                                         event.logicalKey ==
@@ -111,36 +111,44 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        AnimatedContainer(
-          width: entertainmentList[index]['isFocused']
-              ? screenwdt * 0.3
-              : screenwdt * 0.27,
-          height: entertainmentList[index]['isFocused']
-              ? screenhgt * 0.23
-              : screenhgt * 0.2,
-          duration: const Duration(milliseconds: 400),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: entertainmentList[index]['isFocused']
-                  ? primaryColor
-                  : Colors.transparent,
-              width: 10.0,
-            ),
-          ),
-          child: Opacity(
-            opacity: entertainmentList[index]['isFocused'] ? 1 : 0.7,
-            child: Image.network(
-              entertainmentList[index]['banner'],
+         Container(
+              padding: EdgeInsets.all(10),
+
+           child: AnimatedContainer(
+              // curve: Curves.ease,
               width: entertainmentList[index]['isFocused']
-                  ? screenwdt * 0.3
-                  : screenwdt * 0.27,
+                  ? screenwdt * 0.35
+                  : screenwdt * 0.3,
               height: entertainmentList[index]['isFocused']
-                  ? screenhgt * 0.23
+                  ? screenhgt * 0.25
                   : screenhgt * 0.2,
-              fit: BoxFit.cover,
+              duration: const Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                  color:hintColor,
+                  border: Border.all(
+                    color: hintColor,
+                    // entertainmentList[index]['isFocused']
+                    //     ? hintColor
+                    //     : Colors.transparent,
+                    width: 10.0,
+                  ),
+                  borderRadius: BorderRadius.circular(5)),
+           
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: Image.network(
+                  entertainmentList[index]['banner'],
+                  width: entertainmentList[index]['isFocused']
+                      ? screenwdt * 0.3
+                      : screenwdt * 0.27,
+                  height: entertainmentList[index]['isFocused']
+                      ? screenhgt * 0.23
+                      : screenhgt * 0.2,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-          ),
-        ),
+         ),
         // Container(
         //   width: entertainmentList[index]['isFocused']
         //       ? screenwdt * 0.3

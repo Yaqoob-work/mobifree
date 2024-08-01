@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 
-import '../screens/v_o_d.dart';
+import '../video_widget/video_movie_screen.dart';
 
 class BannerSliderPage extends StatefulWidget {
   @override
@@ -169,11 +169,11 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => VideoScreen(
+              builder: (context) => VideoMovieScreen(
                 videoUrl: videoUrl,
                 videoTitle: filteredData['title'] ?? 'No Title',
                 channelList: [], videoType: '',
-                 videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: ''
+                 videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', url: '', type: '',
                 // onFabFocusChanged: (bool focused) {},
                 // genres: '',
                 // videoBanner: '',
@@ -229,12 +229,14 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                             final banner = bannerList[index];
                             return Stack(
                               children: [
+                                
                                 Container(
                                   margin: EdgeInsets.all(screenhgt * 0.05),
                                   width: MediaQuery.of(context).size.width,
                                   height:
                                       screenhgt* 0.6,
                                   child: GestureDetector(
+                                    
                                     onTap: () {
                                       if (selectedContentId != null) {
                                         fetchAndPlayVideo(selectedContentId!);

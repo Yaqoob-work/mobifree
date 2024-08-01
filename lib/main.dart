@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
      screenhgt = MediaQuery.of(context).size.height;
      screenwdt = MediaQuery.of(context).size.height;
      screensz = MediaQuery.of(context).size;
-      primaryColor = Color.fromARGB(255, 248, 8, 128);
+      primaryColor = Color.fromARGB(255, 248, 8, 8);
    highlightColor = Colors.blue;
    cardColor = Color.fromARGB(255, 8, 1, 34);
    hintColor = Colors.white;
@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
         '/network': (context) => Network(),
+        '/live':(context) => LiveScreen(),
       },
       // home: MyHomePage(),
     );
@@ -151,26 +152,28 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
           0.22, // Adjust percentage as needed
       // color: const Color.fromARGB(255, 136, 51, 122),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [primaryColor, Colors.blue],
-          stops: [0.0, 1.0],
-          tileMode: TileMode.clamp,
-        ),
+        color: hintColor,
+        // gradient: LinearGradient(
+        //   begin: Alignment.centerLeft,
+        //   end: Alignment.centerRight,
+        //   colors: [primaryColor, Colors.blue],
+        //   stops: [0.0, 1.0],
+        //   tileMode: TileMode.clamp,
+        // ),
       ),
       child: Column(
         children: <Widget>[
           Container(
             // color: Colors.white,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [primaryColor, Colors.blue],
-                stops: [0.0, 1.0],
-                tileMode: TileMode.clamp,
-              ),
+              color: hintColor,
+              // gradient: LinearGradient(
+              //   begin: Alignment.centerLeft,
+              //   end: Alignment.centerRight,
+              //   colors: [primaryColor, Colors.blue],
+              //   stops: [0.0, 1.0],
+              //   tileMode: TileMode.clamp,
+              // ),
             ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
@@ -236,9 +239,9 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
           setState(() {}); // Trigger rebuild to update UI when focused
         }
       },
-      onKey: (node, event) {
-        if (event.isKeyPressed(LogicalKeyboardKey.select) ||
-            event.isKeyPressed(LogicalKeyboardKey.enter)) {
+      onKeyEvent: (node, event) {
+        if (HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.select) ||
+            HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
           widget.onPageSelected(index);
           return KeyEventResult.handled;
         }
@@ -252,23 +255,25 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         child: Center(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
-            // color: isSelected ? Colors.black : const Color.fromARGB(255, 136, 51, 122),
+            color:  hintColor,
             child: ListTile(
               leading: Icon(
                 iconData,
-                color: isSelected ? Colors.yellow : hintColor,
-                size: focusNode.hasFocus || isSelected ? 35 : 25,
+                color: focusNode.hasFocus?      Color.fromARGB(255, 241, 7, 46):Color.fromARGB(255, 20, 27, 122),
+                size:  isSelected? 25:20,
               ),
               title: Text(
                 title,
                 style: TextStyle(
-                  color: isSelected ? Colors.yellow : hintColor,
-                  fontSize: focusNode.hasFocus || isSelected ? 22 : 18,
+                  color:focusNode.hasFocus?   Color.fromARGB(255, 241, 7, 46):Color.fromARGB(255, 20, 27, 122),
+                  fontSize: isSelected? 25:20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+            
           ),
+        
         ),
       ),
     );

@@ -88,7 +88,7 @@ class CategoryWidget extends StatelessWidget {
                   Text(
                     (category.text).toUpperCase(),
                     style:  TextStyle(
-                      color: primaryColor,
+                      color: hintColor,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -101,20 +101,8 @@ class CategoryWidget extends StatelessWidget {
                       itemBuilder: (context, index) {
                         return ChannelWidget(
                           channel: filteredChannels[index],
-                          onTap: () async{
-    //  if (filteredChannels['stream_type'] == 'YoutubeLive') {
-    //   final response = await http.get(
-    //     Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-    //         filteredChannels['url']!),
-    //     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    //   );    
-    //   if (response.statusCode == 200) {
-    //     filteredChannels['url'] = json.decode(response.body)['url'];
-    //     filteredChannels['stream_type'] = "M3u8";
-    //   } else {
-    //     throw Exception('Failed to load networks');
-    //   }
-    // }
+                          onTap: () {
+   
 
                             
                             Navigator.push(
@@ -174,36 +162,50 @@ class _ChannelWidgetState extends State<ChannelWidget> {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedContainer(
-            width: isFocused
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: isFocused
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-            duration: const Duration(milliseconds: 300),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: isFocused
-                    ? primaryColor
-                    : Colors.transparent,
-                width: 10.0,
-              ),
-            ),
-            child: Opacity(
-              opacity: isFocused ? 1 : 0.7,
-                 child: Image.network(
-                    widget.channel.banner,
-                    fit: BoxFit.cover,
-                    width: isFocused
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height: isFocused
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-                  ),
+          Container(
+              // padding: EdgeInsets.all(10),
+margin: EdgeInsets.all(10),
+            child: AnimatedContainer(
+              // padding: EdgeInsets.all(10),
+              width: isFocused
+                  ? screenwdt * 0.35
+                  : screenwdt * 0.27,
+              height: isFocused
+                  ? screenhgt * 0.23
+                  : screenhgt * 0.2,
+              duration: const Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                color: hintColor,
+                border: Border.all(
+                color: hintColor,
+                  
+                  // color: isFocused
+                  //     ? hintColor
+                  //     : hintColor,
+                  width: 10.0,
+                  
                 ),
-                 ),
+                    borderRadius: BorderRadius.circular(5),
+
+              ),
+              // child: Opacity(
+              //   opacity: isFocused ? 1 : 0.7,
+                   child: ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                     child: Image.network(
+                        widget.channel.banner,
+                        fit: BoxFit.cover,
+                        width: isFocused
+                                       ? screenwdt * 0.35
+                                       : screenwdt * 0.27,
+                                   height: isFocused
+                                       ? screenhgt * 0.23
+                                       : screenhgt * 0.2,
+                      ),
+                   ),
+                  // ),
+                   ),
+          ),
               
                 // Container(
                 //     width: isFocused
@@ -401,7 +403,22 @@ class _VideoScreenState extends State<VideoScreen> {
                                   onTap: () => _changeChannel(index),
                                   child: ChannelWidget(
                                     channel: channel,
-                                    onTap: () {
+                                    onTap: () async{
+
+  // if (widget.channels['stream_type'] == 'YoutubeLive') {
+  //     final response = await http.get(
+  //       Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+  //           widget.channels['url']!),
+  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  //     );    
+  //     if (response.statusCode == 200) {
+  //       widget.channels['url'] = json.decode(response.body)['url'];
+  //       widget.channels['stream_type'] = "M3u8";
+  //     } else {
+  //       throw Exception('Failed to load networks');
+  //     }
+  //   }
+
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(

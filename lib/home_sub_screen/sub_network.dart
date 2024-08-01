@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:container_gradient_border/container_gradient_border.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import '../screens/v_o_d.dart';
+import '../video_widget/video_movie_screen.dart';
 
 // Models
 class NetworkApi {
@@ -155,8 +156,8 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: _focusNode,
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent) {
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select) {
             widget.onTap();
             return KeyEventResult.handled;
@@ -166,42 +167,53 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
       },
       child: GestureDetector(
         onTap: widget.onTap,
-        // child: Container(
-        //   decoration: BoxDecoration(
-        //     border: Border.all(
-        //       color: _focusNode.hasFocus ? Colors.yellow : Colors.transparent,
-        //       width: 3.0,
-        //     ),
-        //   ),
-
-        // margin: EdgeInsets.all(5),
+        
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-              height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-              duration: const Duration(milliseconds: 400),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color:
-                      _focusNode.hasFocus ? primaryColor : Colors.transparent,
-                  width: 10.0,
+            // Material(
+            //   elevation: 0,
+              
+                // child: 
+                Container(
+                  padding: const EdgeInsets.all(10.0),
+
+                  child: AnimatedContainer(
+                  // padding: const EdgeInsets.all(10.0),
+                  
+                    width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
+                    height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                    duration: const Duration(milliseconds: 400),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                  
+                      color: hintColor,
+                      border: Border.all(
+                        color:hintColor,
+                            // _focusNode.hasFocus ? primaryColor : Colors.transparent,
+                        width: 10.0,
+                  
+                      ),
+                  
+                    ),
+                    // child: Opacity(
+                      // opacity: _focusNode.hasFocus ? 1 : 0.7,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: Image.network(
+                          widget.network.logo,
+                          width:
+                              _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
+                          height:
+                              _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                 ),
-              ),
-              child: Opacity(
-                opacity: _focusNode.hasFocus ? 1 : 0.7,
-                child: Image.network(
-                  widget.network.logo,
-                  width:
-                      _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-                  height:
-                      _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+              // ),
+            // ),
 
             // const SizedBox(height: 8.0),
             // Container(
@@ -261,8 +273,8 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: _focusNode,
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent) {
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select) {
             widget.onTap();
             return KeyEventResult.handled;
@@ -285,30 +297,35 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
-                width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                // padding: EdgeInsets.all(10),
+                width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
                 height:
                     _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                 duration: const Duration(milliseconds: 400),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color:
-                        _focusNode.hasFocus ? primaryColor : Colors.transparent,
+                    color:Colors.white,
+                        // _focusNode.hasFocus ? primaryColor : Colors.transparent,
                     width: 10.0,
                   ),
+                  borderRadius: BorderRadius.circular(5),
+
                 ),
-                child: Opacity(
-                  opacity: _focusNode.hasFocus ? 1 : 0.7,
+
+                // child: Opacity(
+                //   opacity: _focusNode.hasFocus ? 1 : 0.7,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
                   child: Image.network(
                     widget.content.banner,
-                    width: _focusNode.hasFocus
-                        ? screenwdt * 0.3
-                        : screenwdt * 0.27,
-                    height: _focusNode.hasFocus
-                        ? screenhgt * 0.23
-                        : screenhgt * 0.2,
+                    width:
+                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
+                    height:
+                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
+                // ),
               ),
 
               // const SizedBox(height: 8.0),
@@ -470,13 +487,14 @@ class _ContentScreenState extends State<ContentScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => VideoScreen(
-                            videoUrl: playLink['url']!,
-                            videoType: playLink['type']!,
-                            videoTitle: '',
-                            channelList: [],
-                            videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: ''
-                          ),
+                          builder: (context) => VideoMovieScreen(
+                              videoUrl: playLink['url']!,
+                              videoType: playLink['type']!,
+                              videoTitle: '',
+                              channelList: [],
+                              videoBanner: '',
+                              onFabFocusChanged: (bool focused) {},
+                              genres: '', url: '', type: '',),
                         ),
                       );
                     });

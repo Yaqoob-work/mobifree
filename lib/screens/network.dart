@@ -6,6 +6,7 @@ import 'package:mobi_tv_entertainment/main.dart';
 // import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:video_player/video_player.dart';
 
+import '../video_widget/video_movie_screen.dart';
 import 'v_o_d.dart';
 
 // Models
@@ -173,14 +174,14 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             AnimatedContainer(
-              width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+              width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
               height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-              duration: const Duration(milliseconds: 400),
+              duration: const Duration(milliseconds: 300),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(
-                  color:
-                      _focusNode.hasFocus ? hintColor : Colors.transparent,
+                  color:hintColor,
+                      // _focusNode.hasFocus ? hintColor : Colors.transparent,
                   width: 10.0,
                 ),
                   borderRadius: BorderRadius.circular(5),
@@ -194,7 +195,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     widget.network.logo,
                     fit: BoxFit.cover,
                     width:
-                        _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
                     height:
                         _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                     errorBuilder: (context, error, stackTrace) {
@@ -257,8 +258,8 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: _focusNode,
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent) {
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select) {
             widget.onTap();
             return KeyEventResult.handled;
@@ -274,7 +275,6 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AnimatedContainer(
-            padding: EdgeInsets.all(10),
 
                 width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
               height: _focusNode.hasFocus ? screenhgt * 0.25 : screenhgt * 0.2,
@@ -283,9 +283,9 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                 color: hintColor,
                 border: Border.all(
                   
-                  color:
-                      _focusNode.hasFocus ? hintColor : Colors.transparent,
-                  width: 1.0,
+                  color:hintColor,
+                      // _focusNode.hasFocus ? hintColor : Colors.transparent,
+                  width: 10.0,
                 ),
                 borderRadius: BorderRadius.circular(5),
 
@@ -296,7 +296,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                     widget.content.banner,
                     fit: BoxFit.cover,
                     width:
-                        _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
                     height:
                         _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                     errorBuilder: (context, error, stackTrace) {
@@ -459,9 +459,9 @@ class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => VideoScreen(
+                            builder: (context) => VideoMovieScreen(
                               videoUrl: playLink['url']!,
-                              videoType: playLink['type']!, videoTitle: '', channelList: [], videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '',
+                              videoType: playLink['type']!, videoTitle: '', channelList: [], videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', url: '', type: '',
                             ),
                           ),
                         );
@@ -478,52 +478,35 @@ class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
   }
 }
 
-// class VideoScreen extends StatefulWidget {
-//   final String videoUrl;
-//   final String videoType;
 
-//   VideoScreen({required this.videoUrl, required this.videoType});
 
-//   @override
-//   _VideoScreenState createState() => _VideoScreenState();
-// }
+// this code is just copy of other page (VOD)
+//  void _onItemTap(BuildContext context, int index) async {
+  //   if (searchResults[index]['stream_type'] == 'YoutubeLive') {
+  //     final response = await http.get(
+  //       Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+  //           searchResults[index]['url']),
+  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  //     );
 
-// class _VideoScreenState extends State<VideoScreen> {
-//   late VideoPlayerController _videoPlayerController;
-
-//   @override
-//   void initState() {
-//     super.initState();
-    
-//       _videoPlayerController = VideoPlayerController.network(widget.videoUrl)
-//         ..initialize().then((_) {
-//           setState(() {});
-//           _videoPlayerController.play();
-//         });
-    
-//   }
-
-//   @override
-//   void dispose() {
-    
-//       _videoPlayerController.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       body: Center(
-//         child: 
-        
-//             _videoPlayerController.value.isInitialized
-//                 ? AspectRatio(
-//                     aspectRatio: _videoPlayerController.value.aspectRatio,
-//                     child: VideoPlayer(_videoPlayerController),
-//                   )
-//                 : CircularProgressIndicator(),
-//       ),
-//     );
-//   }
-// }
+  //     if (response.statusCode == 200 &&
+  //         json.decode(response.body)['url'] != '') {
+  //       searchResults[index]['url'] = json.decode(response.body)['url'];
+  //       searchResults[index]['stream_type'] = "M3u8";
+  //     } else {
+  //       throw Exception('Failed to load networks');
+  //     }
+  //   }
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => VideoScreen(
+  //         videoUrl: searchResults[index]['url'] ?? '',
+  //         videoTitle: searchResults[index]['name'] ?? 'Unknown',
+  //         channelList: searchResults,
+  //         onFabFocusChanged: _handleFabFocusChanged,
+  //         genres: '',
+  //       ),
+  //     ),
+  //   );
+  // }
