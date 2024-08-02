@@ -2,15 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
-import 'package:mobi_tv_entertainment/screens/network.dart';
+import 'package:mobi_tv_entertainment/screens/vod.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
-import 'package:mobi_tv_entertainment/screens/v_o_d.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(MyApp());
 }
+
+
 
 var primaryColor ;
 var highlightColor ;
@@ -43,7 +55,6 @@ class MyApp extends StatelessWidget {
         '/category': (context) => HomeCategory(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
-        '/network': (context) => Network(),
         '/live':(context) => LiveScreen(),
       },
       // home: MyHomePage(),
@@ -101,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 SearchScreen(),
                 LiveScreen(),
                 VOD(),
-                Network(),
+                // Network(),
                 HomeCategory(),
               ],
             ),
@@ -131,7 +142,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(6, (index) => FocusNode());
+    _focusNodes = List.generate(5, (index) => FocusNode());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNodes[0]);
     });
@@ -209,17 +220,17 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                   3,
                   _focusNodes[3],
                 ),
-                _buildNavigationItem(
-                  Icons.network_wifi_rounded,
-                  'NETWORK',
-                  4,
-                  _focusNodes[4],
-                ),
+                // _buildNavigationItem(
+                //   Icons.network_wifi_rounded,
+                //   'NETWORK',
+                //   4,
+                //   _focusNodes[4],
+                // ),
                 _buildNavigationItem(
                   Icons.category,
                   'CATEGORY',
-                  5,
-                  _focusNodes[5],
+                  4,
+                  _focusNodes[4],
                 ),
               ],
             ),
@@ -260,7 +271,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
               leading: Icon(
                 iconData,
                 color: focusNode.hasFocus?      Color.fromARGB(255, 241, 7, 46):Color.fromARGB(255, 20, 27, 122),
-                size:  isSelected? 25:20,
+                size:  isSelected? 23:20,
               ),
               title: Text(
                 title,

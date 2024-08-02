@@ -4,11 +4,26 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(MyApp());
+}
 
 
 
-
-var liveHeight;
+// var liveHeight;
 class LiveSubScreen extends StatefulWidget {
   @override
   _LiveSubScreenState createState() => _LiveSubScreenState();
@@ -70,7 +85,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
                   : LayoutBuilder(builder: (context, constraints) {
-                     liveHeight = constraints.maxHeight;
+                    //  liveHeight = constraints.maxHeight;
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: entertainmentList.length,

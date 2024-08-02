@@ -6,8 +6,24 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
 
-double categoryheight = 0;
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(HomeCategory());
+}
+
+// double categoryheight = 0;
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -21,11 +37,11 @@ class _HomeCategoryState extends State<HomeCategory> {
   void initState() {
     super.initState();
     _categories = fetchCategories();
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        categoryheight = MediaQuery.of(context).size.height;
-      });
-    });
+    //  WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   setState(() {
+    //     categoryheight = MediaQuery.of(context).size.height;
+    //   });
+    // });
   }
 
   Future<List<Category>> fetchCategories() async {

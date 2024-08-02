@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -347,8 +348,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                     width: 3.0,
                   ),
                 ),
-                child: Image.network(
-                  smallBanner['banner'] ?? '',
+                child: CachedNetworkImage(
+                 imageUrl: smallBanner['banner'] ?? '',
                   fit: BoxFit.cover,
                 ),
               ),

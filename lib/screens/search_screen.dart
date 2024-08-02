@@ -5,7 +5,22 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
-// import 'video_screen.dart'; // Make sure to replace this with your actual import
+import 'package:flutter/material.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(SearchScreen());
+}
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -56,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
       try {
         final response = await http.get(
-          Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+          Uri.parse('https://mobifreetv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
           headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
         );
 
@@ -84,8 +99,8 @@ class _SearchScreenState extends State<SearchScreen> {
           });
 
           // Schedule focus request after build
-          Future.delayed(Duration.zero, () {
-            if (_itemFocusNodes.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
               FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
             }
           });
@@ -105,21 +120,10 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: cardColor, 
-      //   toolbarHeight: screenhgt * 0.25,
-      //   title:te ,
-        
-      // ),
-
-      
-      backgroundColor:cardColor, // Replace with cardColor
+      backgroundColor: cardColor, // Replace with cardColor
       body: Column(
         children: [
           Container(
-          // width: screenwdt ,
-          // height: screenhgt * 0.2,
-          // child: Padding(
             padding: const EdgeInsets.all(15),
             child: TextField(
               controller: _searchController,
@@ -139,8 +143,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 _performSearch(value);
               },
             ),
-          // ),
-        ),
+          ),
           isLoading
               ? Expanded(
                   child: Center(child: CircularProgressIndicator()),
@@ -160,19 +163,22 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     )
                   : Expanded(
-                      child: GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                          ),
+                          itemCount: searchResults.length,
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () {
+                                _onItemTap(context, index);
+                              },
+                              child: _buildGridViewItem(context, index),
+                            );
+                          },
                         ),
-                        itemCount: searchResults.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              _onItemTap(context, index);
-                            },
-                            child: _buildGridViewItem(context, index),
-                          );
-                        },
                       ),
                     ),
         ],
@@ -201,42 +207,27 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.27,
-            height: selectedIndex == index ? screenhgt * 0.23 : screenhgt * 0.2,
+            width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.28,
+            height: selectedIndex == index ? screenhgt * 0.25 : screenhgt * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
               color: hintColor,
               border: Border.all(
                 color: hintColor,
-                // selectedIndex == index ? hintColor : Colors.transparent, // Replace with primaryColor
                 width: 10.0,
               ),
               borderRadius: BorderRadius.circular(5),
-
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
               child: Image.network(
                 searchResults[index]['banner'] ?? '',
-                width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.27,
+                width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.28,
                 height: selectedIndex == index ? screenhgt * 0.23 : screenhgt * 0.2,
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // Container(
-          //   width: selectedIndex == index ? 150 : 100,
-          //   child: Text(
-          //     searchResults[index]['name'] ?? 'Unknown',
-          //     style: TextStyle(
-          //       fontSize: 20,
-          //       color: selectedIndex == index ? Colors.yellow : Colors.white, // Replace with highlightColor and hintColor
-          //     ),
-          //     textAlign: TextAlign.center,
-          //     overflow: TextOverflow.ellipsis,
-          //     maxLines: 1,
-          //   ),
-          // ),
         ],
       ),
     );

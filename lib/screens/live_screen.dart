@@ -4,6 +4,22 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(LiveScreen());
+}
 
 class LiveScreen extends StatefulWidget {
   @override
@@ -65,20 +81,23 @@ class _LiveScreenState extends State<LiveScreen> {
               ? Center(child: Text('Error: $errorMessage'))
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
-                  : GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        // childAspectRatio: 0.75,
+                  : Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          // childAspectRatio: 0.75,
+                        ),
+                        itemCount: entertainmentList.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () => _navigateToVideoScreen(
+                                context, entertainmentList[index]),
+                            child: _buildGridViewItem(index),
+                          );
+                        },
                       ),
-                      itemCount: entertainmentList.length,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () => _navigateToVideoScreen(
-                              context, entertainmentList[index]),
-                          child: _buildGridViewItem(index),
-                        );
-                      },
-                    ),
+                  ),
     );
   }
 
@@ -122,9 +141,10 @@ class _LiveScreenState extends State<LiveScreen> {
             decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(
-                  color: entertainmentList[index]['isFocused']
-                      ? hintColor
-                      : Colors.transparent,
+                  color: hintColor,
+                  // entertainmentList[index]['isFocused']
+                  //     ? hintColor
+                  //     : Colors.transparent,
                   width: 1.0,
                 ),
                 borderRadius: BorderRadius.circular(5)),

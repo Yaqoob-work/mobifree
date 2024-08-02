@@ -2,9 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
-import 'package:mobi_tv_entertainment/home_sub_screen/sub_network.dart';
+import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
 
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(HomeScreen());
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -38,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     // Simulate network request delay
-    // await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
 
     setState(() {
       _isLoading = false;
@@ -99,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SizedBox(
               height: 170,
-              child: SubNetwork(),
+              child: SubVod(),
             ),
                       ],
                     ),

@@ -3,11 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
-// import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-import 'package:video_player/video_player.dart';
-
 import '../video_widget/video_movie_screen.dart';
-import 'v_o_d.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(VOD());
+}
 
 // Models
 class NetworkApi {
@@ -50,8 +62,15 @@ class MovieDetailsApi {
   final int id;
   final String name;
   final String banner;
+  final String poster;
+  final String genres;
 
-  MovieDetailsApi({required this.id, required this.name, required this.banner});
+  MovieDetailsApi(
+      {required this.id,
+      required this.name,
+      required this.banner,
+      required this.poster,
+      required this.genres});
 
   factory MovieDetailsApi.fromJson(Map<String, dynamic> json) {
     return MovieDetailsApi(
@@ -60,6 +79,8 @@ class MovieDetailsApi {
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       banner: json['banner'] ?? 'https://via.placeholder.com/150',
+      poster: json['poster'] ?? 'https://via.placeholder.com/150',
+      genres: json['genres'] ?? 'Unknown',
     );
   }
 }
@@ -180,45 +201,26 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(
-                  color:hintColor,
-                      // _focusNode.hasFocus ? hintColor : Colors.transparent,
+                  color: hintColor,
                   width: 10.0,
                 ),
-                  borderRadius: BorderRadius.circular(5),
-
+                borderRadius: BorderRadius.circular(5),
               ),
-              // child: Opacity(
-              //   opacity: _focusNode.hasFocus ? 1 : 0.7,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: Image.network(
-                    widget.network.logo,
-                    fit: BoxFit.cover,
-                    width:
-                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
-                    height:
-                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(child: Text('Image not available'));
-                    },
-                  ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: Image.network(
+                  widget.network.logo,
+                  fit: BoxFit.cover,
+                  width:
+                      _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
+                  height:
+                      _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(child: Text('Image not available'));
+                  },
                 ),
-              // ),
+              ),
             ),
-            // Container(
-            //   width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
-            //   child: Text(
-            //     (widget.network.name).toUpperCase(),
-            //     textAlign: TextAlign.center,
-            //     overflow: TextOverflow.ellipsis,
-            //     maxLines: 1,
-            //     style: TextStyle(
-            //       color: _focusNode.hasFocus ? highlightColor : Colors.white,
-            //       fontSize: _focusNode.hasFocus ? 20 : 18,
-            //       fontWeight: FontWeight.bold,
-            //     ),
-            //   ),
-            // ),
           ],
         ),
       ),
@@ -275,48 +277,47 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AnimatedContainer(
-
                 width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
-              height: _focusNode.hasFocus ? screenhgt * 0.25 : screenhgt * 0.2,
-              duration: const Duration(milliseconds: 400),
-              decoration: BoxDecoration(
-                color: hintColor,
-                border: Border.all(
-                  
-                  color:hintColor,
-                      // _focusNode.hasFocus ? hintColor : Colors.transparent,
-                  width: 10.0,
+                height:
+                    _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: hintColor,
+                  border: Border.all(
+                    color: hintColor,
+                    width: 10.0,
+                  ),
+                  borderRadius: BorderRadius.circular(5),
                 ),
-                borderRadius: BorderRadius.circular(5),
-
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.network(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: Image.network(
                     widget.content.banner,
                     fit: BoxFit.cover,
-                    width:
-                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
-                    height:
-                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                    width: _focusNode.hasFocus
+                        ? screenwdt * 0.35
+                        : screenwdt * 0.3,
+                    height: _focusNode.hasFocus
+                        ? screenhgt * 0.23
+                        : screenhgt * 0.2,
                     errorBuilder: (context, error, stackTrace) {
                       return Center(child: Text('Image not available'));
                     },
                   ),
+                ),
               ),
-              ),
+              // SizedBox(height: 5),
               // Container(
-              //   width: _focusNode.hasFocus ? screenwdt * 0.3 : screenwdt * 0.27,
+              //   width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
               //   child: Text(
-              //     (widget.content.name).toUpperCase(),
+              //     widget.content.name,
+              //     style: TextStyle(
+              //       color: _focusNode.hasFocus ? Colors.yellow : Colors.white,
+              //       fontSize: _focusNode.hasFocus ? 20 : 16,
+              //     ),
               //     textAlign: TextAlign.center,
               //     overflow: TextOverflow.ellipsis,
-              //     maxLines: 1,
-              //     style: TextStyle(
-              //       color: _focusNode.hasFocus ? highlightColor : Colors.white,
-              //       fontSize: _focusNode.hasFocus ? 20 : 18,
-              //       fontWeight: FontWeight.bold,
-              //     ),
+              //     maxLines: 2,
               //   ),
               // ),
             ],
@@ -327,60 +328,49 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
   }
 }
 
-class Network extends StatefulWidget {
-  @override
-  _NetworkState createState() => _NetworkState();
-}
-
-class _NetworkState extends State<Network> {
-  late Future<List<NetworkApi>> futureNetworks;
-
-  @override
-  void initState() {
-    super.initState();
-    futureNetworks = fetchNetworks();
-  }
-
+// Pages
+class VOD extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: cardColor,
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: FutureBuilder<List<NetworkApi>>(
-          future: futureNetworks,
+          future: fetchNetworks(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator();
+              return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            } else if (snapshot.hasData) {
-              final networks = snapshot.data!;
+              return Center(child: Text('Failed to load networks'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Center(child: Text('No networks available'));
+            } else {
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
                   // mainAxisSpacing: 10,
                   // crossAxisSpacing: 10,
-                  // childAspectRatio: 0.80,
+                  // childAspectRatio: 1.0,
                 ),
-                itemCount: networks.length,
+                itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
-                  final network = networks[index];
+                  final network = snapshot.data![index];
                   return FocusableGridItem(
                     network: network,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              NetworkContentsScreen(networkId: network.id),
+                          builder: (context) => NetworkContentsScreen(
+                            network: network,
+                          ),
                         ),
                       );
                     },
                   );
                 },
               );
-            } else {
-              return Text('No data available');
             }
           },
         ),
@@ -389,55 +379,121 @@ class _NetworkState extends State<Network> {
   }
 }
 
-class NetworkContentsScreen extends StatefulWidget {
-  final int networkId;
+class NetworkContentsScreen extends StatelessWidget {
+  final NetworkApi network;
 
-  NetworkContentsScreen({required this.networkId});
-
-  @override
-  _NetworkContentsScreenState createState() => _NetworkContentsScreenState();
-}
-
-class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
-  late Future<List<ContentApi>> futureContent;
-
-  @override
-  void initState() {
-    super.initState();
-    futureContent = fetchContent(widget.networkId);
-  }
+  NetworkContentsScreen({required this.network});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: cardColor,
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: FutureBuilder<List<ContentApi>>(
-          future: futureContent,
+          future: fetchContent(network.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator();
+              return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            } else if (snapshot.hasData) {
-              final contents = snapshot.data!;
+              return Center(child: Text('Failed to load content'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Center(child: Text('No content available'));
+            } else {
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
                   // mainAxisSpacing: 10,
                   // crossAxisSpacing: 10,
+                  // childAspectRatio: 1.0,
                 ),
-                itemCount: contents.length,
+                itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
-                  final content = contents[index];
+                  final content = snapshot.data![index];
                   return FocusableGridItemContent(
-                      content: content,
-                      
-                      onTap: () async {
-                        final movieDetails =
-                            await fetchMovieDetails(content.id);
-                        final playLink =
-                            await fetchMoviePlayLink(movieDetails.id);
+                    content: content,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailsPage(
+                            // contentId: content.id,
+                             content: content,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+class DetailsPage extends StatelessWidget {
+  final ContentApi content;
+
+  DetailsPage({required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: cardColor,
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: FutureBuilder<MovieDetailsApi>(
+          future: fetchMovieDetails(content.id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Failed to load movie details'));
+            } else if (!snapshot.hasData) {
+              return Center(child: Text('No movie details available'));
+            } else {
+              final movieDetails = snapshot.data!;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: screenhgt * 0.5,
+                  alignment: Alignment.center,
+                  child: Image.network(
+                    movieDetails.poster,
+                    fit: BoxFit.contain,
+                  ),
+                  ),
+                  Center(
+                    child: Text(
+                      movieDetails.name,
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Expanded(
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        // mainAxisSpacing: 10,
+                        // crossAxisSpacing: 10,
+                        // childAspectRatio: 1.0,
+                      ),
+                      itemCount: 1, // Assume we have only one detail item
+                      itemBuilder: (context, index) {
+                        return FocusableGridItemContent(
+                          content: content,
+                          onTap: () async {
+                            final playLink = await fetchMoviePlayLink(content.id);
+                            // final movieDetails =
+                            // await fetchMovieDetails(content.id);
+                        // final playLink =
+                        //     await fetchMoviePlayLink(movieDetails.id);
 
                         if (playLink['type'] == 'Youtube') {
                           final response = await http.get(
@@ -455,21 +511,23 @@ class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
                             throw Exception('Failed to load networks');
                           }
                         }
-                        // print('saddam $playLink');
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoMovieScreen(
-                              videoUrl: playLink['url']!,
-                              videoType: playLink['type']!, videoTitle: '', channelList: [], videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', url: '', type: '',
-                            ),
-                          ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VideoMovieScreen(
+                               videoUrl: playLink['url']!, videoTitle: '', channelList: [], videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', videoType: '', url: '', type: '',
+                             ),
+                                //   playLink: playLink['url']!,
+                                // ),
+                              ),
+                            );
+                          },
                         );
-                      });
-                },
+                      },
+                    ),
+                  ),
+                ],
               );
-            } else {
-              return Text('No data available');
             }
           },
         ),
@@ -477,36 +535,3 @@ class _NetworkContentsScreenState extends State<NetworkContentsScreen> {
     );
   }
 }
-
-
-
-// this code is just copy of other page (VOD)
-//  void _onItemTap(BuildContext context, int index) async {
-  //   if (searchResults[index]['stream_type'] == 'YoutubeLive') {
-  //     final response = await http.get(
-  //       Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-  //           searchResults[index]['url']),
-  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  //     );
-
-  //     if (response.statusCode == 200 &&
-  //         json.decode(response.body)['url'] != '') {
-  //       searchResults[index]['url'] = json.decode(response.body)['url'];
-  //       searchResults[index]['stream_type'] = "M3u8";
-  //     } else {
-  //       throw Exception('Failed to load networks');
-  //     }
-  //   }
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => VideoScreen(
-  //         videoUrl: searchResults[index]['url'] ?? '',
-  //         videoTitle: searchResults[index]['name'] ?? 'Unknown',
-  //         channelList: searchResults,
-  //         onFabFocusChanged: _handleFabFocusChanged,
-  //         genres: '',
-  //       ),
-  //     ),
-  //   );
-  // }
