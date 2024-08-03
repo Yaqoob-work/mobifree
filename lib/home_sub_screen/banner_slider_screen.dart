@@ -246,7 +246,7 @@ class _BannerSliderState extends State<BannerSlider> {
                                           color: _isSmallBannerFocused
                                               // &&
                                               // _focusedSmallBannerIndex ==index
-                                              ? hintColor
+                                              ? borderColor
                                               : Colors.transparent,
                                           width: 3.0,
                                         ),
@@ -347,8 +347,8 @@ class _BannerSliderState extends State<BannerSlider> {
                                             color: _isSmallBannerFocused &&
                                                     _focusedSmallBannerIndex ==
                                                         index
-                                                ? hintColor
-                                                : Colors.transparent,
+                                                ? borderColor
+                                                : hintColor,
                                             width: 3.0,
                                           ),
                                         ),

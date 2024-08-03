@@ -126,13 +126,11 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
               decoration: BoxDecoration(
                   color:hintColor,
                   border: Border.all(
-                    color: hintColor,
-                    // entertainmentList[index]['isFocused']
-                    //     ? hintColor
-                    //     : Colors.transparent,
-                    width: 10.0,
+                    color: 
+                    entertainmentList[index]['isFocused']?borderColor: hintColor,
+                    width: 5.0,
                   ),
-                  borderRadius: BorderRadius.circular(5)),
+                  borderRadius: BorderRadius.circular(10)),
            
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(5),

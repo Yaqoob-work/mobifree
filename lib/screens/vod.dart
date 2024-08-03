@@ -166,52 +166,53 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.select) {
-            widget.onTap();
-            return KeyEventResult.handled;
+    return GestureDetector(
+          onTap: widget.onTap,
+
+      child: Focus(
+        focusNode: _focusNode,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.select) {
+              widget.onTap();
+              return KeyEventResult.handled;
+            }
           }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
-              height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: hintColor,
-                  width: 10.0,
+          return KeyEventResult.ignored;
+        },
+        
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
+                height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _focusNode.hasFocus ?borderColor:hintColor,
+                    width: 5.0,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.network(
-                  widget.network.logo,
-                  fit: BoxFit.cover,
-                  width:
-                      _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
-                  height:
-                      _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(child: Text('Image not available'));
-                  },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: Image.network(
+                    widget.network.logo,
+                    fit: BoxFit.cover,
+                    width:
+                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
+                    height:
+                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(child: Text('Image not available'));
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ),
     );
   }
@@ -247,71 +248,71 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.select) {
-            widget.onTap();
-            return KeyEventResult.handled;
+    return GestureDetector(
+          onTap: widget.onTap,
+
+      child: Focus(
+        focusNode: _focusNode,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.select) {
+              widget.onTap();
+              return KeyEventResult.handled;
+            }
           }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
-                height:
-                    _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-                duration: const Duration(milliseconds: 300),
-                decoration: BoxDecoration(
-                  color: hintColor,
-                  border: Border.all(
-                    color: hintColor,
-                    width: 10.0,
+          return KeyEventResult.ignored;
+        },
+          child: Container(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
+                  height:
+                      _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                  duration: const Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _focusNode.hasFocus ?borderColor: hintColor,
+                      width: 5.0,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: Image.network(
-                    widget.content.banner,
-                    fit: BoxFit.cover,
-                    width: _focusNode.hasFocus
-                        ? screenwdt * 0.35
-                        : screenwdt * 0.3,
-                    height: _focusNode.hasFocus
-                        ? screenhgt * 0.23
-                        : screenhgt * 0.2,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(child: Text('Image not available'));
-                    },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: Image.network(
+                      widget.content.banner,
+                      fit: BoxFit.cover,
+                      width: _focusNode.hasFocus
+                          ? screenwdt * 0.35
+                          : screenwdt * 0.3,
+                      height: _focusNode.hasFocus
+                          ? screenhgt * 0.23
+                          : screenhgt * 0.2,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(child: Text('Image not available'));
+                      },
+                    ),
                   ),
                 ),
-              ),
-              // SizedBox(height: 5),
-              // Container(
-              //   width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
-              //   child: Text(
-              //     widget.content.name,
-              //     style: TextStyle(
-              //       color: _focusNode.hasFocus ? Colors.yellow : Colors.white,
-              //       fontSize: _focusNode.hasFocus ? 20 : 16,
-              //     ),
-              //     textAlign: TextAlign.center,
-              //     overflow: TextOverflow.ellipsis,
-              //     maxLines: 2,
-              //   ),
-              // ),
-            ],
+                // SizedBox(height: 5),
+                // Container(
+                //   width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
+                //   child: Text(
+                //     widget.content.name,
+                //     style: TextStyle(
+                //       color: _focusNode.hasFocus ? Colors.yellow : Colors.white,
+                //       fontSize: _focusNode.hasFocus ? 20 : 16,
+                //     ),
+                //     textAlign: TextAlign.center,
+                //     overflow: TextOverflow.ellipsis,
+                //     maxLines: 2,
+                //   ),
+                // ),
+              ],
+            ),
           ),
-        ),
       ),
     );
   }
@@ -466,13 +467,8 @@ class DetailsPage extends StatelessWidget {
                   ),
                   SizedBox(height: 10),
                   Expanded(
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        // mainAxisSpacing: 10,
-                        // crossAxisSpacing: 10,
-                        // childAspectRatio: 1.0,
-                      ),
+                    child: ListView.builder(
+                     scrollDirection: Axis.horizontal,
                       itemCount: 1, // Assume we have only one detail item
                       itemBuilder: (context, index) {
                         return FocusableGridItemContent(

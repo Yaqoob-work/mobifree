@@ -28,6 +28,7 @@ var primaryColor ;
 var highlightColor ;
 var cardColor ;
 var hintColor  ;
+var borderColor  ;
 
 var screenhgt ;
 var screenwdt ;
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
    highlightColor = Colors.blue;
    cardColor = Color.fromARGB(255, 8, 1, 34);
    hintColor = Colors.white;
+   borderColor = Color.fromARGB(255, 247, 6, 118);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -270,13 +272,13 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             child: ListTile(
               leading: Icon(
                 iconData,
-                color: focusNode.hasFocus?      Color.fromARGB(255, 241, 7, 46):Color.fromARGB(255, 20, 27, 122),
+                color: focusNode.hasFocus?      Color.fromARGB(255, 247, 6, 118):Color.fromARGB(255, 20, 27, 122),
                 size:  isSelected? 23:20,
               ),
               title: Text(
                 title,
                 style: TextStyle(
-                  color:focusNode.hasFocus?   Color.fromARGB(255, 241, 7, 46):Color.fromARGB(255, 20, 27, 122),
+                  color:focusNode.hasFocus?   Color.fromARGB(255, 247, 6, 118):Color.fromARGB(255, 20, 27, 122),
                   fontSize: isSelected? 25:20,
                   fontWeight: FontWeight.bold,
                 ),

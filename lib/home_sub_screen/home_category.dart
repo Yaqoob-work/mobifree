@@ -197,33 +197,33 @@ margin: EdgeInsets.all(10),
                   : screenhgt * 0.2,
               duration: const Duration(milliseconds: 300),
               decoration: BoxDecoration(
-                color: hintColor,
                 border: Border.all(
-                color: hintColor,
                   
-                  // color: isFocused
-                  //     ? hintColor
-                  //     : hintColor,
-                  width: 10.0,
+                  color: isFocused
+                      ? borderColor
+                      : hintColor,
+                  width: 5.0,
                   
                 ),
-                    borderRadius: BorderRadius.circular(5),
-
+                    borderRadius: BorderRadius.circular(10),
               ),
               // child: Opacity(
               //   opacity: isFocused ? 1 : 0.7,
                    child: ClipRRect(
                     borderRadius: BorderRadius.circular(5),
-                     child: Image.network(
-                        widget.channel.banner,
-                        fit: BoxFit.cover,
-                        width: isFocused
-                                       ? screenwdt * 0.35
-                                       : screenwdt * 0.27,
-                                   height: isFocused
-                                       ? screenhgt * 0.23
-                                       : screenhgt * 0.2,
-                      ),
+                     child: Material(
+                      elevation: 0,
+                       child: Image.network(
+                          widget.channel.banner,
+                          fit: BoxFit.cover,
+                          width: isFocused
+                                         ? screenwdt * 0.35
+                                         : screenwdt * 0.27,
+                                     height: isFocused
+                                         ? screenhgt * 0.23
+                                         : screenhgt * 0.2,
+                        ),
+                     ),
                    ),
                   // ),
                    ),

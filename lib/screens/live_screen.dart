@@ -71,7 +71,7 @@ class _LiveScreenState extends State<LiveScreen> {
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
                   : Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(10.0),
                     child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
@@ -118,7 +118,7 @@ class _LiveScreenState extends State<LiveScreen> {
           // decoration: BoxDecoration(boxShadow: entertainmentList[index]['isFocused']?[]:[]),
           // child:
           AnimatedContainer(
-            padding: EdgeInsets.all(10),
+            // padding: EdgeInsets.all(10),
             // curve: Curves.ease,
             width: entertainmentList[index]['isFocused']
                 ? screenwdt * 0.35
@@ -128,15 +128,15 @@ class _LiveScreenState extends State<LiveScreen> {
                 : screenhgt * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-                color: Colors.white,
+                // color: Colors.white,
                 border: Border.all(
-                  color: hintColor,
-                  // entertainmentList[index]['isFocused']
-                  //     ? hintColor
-                  //     : Colors.transparent,
-                  width: 1.0,
+                  color: 
+                  entertainmentList[index]['isFocused']
+                      ? borderColor
+                      : hintColor,
+                  width: 5.0,
                 ),
-                borderRadius: BorderRadius.circular(5)),
+                borderRadius: BorderRadius.circular(10)),
 
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),

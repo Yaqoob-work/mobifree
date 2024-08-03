@@ -5,7 +5,6 @@ import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 
-
 void main() {
   runApp(HomeScreen());
 }
@@ -50,7 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _fetchData();
     }
   }
@@ -68,101 +68,82 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 0,
               child: Text(''),
             ),
-
             Container(
               height: MediaQuery.of(context).size.height * 0.7,
               child: BannerSlider(),
             ),
-
-            
-
-              Container(
-              
-                    child: Column(
-                      children: [
-                        Container(
-                          color: cardColor,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                               Container(
-                                
-                                 child: Padding(
-                                   padding: const EdgeInsets.only(left: 10),
-                                   child: Text(
-                                    "NETWORK",
-                                    textAlign: TextAlign.left,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: hintColor,
-                                    ),
-                                                               ),
-                                 ),
-                               ),
-                              Text('')
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-              height: 170,
-              child: SubVod(),
-            ),
-                      ],
-                    ),
-                  ),
-              
-            
-            
-              Container(
-              
-                  
-                    child: Column(
+            Container(
+              child: Column(
+                children: [
+                  Container(
+                    color: cardColor,
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          color: cardColor,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          
-                            children: [
-                               Padding(
-                                 padding: const EdgeInsets.only(left: 10),
-                                 child: Text(
-                                  "LIVE",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color:hintColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                                               ),
-                               ),
-                              Text('')
-                            ],
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Text(
+                              "NETWORK",
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: hintColor,
+                              ),
+                            ),
                           ),
                         ),
-                         SizedBox(
-              height: 170,
-              child: LiveSubScreen(),
-            ),
+                        Text('')
                       ],
                     ),
                   ),
-                
-              
-            
-           
-
+                  SizedBox(
+                    height: 170,
+                    child: SubVod(),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    color: cardColor,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10),
+                          child: Text(
+                            "LIVE",
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: hintColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Text('')
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 170,
+                    child: LiveSubScreen(),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(
               height: 1500,
               child: HomeCategory(),
             ),
-
             Container(
               height: 0,
               child: Text(''),
             ),
-
             if (_isLoading) ...[
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),

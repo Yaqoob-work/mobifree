@@ -191,12 +191,11 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                 height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
-                  color: Colors.white,
                   border: Border.all(
-                    color: hintColor,
-                    width: 10.0,
+                    color: _focusNode.hasFocus ?borderColor: hintColor,
+                    width: 5.0,
                   ),
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
@@ -275,12 +274,11 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                     _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
-                  color: hintColor,
                   border: Border.all(
-                    color: hintColor,
-                    width: 10.0,
+                    color: _focusNode.hasFocus ?borderColor: hintColor,
+                    width: 5.0,
                   ),
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
@@ -467,13 +465,8 @@ class DetailsPage extends StatelessWidget {
                   ),
                   SizedBox(height: 10),
                   Expanded(
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        // mainAxisSpacing: 10,
-                        // crossAxisSpacing: 10,
-                        // childAspectRatio: 1.0,
-                      ),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
                       itemCount: 1, // Assume we have only one detail item
                       itemBuilder: (context, index) {
                         return FocusableGridItemContent(

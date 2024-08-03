@@ -6,9 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
-
 void main() {
-  runApp(SearchScreen());
+  runApp(MaterialApp(home: SearchScreen()));
 }
 
 class SearchScreen extends StatefulWidget {
@@ -48,10 +47,52 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://mobifreetv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        return responseData.where((channel) =>
+            channel['name'] != null &&
+            channel['name'].toString().toLowerCase().contains(searchTerm.toLowerCase())).toList();
+      } else {
+        throw Exception('Failed to load data from API 1');
+      }
+    } catch (e) {
+      print('Error fetching from API 1: $e');
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> _fetchFromApi2(String searchTerm) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        return responseData.where((channel) =>
+            channel['name'] != null &&
+            channel['name'].toString().toLowerCase().contains(searchTerm.toLowerCase())).toList();
+      } else {
+        throw Exception('Failed to load data from API 2');
+      }
+    } catch (e) {
+      print('Error fetching from API 2: $e');
+      return [];
+    }
+  }
+
   void _performSearch(String searchTerm) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
       setState(() {
         isLoading = true;
         searchResults.clear();
@@ -59,44 +100,25 @@ class _SearchScreenState extends State<SearchScreen> {
       });
 
       try {
-        final response = await http.get(
-          Uri.parse('https://mobifreetv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
-          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-        );
+        final api1Results = await _fetchFromApi1(searchTerm);
+        final api2Results = await _fetchFromApi2(searchTerm);
 
-        if (response.statusCode == 200) {
-          final List<dynamic> responseData = json.decode(response.body);
+        setState(() {
+          searchResults = [...api1Results, ...api2Results];
+          _itemFocusNodes.addAll(List.generate(
+            searchResults.length,
+            (index) => FocusNode(),
+          ));
+          isLoading = false;
+        });
 
-          setState(() {
-            if (searchTerm.isEmpty) {
-              searchResults.clear();
-            } else {
-              searchResults = responseData
-                  .where((channel) =>
-                      channel['name'] != null &&
-                      channel['name']
-                          .toString()
-                          .toLowerCase()
-                          .contains(searchTerm.toLowerCase()))
-                  .toList();
-            }
-            _itemFocusNodes.addAll(List.generate(
-              searchResults.length,
-              (index) => FocusNode(),
-            ));
-            isLoading = false;
-          });
+        // Schedule focus request after build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
+            FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
+          }
+        });
 
-          // Schedule focus request after build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
-              FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
-            }
-          });
-
-        } else {
-          throw Exception('Failed to load data');
-        }
       } catch (e) {
         print('Error fetching data: $e');
         setState(() {
@@ -109,7 +131,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor, // Replace with cardColor
+      backgroundColor: cardColor, // Replace with your cardColor
       body: Column(
         children: [
           Container(
@@ -122,7 +144,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: BorderSide(color: hintColor, width: 4.0), // Replace with primaryColor
                 ),
-                labelText: 'Search By Channel Name',
+                labelText: 'Search By Name',
                 labelStyle: TextStyle(color: Colors.white), // Replace with hintColor
               ),
               style: TextStyle(color: Colors.white), // Replace with hintColor
@@ -153,7 +175,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     )
                   : Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(10.0),
                         child: GridView.builder(
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 4,
@@ -196,23 +218,30 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.28,
-            height: selectedIndex == index ? screenhgt * 0.25 : screenhgt * 0.2,
+            
+            width: selectedIndex == index 
+                ? screenwdt * 0.35
+                : screenwdt * 0.3,
+            height: selectedIndex == index 
+                ? screenhgt * 0.25
+                : screenhgt * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              color: hintColor,
-              border: Border.all(
-                color: hintColor,
-                width: 10.0,
-              ),
-              borderRadius: BorderRadius.circular(5),
-            ),
+                // color: Colors.white,
+                border: Border.all(
+                  color: 
+                  selectedIndex == index 
+                      ? borderColor
+                      : hintColor,
+                  width: 5.0,
+                ),
+                borderRadius: BorderRadius.circular(10)),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
               child: Image.network(
                 searchResults[index]['banner'] ?? '',
-                width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.28,
-                height: selectedIndex == index ? screenhgt * 0.23 : screenhgt * 0.2,
+                width: selectedIndex == index ? MediaQuery.of(context).size.width * 0.35 : MediaQuery.of(context).size.width * 0.28,
+                height: selectedIndex == index ? MediaQuery.of(context).size.height * 0.23 : MediaQuery.of(context).size.height * 0.2,
                 fit: BoxFit.cover,
               ),
             ),
@@ -224,20 +253,26 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onItemTap(BuildContext context, int index) async {
     if (searchResults[index]['stream_type'] == 'YoutubeLive') {
-      final response = await http.get(
-        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-            searchResults[index]['url']),
-        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      );
+      try {
+        final response = await http.get(
+          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' + searchResults[index]['url']),
+          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+        );
 
-      if (response.statusCode == 200 &&
-          json.decode(response.body)['url'] != '') {
-        searchResults[index]['url'] = json.decode(response.body)['url'];
-        searchResults[index]['stream_type'] = "M3u8";
-      } else {
-        throw Exception('Failed to load networks');
+        if (response.statusCode == 200) {
+          final jsonResponse = json.decode(response.body);
+          if (jsonResponse['url'] != '') {
+            searchResults[index]['url'] = jsonResponse['url'];
+            searchResults[index]['stream_type'] = "M3u8";
+          }
+        } else {
+          throw Exception('Failed to load networks');
+        }
+      } catch (e) {
+        print('Error fetching video URL: $e');
       }
     }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -247,8 +282,8 @@ class _SearchScreenState extends State<SearchScreen> {
           channelList: searchResults,
           onFabFocusChanged: _handleFabFocusChanged,
           genres: '',
-           channels: [],
-            initialIndex: index,
+          channels: [],
+          initialIndex: index,
         ),
       ),
     );

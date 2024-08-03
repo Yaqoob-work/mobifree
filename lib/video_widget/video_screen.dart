@@ -1,15 +1,9 @@
-
-
-
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-
-
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
@@ -23,8 +17,8 @@ class VideoScreen extends StatefulWidget {
     required this.channelList,
     required this.onFabFocusChanged,
     required String genres,
-     required List<Channel> channels,
-      required int initialIndex,
+    required List<Channel> channels,
+    required int initialIndex,
   });
 
   @override
@@ -256,8 +250,8 @@ class _VideoScreenState extends State<VideoScreen> {
                         borderRadius: BorderRadius.circular(50.0),
                         child: Focus(
                           focusNode: focusNodes[index],
-                          onKey: (FocusNode node, RawKeyEvent event) {
-                            if (event is RawKeyDownEvent &&
+                          onKeyEvent: (FocusNode node, KeyEvent event) {
+                            if (event is KeyDownEvent &&
                                 (event.logicalKey ==
                                         LogicalKeyboardKey.select ||
                                     event.logicalKey ==
@@ -275,54 +269,48 @@ class _VideoScreenState extends State<VideoScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              
-                                  AnimatedContainer(
-                                    width: widget.channelList[index]['isFocused']
-                ? screenwdt * 0.3
-                : screenwdt * 0.27,
-            height:  widget.channelList[index]['isFocused']
-                ? screenhgt * 0.23
-                : screenhgt * 0.2,
-                                    duration:
-                                        const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                    // decoration: BoxDecoration(
-                                    //   border: Border.all(
-                                    //     color: widget.channelList[index]['isFocused']
-                                    //         ? Color.fromARGB(255, 106, 235, 20)
-                                    //         : Colors.transparent,
-                                    //     width: 5.0,
-                                    //   ),
-                                    //   borderRadius: BorderRadius.circular(25.0),
-                                    // ),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: widget.channelList[index]['isFocused']
-                    ? primaryColor
-                    : Colors.transparent,
-                width: 10.0,
-              ),
-            ),
-            child: Opacity(
-              opacity: widget.channelList[index]['isFocused'] ? 1 : 0.7,
-              child: Image.network(
-                                          widget.channelList[index]['banner'] ??
-                                              '',
-                                          fit: BoxFit.cover,
-                                          width: widget.channelList[index]
-                                                  ['isFocused']
-                                              ? screenwdt * 0.3
-                    : screenwdt * 0.27,
-                height: widget.channelList[index]
-                                                  ['isFocused']
-                    ? screenhgt * 0.23
-                    : screenhgt * 0.2,
-                                        ),
-                                      ),
-                                    ),
-                                  
-                                
-                            
+                              AnimatedContainer(
+                                width: widget.channelList[index]['isFocused']
+                                    ? screenwdt * 0.3
+                                    : screenwdt * 0.27,
+                                height: widget.channelList[index]['isFocused']
+                                    ? screenhgt * 0.23
+                                    : screenhgt * 0.2,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                // decoration: BoxDecoration(
+                                //   border: Border.all(
+                                //     color: widget.channelList[index]['isFocused']
+                                //         ? Color.fromARGB(255, 106, 235, 20)
+                                //         : Colors.transparent,
+                                //     width: 5.0,
+                                //   ),
+                                //   borderRadius: BorderRadius.circular(25.0),
+                                // ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: widget.channelList[index]
+                                            ['isFocused']
+                                        ? primaryColor
+                                        : Colors.transparent,
+                                    width: 10.0,
+                                  ),
+                                ),
+                               
+                                  child: Image.network(
+                                    widget.channelList[index]['banner'] ?? '',
+                                    fit: BoxFit.cover,
+                                    width: widget.channelList[index]
+                                            ['isFocused']
+                                        ? screenwdt * 0.3
+                                        : screenwdt * 0.27,
+                                    height: widget.channelList[index]
+                                            ['isFocused']
+                                        ? screenhgt * 0.23
+                                        : screenhgt * 0.2,
+                                  ),
+                              ),
+
                               // Container(
                               //   width: widget.channelList[index]['isFocused']
                               //       ? 180
@@ -356,8 +344,3 @@ class _VideoScreenState extends State<VideoScreen> {
     );
   }
 }
-
-
-
-
-

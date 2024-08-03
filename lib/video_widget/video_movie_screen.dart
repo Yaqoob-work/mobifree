@@ -206,7 +206,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
                                   _controller,
                                   allowScrubbing: true,
                                   colors: VideoProgressColors(
-                                      playedColor: primaryColor,
+                                      playedColor: borderColor,
                                       bufferedColor: Colors.grey,
                                       backgroundColor: highlightColor),
                                 ),
