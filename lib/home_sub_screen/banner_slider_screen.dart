@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -8,12 +7,12 @@ import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_movie_screen.dart';
 
-class BannerSliderPage extends StatefulWidget {
+class BannerSlider extends StatefulWidget {
   @override
-  _BannerSliderPageState createState() => _BannerSliderPageState();
+  _BannerSliderState createState() => _BannerSliderState();
 }
 
-class _BannerSliderPageState extends State<BannerSliderPage> {
+class _BannerSliderState extends State<BannerSlider> {
   List<dynamic> bannerList = [];
   bool isLoading = true;
   String errorMessage = '';
@@ -155,18 +154,18 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
         if (filteredData != null) {
           final videoUrl = filteredData['url'] ?? '';
           if (filteredData['stream_type'] == 'YoutubeLive') {
-      final response = await http.get(
-        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-            filteredData['url']!),
-        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      );    
-      if (response.statusCode == 200) {
-        filteredData['url'] = json.decode(response.body)['url'];
-        filteredData['stream_type'] = "M3u8";
-      } else {
-        throw Exception('Failed to load networks');
-      }
-    }
+            final response = await http.get(
+              Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                  filteredData['url']!),
+              headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+            );
+            if (response.statusCode == 200) {
+              filteredData['url'] = json.decode(response.body)['url'];
+              filteredData['stream_type'] = "M3u8";
+            } else {
+              throw Exception('Failed to load networks');
+            }
+          }
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -174,7 +173,8 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                 videoUrl: videoUrl,
                 videoTitle: filteredData['title'] ?? 'No Title',
                 channelList: [], videoType: '',
-                 videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', url: '', type: '',
+                videoBanner: '', onFabFocusChanged: (bool focused) {},
+                genres: '', url: '', type: '',
                 // onFabFocusChanged: (bool focused) {},
                 // genres: '',
                 // videoBanner: '',
@@ -230,14 +230,11 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                             final banner = bannerList[index];
                             return Stack(
                               children: [
-                                
                                 Container(
                                   margin: EdgeInsets.all(screenhgt * 0.05),
                                   width: MediaQuery.of(context).size.width,
-                                  height:
-                                      screenhgt* 0.6,
+                                  height: screenhgt * 0.5,
                                   child: GestureDetector(
-                                    
                                     onTap: () {
                                       if (selectedContentId != null) {
                                         fetchAndPlayVideo(selectedContentId!);
@@ -245,15 +242,15 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                     },
                                     child: Container(
                                       decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: _isSmallBannerFocused 
-                                            // &&
-                                                    // _focusedSmallBannerIndex ==index
-                                                ? hintColor
-                                                : Colors.transparent,
-                                            width: 3.0,
-                                          ),
+                                        border: Border.all(
+                                          color: _isSmallBannerFocused
+                                              // &&
+                                              // _focusedSmallBannerIndex ==index
+                                              ? hintColor
+                                              : Colors.transparent,
+                                          width: 3.0,
                                         ),
+                                      ),
                                       child: Image.network(
                                         banner['banner'] ?? '',
                                         fit: BoxFit.cover,
@@ -277,16 +274,17 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                                   ),
                                 ),
                                 Positioned(
-                                  top: screenhgt * 0.1,
-                                  left: screenwdt * 0.12,
+                                  top: screenhgt * 0.05,
+                                  left: screenwdt * 0.1,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10.0, vertical: 5.0),
                                     child: Text(
-                                      (banner['title'] ??
-                                          'No Title').toString().toUpperCase(), // Handle null title here
-                                      style:  TextStyle(
-                                        color: hintColor ,
+                                      (banner['title'] ?? 'No Title')
+                                          .toString()
+                                          .toUpperCase(), // Handle null title here
+                                      style: TextStyle(
+                                        color: hintColor,
                                         fontSize: 30.0,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -298,454 +296,76 @@ class _BannerSliderPageState extends State<BannerSliderPage> {
                           },
                         ),
                         Positioned(
-  top: screenhgt * 0.65,
-  left: screenwdt * 0.05,
-  right:screenwdt * 0.05,
-  child: Container(
-    color: cardColor,
-    height: screenhgt * 0.15,
-    child: ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: bannerList.length,
-      itemBuilder: (context, index) {
-        final smallBanner = bannerList[index] ?? '';
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Focus(
-            focusNode: _smallBannerFocusNodes[index],
-            onFocusChange: (hasFocus) {
-              if (hasFocus) {
-                setState(() {
-                  _isSmallBannerFocused = true;
-                  _focusedSmallBannerIndex = index;
-                  _scrollToSmallBanner(index);
-                });
-              } else {
-                setState(() {
-                  _isSmallBannerFocused = false;
-                });
-              }
-            },
-            onKeyEvent: (node, event) {
-              if (event is KeyDownEvent &&
-                  event.logicalKey == LogicalKeyboardKey.select) {
-                fetchAndPlayVideo(smallBanner['content_id'] ?? '');
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: GestureDetector(
-              onTap: () {
-                fetchAndPlayVideo(smallBanner['content_id'] ?? '');
-              },
-              child: Container(
-                width: screenhgt * 0.3, // Adjust the width as needed
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _isSmallBannerFocused && _focusedSmallBannerIndex == index
-                        ? hintColor
-                        : Colors.transparent,
-                    width: 3.0,
-                  ),
-                ),
-                child: CachedNetworkImage(
-                 imageUrl: smallBanner['banner'] ?? '',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    ),
-  ),
-),
-
+                          top: screenhgt * 0.55,
+                          left: screenwdt * 0.05,
+                          right: screenwdt * 0.05,
+                          child: Container(
+                            color: cardColor,
+                            height: screenhgt * 0.15,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: bannerList.length,
+                              itemBuilder: (context, index) {
+                                final smallBanner = bannerList[index] ?? '';
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      fetchAndPlayVideo(
+                                          smallBanner['content_id'] ?? '');
+                                    },
+                                    child: Focus(
+                                      focusNode: _smallBannerFocusNodes[index],
+                                      onFocusChange: (hasFocus) {
+                                        if (hasFocus) {
+                                          setState(() {
+                                            _isSmallBannerFocused = true;
+                                            _focusedSmallBannerIndex = index;
+                                            _scrollToSmallBanner(index);
+                                          });
+                                        } else {
+                                          setState(() {
+                                            _isSmallBannerFocused = false;
+                                          });
+                                        }
+                                      },
+                                      onKeyEvent: (node, event) {
+                                        if (event is KeyDownEvent &&
+                                            event.logicalKey ==
+                                                LogicalKeyboardKey.select) {
+                                          fetchAndPlayVideo(
+                                              smallBanner['content_id'] ?? '');
+                                          return KeyEventResult.handled;
+                                        }
+                                        return KeyEventResult.ignored;
+                                      },
+                                      child: Container(
+                                        width: screenhgt *
+                                            0.3, // Adjust the width as needed
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: _isSmallBannerFocused &&
+                                                    _focusedSmallBannerIndex ==
+                                                        index
+                                                ? hintColor
+                                                : Colors.transparent,
+                                            width: 3.0,
+                                          ),
+                                        ),
+                                        child: Image.network(
+                                          smallBanner['banner'] ?? '',
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                       ],
                     ),
     );
   }
 }
-
-// class VideoScreen extends StatefulWidget {
-//   final String videoUrl;
-//   final String videoTitle;
-//   final List<dynamic> channelList;
-//   final Function(bool) onFabFocusChanged; // Callback to notify FAB focus change
-
-//   VideoScreen({
-//     required this.videoUrl,
-//     required this.videoTitle,
-//     required this.channelList,
-//     required this.onFabFocusChanged,
-//     required String genres,
-//   });
-
-//   @override
-//   _VideoScreenState createState() => _VideoScreenState();
-// }
-
-// class _VideoScreenState extends State<VideoScreen> {
-//   late VideoPlayerController _controller;
-//   late Future<void> _initializeVideoPlayerFuture;
-//   bool isGridVisible = false;
-//   int selectedIndex = -1;
-//   bool isFullScreen = false;
-//   double volume = 0.5;
-//   bool isVolumeControlVisible = false;
-//   Timer? _hideVolumeControlTimer;
-//   Timer? _inactivityTimer; // Timer to track inactivity
-//   List<FocusNode> focusNodes = [];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _controller = VideoPlayerController.network(widget.videoUrl);
-//     _initializeVideoPlayerFuture = _controller.initialize();
-//     _controller.setLooping(true);
-//     _controller.play();
-//     _controller.setVolume(volume);
-
-//     // Initialize focus nodes for each channel item
-//     focusNodes =
-//         List.generate(widget.channelList.length, (index) => FocusNode());
-
-//     // Initialize isFocused to false for each channel
-//     widget.channelList.forEach((channel) {
-//       if (channel['isFocused'] == null) {
-//         channel['isFocused'] = false;
-//       }
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     _controller.dispose();
-//     _hideVolumeControlTimer?.cancel();
-//     _inactivityTimer?.cancel(); // Cancel the inactivity timer
-//     for (var node in focusNodes) {
-//       node.dispose();
-//     }
-//     super.dispose();
-//   }
-
-//   void toggleGridVisibility() {
-//     setState(() {
-//       isGridVisible = !isGridVisible;
-//       if (isGridVisible) {
-//         _resetInactivityTimer(); // Start the inactivity timer when grid is visible
-//       }
-//     });
-//   }
-
-//   void toggleFullScreen() {
-//     setState(() {
-//       isFullScreen = !isFullScreen;
-//     });
-//   }
-
-//   void _onItemFocus(int index, bool hasFocus) {
-//     setState(() {
-//       widget.channelList[index]['isFocused'] = hasFocus;
-//       if (hasFocus) {
-//         selectedIndex = index;
-//         _resetInactivityTimer(); // Reset inactivity timer on focus change
-//       } else if (selectedIndex == index) {
-//         selectedIndex = -1;
-//       }
-//     });
-//   }
-
-//   void _onItemTap(int index) {
-//     setState(() {
-//       selectedIndex = index;
-//     });
-
-//     String selectedUrl = widget.channelList[index]['url'] ?? '';
-//     _controller.pause();
-//     _controller = VideoPlayerController.network(selectedUrl);
-//     _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-//       setState(() {});
-//       _controller.play();
-//       _controller.setVolume(volume);
-//     });
-//   }
-
-//   void _showVolumeControl() {
-//     setState(() {
-//       isVolumeControlVisible = true;
-//     });
-
-//     _hideVolumeControlTimer?.cancel();
-//     _hideVolumeControlTimer = Timer(const Duration(seconds: 3), () {
-//       setState(() {
-//         isVolumeControlVisible = false;
-//       });
-//     });
-//   }
-
-//   void _resetInactivityTimer() {
-//     _inactivityTimer?.cancel();
-//     _inactivityTimer = Timer(const Duration(seconds: 10), () {
-//       setState(() {
-//         isGridVisible = false;
-//       });
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       body: Stack(
-//         children: [
-//           FutureBuilder(
-//             future: _initializeVideoPlayerFuture,
-//             builder: (context, snapshot) {
-//               if (snapshot.connectionState == ConnectionState.done) {
-//                 return Center(
-//                   child: AspectRatio(
-//                     aspectRatio: 16 / 9,
-//                     child: Stack(
-//                       alignment: Alignment.bottomCenter,
-//                       children: [
-//                         VideoPlayer(_controller),
-//                         Positioned(
-//                           left: 0,
-//                           right: 0,
-//                           bottom: 0,
-//                           child: LinearProgressIndicator(
-//                             value: _controller.value.position.inSeconds /
-//                                 _controller.value.duration.inSeconds,
-//                             backgroundColor: Colors.transparent,
-//                             valueColor: const AlwaysStoppedAnimation<Color>(
-//                                 Colors.grey),
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 );
-//               } else {
-//                 return const Center(child: CircularProgressIndicator());
-//               }
-//             },
-//           ),
-//           if (!isFullScreen)
-//             Positioned(
-//               bottom: 30,
-//               left: 20,
-//               right: 20,
-//               child: Column(
-//                 children: [
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     children: [
-//                       IconButton(
-//                         icon: Icon(
-//                           _controller.value.isPlaying
-//                               ? Icons.pause
-//                               : Icons.play_arrow,
-//                         ),
-//                         onPressed: () {
-//                           setState(() {
-//                             if (_controller.value.isPlaying) {
-//                               _controller.pause();
-//                             } else {
-//                               _controller.play();
-//                             }
-//                           });
-//                         },
-//                       ),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 20),
-//                   if (isVolumeControlVisible)
-//                     Row(
-//                       children: [
-//                         const Icon(Icons.volume_up),
-//                         Expanded(
-//                           child: Slider(
-//                             value: volume,
-//                             min: 0,
-//                             max: 1,
-//                             onChanged: (value) {
-//                               setState(() {
-//                                 volume = value;
-//                                 _controller.setVolume(volume);
-//                                 _showVolumeControl();
-//                               });
-//                             },
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                 ],
-//               ),
-//             ),
-//           // AnimatedPositioned(
-//           //   duration: const Duration(milliseconds: 300),
-//           //   bottom: isGridVisible ? 230 : 20,
-//           //   right: 20,
-//           //   child: FloatingActionButton(
-//           //     onPressed: toggleGridVisibility,
-//           //     child: Icon(isGridVisible ? Icons.close : Icons.grid_view),
-//           //   ),
-//           // ),
-//           // if (isGridVisible)
-//           //   Positioned(
-//           //     bottom: 0,
-//           //     left: 0,
-//           //     right: 0,
-//           //     child: Container(
-//           //       height: 220,
-//           //       color: Colors.black87,
-//           //       child: ListView.builder(
-//           //         scrollDirection: Axis.horizontal,
-//           //         itemCount: widget.channelList.length,
-//           //         itemBuilder: (context, index) {
-//           //           return GestureDetector(
-//           //             onTap: () => _onItemTap(index),
-//           //             child: ClipRRect(
-//           //               borderRadius: BorderRadius.circular(50.0),
-//           //               child: Focus(
-//           //                 focusNode: focusNodes[index],
-//           //                 onKey: (FocusNode node, RawKeyEvent event) {
-//           //                   if (event is RawKeyDownEvent &&
-//           //                       (event.logicalKey ==
-//           //                               LogicalKeyboardKey.select ||
-//           //                           event.logicalKey ==
-//           //                               LogicalKeyboardKey.enter)) {
-//           //                     _onItemTap(index);
-//           //                     return KeyEventResult.handled;
-//           //                   }
-//           //                   _resetInactivityTimer(); // Reset inactivity timer on key event
-//           //                   return KeyEventResult.ignored;
-//           //                 },
-//           //                 onFocusChange: (hasFocus) {
-//           //                   _onItemFocus(index, hasFocus);
-//           //                 },
-//           //                 child: Column(
-//           //                   mainAxisAlignment: MainAxisAlignment.center,
-//           //                   crossAxisAlignment: CrossAxisAlignment.center,
-//           //                   children: [
-//           //                     Padding(
-//           //                       padding: const EdgeInsets.symmetric(
-//           //                           horizontal: 20.0),
-//           //                       child: Container(
-//           //                         width: widget.channelList[index]['isFocused']
-//           //                             ? 210
-//           //                             : 140,
-//           //                         height: widget.channelList[index]['isFocused']
-//           //                             ? 160
-//           //                             : 140,
-//           //                         child: AnimatedContainer(
-//           //                           width: widget.channelList[index]
-//           //                                   ['isFocused']
-//           //                               ? 200
-//           //                               : 100,
-//           //                           height: widget.channelList[index]
-//           //                                   ['isFocused']
-//           //                               ? 150
-//           //                               : 100,
-//           //                           duration: const Duration(milliseconds: 300),
-//           //                           curve: Curves.easeInOut,
-//           //                           // decoration: BoxDecoration(
-//           //                           //   border: Border.all(
-//           //                           //     color: widget.channelList[index]['isFocused']
-//           //                           //         ? Color.fromARGB(255, 106, 235, 20)
-//           //                           //         : Colors.transparent,
-//           //                           //     width: 5.0,
-//           //                           //   ),
-//           //                           //   borderRadius: BorderRadius.circular(25.0),
-//           //                           // ),
-//           //                           child: ContainerGradientBorder(
-//           //                             width: widget.channelList[index]
-//           //                                     ['isFocused']
-//           //                                 ? 190
-//           //                                 : 110,
-//           //                             height: widget.channelList[index]
-//           //                                     ['isFocused']
-//           //                                 ? 140
-//           //                                 : 110,
-//           //                             start: Alignment.topLeft,
-//           //                             end: Alignment.bottomRight,
-//           //                             borderWidth: 7,
-//           //                             colorList: widget.channelList[index]
-//           //                                     ['isFocused']
-//           //                                 ? [
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                     primaryColor,
-//           //                                     highlightColor,
-//           //                                   ]
-//           //                                 : [
-//           //                                     primaryColor,
-//           //                                     highlightColor
-//           //                                   ],
-//           //                             borderRadius: 14,
-//           //                             child: ClipRRect(
-//           //                               borderRadius: BorderRadius.circular(10),
-//           //                               child: Image.network(
-//           //                                 widget.channelList[index]['banner'] ??
-//           //                                     '',
-//           //                                 fit: BoxFit.cover,
-//           //                                 width: widget.channelList[index]
-//           //                                         ['isFocused']
-//           //                                     ? 180
-//           //                                     : 100,
-//           //                                 height: widget.channelList[index]
-//           //                                         ['isFocused']
-//           //                                     ? 130
-//           //                                     : 100,
-//           //                               ),
-//           //                             ),
-//           //                           ),
-//           //                         ),
-//           //                       ),
-//           //                     ),
-//           //                     Container(
-//           //                       width: widget.channelList[index]['isFocused']
-//           //                           ? 180
-//           //                           : 100,
-//           //                       child: Text(
-//           //                         widget.channelList[index]['name'] ??
-//           //                             'Unknown',
-//           //                         style: TextStyle(
-//           //                           color: widget.channelList[index]
-//           //                                   ['isFocused']
-//           //                               ? Color.fromARGB(255, 106, 235, 20)
-//           //                               : Colors.white.withOpacity(0.6),
-//           //                           fontSize: 20.0,
-//           //                         ),
-//           //                         maxLines: 1,
-//           //                         textAlign: TextAlign.center,
-//           //                         overflow: TextOverflow.ellipsis,
-//           //                       ),
-//           //                     ),
-//           //                   ],
-//           //                 ),
-//           //               ),
-//           //             ),
-//           //           );
-//           //         },
-//           //       ),
-//           //     ),
-//           //   ),
-//         ],
-//       ),
-//     );
-//   }
-// }

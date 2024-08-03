@@ -6,20 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-import 'package:flutter/material.dart';
-import 'dart:io';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-}
 
 void main() {
-  HttpOverrides.global = MyHttpOverrides();
   runApp(HomeCategory());
 }
 
@@ -85,6 +74,8 @@ class _HomeCategoryState extends State<HomeCategory> {
   }
 }
 
+
+
 class CategoryWidget extends StatelessWidget {
   final Category category;
 
@@ -98,47 +89,62 @@ class CategoryWidget extends StatelessWidget {
     return filteredChannels.isNotEmpty
         ? Container(
             color: cardColor,
-           child:  Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (category.text).toUpperCase(),
-                    style:  TextStyle(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Text(
+                    category.text.toUpperCase(),
+                    style: TextStyle(
                       color: hintColor,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(
-                    height: screenhgt * 0.3,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: filteredChannels.length,
-                      itemBuilder: (context, index) {
-                        return ChannelWidget(
-                          channel: filteredChannels[index],
-                          onTap: () {
-   
-
-                            
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VideoScreen(
-                                  channels: filteredChannels,
-                                  initialIndex: index, 
-                                  // videoUrl: '', videoTitle: '', channelList: [], onFabFocusChanged: (bool ) {  }, genres: '', url: null, playUrl: '', playVideo: (String id) {  }, id: '',
-                                ),
-                              ),
+                ),
+                SizedBox(
+                  height: screenhgt * 0.3,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: filteredChannels.length,
+                    itemBuilder: (context, index) {
+                      return ChannelWidget(
+                        channel: filteredChannels[index],
+                        onTap: () async {
+                          if (filteredChannels[index].streamType == 'YoutubeLive') {
+                            final response = await http.get(
+                              Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                  filteredChannels[index].url),
+                              headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
                             );
-                          },
-                        );
-                      },
-                    ),
+
+                            if (response.statusCode == 200 &&
+                                json.decode(response.body)['url'] != '') {
+                              filteredChannels[index].url = json.decode(response.body)['url'];
+                              filteredChannels[index].streamType = "M3u8";
+                            } else {
+                              throw Exception('Failed to load networks');
+                            }
+                          }
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VideoScreen(
+                                channels: filteredChannels,
+                                initialIndex: index,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
-                ],
-              ),
-        )
+                ),
+              ],
+            ),
+          )
         : const SizedBox.shrink();
   }
 }
@@ -272,13 +278,13 @@ class Category {
     );
   }
 }
-
 class Channel {
   final String id;
   final String name;
   final String banner;
   final String genres;
-  final String url;
+   String url;
+   String streamType; // Add this line
 
   Channel({
     required this.id,
@@ -286,6 +292,7 @@ class Channel {
     required this.banner,
     required this.genres,
     required this.url,
+    required this.streamType, // Add this line
   });
 
   factory Channel.fromJson(Map<String, dynamic> json) {
@@ -295,10 +302,10 @@ class Channel {
       banner: json['banner'],
       genres: json['genres'],
       url: json['url'] ?? '', // Default empty string if 'url' is null
+      streamType: json['stream_type'] ?? '', // Add this line to handle stream_type
     );
   }
 }
-
 
 
 
@@ -434,6 +441,24 @@ class _VideoScreenState extends State<VideoScreen> {
   //       throw Exception('Failed to load networks');
   //     }
   //   }
+
+ if (channel.streamType == 'YoutubeLive') {
+                            final response = await http.get(
+                              Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                  channel.url),
+                              headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                            );
+
+                            if (response.statusCode == 200 &&
+                                json.decode(response.body)['url'] != '') {
+                              channel.url = json.decode(response.body)['url'];
+                              channel.streamType = "M3u8";
+                            } else {
+                              throw Exception('Failed to load networks');
+                            }
+                          }
+
+
 
                                       Navigator.pushReplacement(
                                         context,

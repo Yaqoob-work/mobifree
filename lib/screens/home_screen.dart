@@ -4,20 +4,9 @@ import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:flutter/material.dart';
-import 'dart:io';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-}
 
 void main() {
-  HttpOverrides.global = MyHttpOverrides();
   runApp(HomeScreen());
 }
 
@@ -69,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cardColor,
       body: SingleChildScrollView(
         controller: _scrollController,
         child: Column(
@@ -81,8 +70,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Container(
-              height: MediaQuery.of(context).size.height * 0.82,
-              child: BannerSliderPage(),
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: BannerSlider(),
             ),
 
             
@@ -98,15 +87,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                                Container(
                                 
-                                 child: Text(
-                                  "NETWORK",
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
-                                                             ),
+                                 child: Padding(
+                                   padding: const EdgeInsets.only(left: 10),
+                                   child: Text(
+                                    "NETWORK",
+                                    textAlign: TextAlign.left,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: hintColor,
+                                    ),
+                                                               ),
+                                 ),
                                ),
                               Text('')
                             ],
@@ -134,14 +126,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           
                             children: [
-                               Text(
-                                "LIVE",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color:primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                               Padding(
+                                 padding: const EdgeInsets.only(left: 10),
+                                 child: Text(
+                                  "LIVE",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color:hintColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                                               ),
+                               ),
                               Text('')
                             ],
                           ),

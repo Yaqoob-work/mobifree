@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
@@ -22,6 +23,8 @@ class VideoScreen extends StatefulWidget {
     required this.channelList,
     required this.onFabFocusChanged,
     required String genres,
+     required List<Channel> channels,
+      required int initialIndex,
   });
 
   @override
