@@ -127,7 +127,7 @@ class CategoryWidget extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (context) => VideoScreen(
                                 channels: filteredChannels,
-                                initialIndex: index,
+                                initialIndex: index, videoUrl: null, videoTitle: null,
                               ),
                             ),
                           );
@@ -294,7 +294,7 @@ class VideoScreen extends StatefulWidget {
 
   VideoScreen({
     required this.channels,
-    required this.initialIndex,
+    required this.initialIndex, required videoUrl, required videoTitle,
   });
 
   @override
@@ -307,7 +307,7 @@ class _VideoScreenState extends State<VideoScreen> {
   String _errorMessage = '';
   bool showChannels = false;
   int currentIndex = 0;
-   FocusNode _fabFocusNode = FocusNode();
+  FocusNode _fabFocusNode = FocusNode();
   bool _isFabFocusNode = false;
   Timer? _inactivityTimer;
 
@@ -337,6 +337,8 @@ class _VideoScreenState extends State<VideoScreen> {
   void _onfabFocusNode() {
     setState(() {
       _isFabFocusNode = _fabFocusNode.hasFocus;
+      _isFabFocusNode = true;
+      
     });
   }
 
@@ -455,7 +457,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                         MaterialPageRoute(
                                           builder: (context) => VideoScreen(
                                             channels: widget.channels,
-                                            initialIndex: index,
+                                            initialIndex: index, videoUrl: null, videoTitle: null,
                                           ),
                                         ),
                                       );
@@ -470,32 +472,25 @@ class _VideoScreenState extends State<VideoScreen> {
                       Positioned(
                         right: 16,
                         bottom: showChannels ? 220 : 16,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GestureDetector(
-                            onTap: (){
+
+                        child: IconButton(
+                          color: hintColor,
+                          // backgroundColor: _isFabFocusNode
+                          //         ? borderColor
+                          //         : Colors.transparent,
+                          focusColor: Colors.black54,
+                          onPressed: () {
+                            setState((hasFocus) {
                               showChannels = !showChannels;
-                            },
-                            child: Focus(
-                              focusNode: _fabFocusNode,
-                              child: IconButton(
-                                color: _isFabFocusNode?borderColor:Colors.transparent,
-                                // backgroundColor: _isFabFocusNode
-                                //         ? borderColor
-                                //         : Colors.transparent,
-                                onPressed: () {
-                                  setState((hasFocus) {
-                                    showChannels = !showChannels;
-                                    _isFabFocusNode = hasFocus;
-                                  } as VoidCallback);
-                                },
-                                icon: Icon(
-                                  
-                                    showChannels ? Icons.close : Icons.grid_view),
-                              ),
-                            ),
-                          ),
+                              _isFabFocusNode = hasFocus;
+                            } as VoidCallback);
+                          },
+                          icon: Icon(
+                              showChannels ? Icons.close : Icons.grid_view),
                         ),
+                        // ),
+                        // ),
+                        // ),
                       ),
                     ],
                   )

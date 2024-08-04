@@ -38,21 +38,15 @@ class _VideoScreenState extends State<VideoScreen> {
   List<FocusNode> focusNodes = [];
   FocusNode fabFocusNode = FocusNode();
    FocusNode _focusNode = FocusNode();
-  Color _backgroundColor = Colors.transparent; // Default background color
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl);
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
     _initializeVideoPlayerFuture = _controller.initialize();
     _controller.setLooping(true);
     _controller.play();
-    _controller.setVolume(volume);
-_focusNode.addListener(() {
-      setState(() {
-        _backgroundColor = _focusNode.hasFocus ? borderColor : Colors.transparent;
-      });
-    });
+
     // Initialize focus nodes for each channel item
     focusNodes =
         List.generate(widget.channelList.length, (index) => FocusNode());
@@ -68,7 +62,6 @@ _focusNode.addListener(() {
   @override
   void dispose() {
     _controller.dispose();
-    _hideVolumeControlTimer?.cancel();
     _inactivityTimer?.cancel(); // Cancel the inactivity timer
     for (var node in focusNodes) {
       node.dispose();
@@ -120,18 +113,7 @@ _focusNode.addListener(() {
     });
   }
 
-  // void _showVolumeControl() {
-  //   setState(() {
-  //     isVolumeControlVisible = true;
-  //   });
-
-  //   _hideVolumeControlTimer?.cancel();
-  //   _hideVolumeControlTimer = Timer(const Duration(seconds: 3), () {
-  //     setState(() {
-  //       isVolumeControlVisible = false;
-  //     });
-  //   });
-  // }
+ 
 
   void _resetInactivityTimer() {
     _inactivityTimer?.cancel();
@@ -180,76 +162,18 @@ _focusNode.addListener(() {
               }
             },
           ),
-          // if (!isFullScreen)
-          //   Positioned(
-          //     bottom: 30,
-          //     left: 20,
-          //     right: 20,
-          //     child: Column(
-          //       children: [
-          //         Row(
-          //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //           children: [
-          //             IconButton(
-          //               icon: Icon(
-          //                 _controller.value.isPlaying
-          //                     ? Icons.pause
-          //                     : Icons.play_arrow,
-          //               ),
-          //               onPressed: () {
-          //                 setState(() {
-          //                   if (_controller.value.isPlaying) {
-          //                     _controller.pause();
-          //                   } else {
-          //                     _controller.play();
-          //                   }
-          //                 });
-          //               },
-          //             ),
-          //           ],
-          //         ),
-          //         // const SizedBox(height: 20),
-          //         // if (isVolumeControlVisible)
-          //         //   Row(
-          //         //     children: [
-          //         //       const Icon(Icons.volume_up),
-          //         //       Expanded(
-          //         //         child: Slider(
-          //         //           value: volume,
-          //         //           min: 0,
-          //         //           max: 1,
-          //         //           onChanged: (value) {
-          //         //             setState(() {
-          //         //               volume = value;
-          //         //               _controller.setVolume(volume);
-          //         //               _showVolumeControl();
-          //         //             });
-          //         //           },
-          //         //         ),
-          //         //       ),
-          //         //     ],
-          //         //   ),
-          //       ],
-          //     ),
-          //   ),
+          
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             bottom: isGridVisible ? 210 : 20,
             right: 20,
-            
-              child: Focus(
-focusNode: _focusNode,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _backgroundColor,
-                  ),
+         
                   child: IconButton(
-                    focusColor: borderColor ,
+                    focusColor: Colors.black26 ,
                     onPressed: toggleGridVisibility,
                     icon: Icon(isGridVisible ? Icons.close : Icons.grid_view),
                   ),
-                ),
-              ),
+              
           ),
           if (isGridVisible)
             Positioned(

@@ -88,46 +88,54 @@ class _SearchScreenState extends State<SearchScreen> {
       return [];
     }
   }
+void _performSearch(String searchTerm) {
+  if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-  void _performSearch(String searchTerm) {
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
-
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
-      setState(() {
-        isLoading = true;
-        searchResults.clear();
-        _itemFocusNodes.clear(); // Clear previous nodes
-      });
-
-      try {
-        final api1Results = await _fetchFromApi1(searchTerm);
-        final api2Results = await _fetchFromApi2(searchTerm);
-
-        setState(() {
-          searchResults = [...api1Results, ...api2Results];
-          _itemFocusNodes.addAll(List.generate(
-            searchResults.length,
-            (index) => FocusNode(),
-          ));
-          isLoading = false;
-        });
-
-        // Schedule focus request after build
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
-            FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
-          }
-        });
-
-      } catch (e) {
-        print('Error fetching data: $e');
-        setState(() {
-          isLoading = false;
-        });
-      }
+  // Check if the search term is empty or contains only whitespace
+  if (searchTerm.trim().isEmpty) {
+    setState(() {
+      isLoading = false;
+      searchResults.clear(); // Clear the results if the search term is empty
+      _itemFocusNodes.clear(); // Clear previous nodes
     });
+    return; // Exit the function early
   }
 
+  _debounce = Timer(const Duration(milliseconds: 300), () async {
+    setState(() {
+      isLoading = true;
+      searchResults.clear();
+      _itemFocusNodes.clear(); // Clear previous nodes
+    });
+
+    try {
+      final api1Results = await _fetchFromApi1(searchTerm);
+      final api2Results = await _fetchFromApi2(searchTerm);
+
+      setState(() {
+        searchResults = [...api1Results, ...api2Results];
+        _itemFocusNodes.addAll(List.generate(
+          searchResults.length,
+          (index) => FocusNode(),
+        ));
+        isLoading = false;
+      });
+
+      // Schedule focus request after build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
+          FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
+        }
+      });
+
+    } catch (e) {
+      print('Error fetching data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  });
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
