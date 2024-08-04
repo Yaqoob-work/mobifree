@@ -450,13 +450,17 @@ class DetailsPage extends StatelessWidget {
             } else {
               final movieDetails = snapshot.data!;
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(height: screenhgt * 0.5,
+                  Container(
+                    height: screenhgt * 0.5,
+                    width: screenwdt ,
                   alignment: Alignment.center,
                   child: Image.network(
                     movieDetails.poster,
-                    fit: BoxFit.contain,
+                    fit: BoxFit.cover,
+                    height: screenhgt * 0.5,
+                    width: screenwdt ,
                   ),
                   ),
                   Center(

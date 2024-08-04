@@ -19,35 +19,14 @@ class _BannerSliderState extends State<BannerSlider> {
   late PageController _pageController;
   late Timer _timer;
   String? selectedContentId;
-  FocusNode _fabFocusNode = FocusNode();
-  FocusNode _titleFocusNode = FocusNode();
+  // FocusNode _fabFocusNode = FocusNode();
   FocusNode _emptytextFocusNode = FocusNode();
   bool _isemptytextFocusNode = false;
-  bool _isTitleFocused = false;
   List<FocusNode> _smallBannerFocusNodes = [];
   bool _isSmallBannerFocused = false;
   int _focusedSmallBannerIndex = 0;
   bool _isPageViewBuilt = false;
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _pageController = PageController();
-  //   fetchBanners();
-  //   _startAutoSlide();
-  //   _titleFocusNode.addListener(_onTitleFocusChange);
-  // }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _timer.cancel();
-    _fabFocusNode.dispose();
-    _titleFocusNode.dispose();
-    _emptytextFocusNode.dispose();
-    _smallBannerFocusNodes.forEach((node) => node.dispose());
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -56,12 +35,21 @@ class _BannerSliderState extends State<BannerSlider> {
     fetchBanners();
     setState(() {
       _isPageViewBuilt = true;
+      
     });
     _startAutoSlide();
-    _titleFocusNode.addListener(_onTitleFocusChange);
-    _emptytextFocusNode.addListener(_onTitleFocusChange);
-    _smallBannerFocusNodes =
-        List.generate(bannerList.length, (_) => FocusNode());
+    _emptytextFocusNode.addListener(_onemptytextFocusNode);
+    _smallBannerFocusNodes = List.generate(bannerList.length, (_) => FocusNode());
+  }
+
+   @override
+  void dispose() {
+    _pageController.dispose();
+    _timer.cancel();
+    // _fabFocusNode.dispose();
+    _emptytextFocusNode.dispose();
+    _smallBannerFocusNodes.forEach((node) => node.dispose());
+    super.dispose();
   }
 
   void _onemptytextFocusNode() {
@@ -70,11 +58,7 @@ class _BannerSliderState extends State<BannerSlider> {
     });
   }
 
-  void _onTitleFocusChange() {
-    setState(() {
-      _isTitleFocused = _titleFocusNode.hasFocus;
-    });
-  }
+
 
   void _startAutoSlide() {
     if (_isPageViewBuilt) {
@@ -262,7 +246,7 @@ class _BannerSliderState extends State<BannerSlider> {
                                 Positioned(
                                   top: 0,
                                   child: Focus(
-                                    focusNode: _titleFocusNode,
+                                    focusNode: _emptytextFocusNode,
                                     onFocusChange: (hasFocus) {
                                       setState(() {
                                         _isemptytextFocusNode = hasFocus;

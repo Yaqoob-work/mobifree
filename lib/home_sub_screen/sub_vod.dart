@@ -320,52 +320,62 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
 }
 
 // Pages
-class SubVod extends StatelessWidget {
+class SubVod extends StatefulWidget {
+  @override
+  _SubVodState createState() => _SubVodState();
+}
+
+class _SubVodState extends State<SubVod> {
+  late Future<List<NetworkApi>> _networksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _networksFuture = fetchNetworks();
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('Building SubVod'); // Debug print
     return Scaffold(
       backgroundColor: cardColor,
-      body: 
-      // Padding(
-        // padding: const EdgeInsets.all(20.0),
-        // child:
-         FutureBuilder<List<NetworkApi>>(
-          future: fetchNetworks(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Failed to load networks'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Center(child: Text('No networks available'));
-            } else {
-              return ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final network = snapshot.data![index];
-                  return FocusableGridItem(
-                    network: network,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NetworkContentsScreen(
-                            network: network,
-                          ),
+      body: FutureBuilder<List<NetworkApi>>(
+        future: _networksFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Failed to load networks'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No networks available'));
+          } else {
+            return ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                final network = snapshot.data![index];
+                return FocusableGridItem(
+                  network: network,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NetworkContentsScreen(
+                          network: network,
                         ),
-                      );
-                    },
-                  );
-                },
-              );
-            }
-          },
-        ),
-      // ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          }
+        },
+      ),
     );
   }
 }
+
 
 class NetworkContentsScreen extends StatelessWidget {
   final NetworkApi network;
@@ -448,13 +458,17 @@ class DetailsPage extends StatelessWidget {
             } else {
               final movieDetails = snapshot.data!;
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(height: screenhgt * 0.5,
+                  Container(
+                    height: screenhgt * 0.5,
+                    width: screenwdt ,
                   alignment: Alignment.center,
                   child: Image.network(
                     movieDetails.poster,
-                    fit: BoxFit.contain,
+                    fit: BoxFit.cover,
+                    height: screenhgt * 0.5,
+                    width: screenwdt ,
                   ),
                   ),
                   Center(

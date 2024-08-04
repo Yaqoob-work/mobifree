@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,7 +17,9 @@ class VideoMovieScreen extends StatefulWidget {
       required String videoBanner,
       required Null Function(bool focused) onFabFocusChanged,
       required String genres,
-      required String videoType, required String url, required String type});
+      required String videoType,
+      required String url,
+      required String type});
 
   @override
   _VideoMovieScreenState createState() => _VideoMovieScreenState();

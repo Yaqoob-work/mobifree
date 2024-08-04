@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -6,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-
 
 void main() {
   runApp(HomeCategory());
@@ -26,11 +24,6 @@ class _HomeCategoryState extends State<HomeCategory> {
   void initState() {
     super.initState();
     _categories = fetchCategories();
-    //  WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   setState(() {
-    //     categoryheight = MediaQuery.of(context).size.height;
-    //   });
-    // });
   }
 
   Future<List<Category>> fetchCategories() async {
@@ -74,8 +67,6 @@ class _HomeCategoryState extends State<HomeCategory> {
   }
 }
 
-
-
 class CategoryWidget extends StatelessWidget {
   final Category category;
 
@@ -112,16 +103,19 @@ class CategoryWidget extends StatelessWidget {
                       return ChannelWidget(
                         channel: filteredChannels[index],
                         onTap: () async {
-                          if (filteredChannels[index].streamType == 'YoutubeLive') {
+                          if (filteredChannels[index].streamType ==
+                              'YoutubeLive') {
                             final response = await http.get(
-                              Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                  filteredChannels[index].url),
+                              Uri.parse(
+                                  'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                      filteredChannels[index].url),
                               headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
                             );
 
                             if (response.statusCode == 200 &&
                                 json.decode(response.body)['url'] != '') {
-                              filteredChannels[index].url = json.decode(response.body)['url'];
+                              filteredChannels[index].url =
+                                  json.decode(response.body)['url'];
                               filteredChannels[index].streamType = "M3u8";
                             } else {
                               throw Exception('Failed to load networks');
@@ -172,85 +166,70 @@ class _ChannelWidgetState extends State<ChannelWidget> {
             isFocused = hasFocus;
           });
         },
-        onKeyEvent : (node, event) {
-          if (event is KeyDownEvent  &&
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.select) {
             widget.onTap();
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;
         },
-         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
               // padding: EdgeInsets.all(10),
-margin: EdgeInsets.all(10),
-            child: AnimatedContainer(
-              // padding: EdgeInsets.all(10),
-              width: isFocused
-                  ? screenwdt * 0.35
-                  : screenwdt * 0.27,
-              height: isFocused
-                  ? screenhgt * 0.23
-                  : screenhgt * 0.2,
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  
-                  color: isFocused
-                      ? borderColor
-                      : hintColor,
-                  width: 5.0,
-                  
+              margin: EdgeInsets.all(10),
+              child: AnimatedContainer(
+                // padding: EdgeInsets.all(10),
+                width: isFocused ? screenwdt * 0.35 : screenwdt * 0.27,
+                height: isFocused ? screenhgt * 0.23 : screenhgt * 0.2,
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isFocused ? borderColor : hintColor,
+                    width: 5.0,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                    borderRadius: BorderRadius.circular(10),
-              ),
-              // child: Opacity(
-              //   opacity: isFocused ? 1 : 0.7,
-                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
-                     child: Material(
-                      elevation: 0,
-                       child: Image.network(
-                          widget.channel.banner,
-                          fit: BoxFit.cover,
-                          width: isFocused
-                                         ? screenwdt * 0.35
-                                         : screenwdt * 0.27,
-                                     height: isFocused
-                                         ? screenhgt * 0.23
-                                         : screenhgt * 0.2,
-                        ),
-                     ),
-                   ),
-                  // ),
-                   ),
-          ),
-              
-                // Container(
-                //     width: isFocused
-                // ? screenwdt * 0.3
-                // : screenwdt * 0.27,
-           
-
-                //   child: Text(
-                //     widget.channel.name,
-                //     style: TextStyle(
-                //       color: isFocused ?highlightColor : hintColor,
-                //       fontSize: 20,
-                //       fontWeight: FontWeight.bold,
-                //     ),
-                //     textAlign: TextAlign.center,
-                //     overflow: TextOverflow.ellipsis,
-                //     maxLines: 1,
-                //   ),
+                // child: Opacity(
+                //   opacity: isFocused ? 1 : 0.7,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: Material(
+                    elevation: 0,
+                    child: Image.network(
+                      widget.channel.banner,
+                      fit: BoxFit.cover,
+                      width: isFocused ? screenwdt * 0.35 : screenwdt * 0.27,
+                      height: isFocused ? screenhgt * 0.23 : screenhgt * 0.2,
+                    ),
+                  ),
+                ),
                 // ),
-            
-              
-            ],
-          ),
+              ),
+            ),
+
+            // Container(
+            //     width: isFocused
+            // ? screenwdt * 0.3
+            // : screenwdt * 0.27,
+
+            //   child: Text(
+            //     widget.channel.name,
+            //     style: TextStyle(
+            //       color: isFocused ?highlightColor : hintColor,
+            //       fontSize: 20,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //     textAlign: TextAlign.center,
+            //     overflow: TextOverflow.ellipsis,
+            //     maxLines: 1,
+            //   ),
+            // ),
+          ],
+        ),
       ),
     );
   }
@@ -278,13 +257,14 @@ class Category {
     );
   }
 }
+
 class Channel {
   final String id;
   final String name;
   final String banner;
   final String genres;
-   String url;
-   String streamType; // Add this line
+  String url;
+  String streamType; // Add this line
 
   Channel({
     required this.id,
@@ -302,12 +282,11 @@ class Channel {
       banner: json['banner'],
       genres: json['genres'],
       url: json['url'] ?? '', // Default empty string if 'url' is null
-      streamType: json['stream_type'] ?? '', // Add this line to handle stream_type
+      streamType:
+          json['stream_type'] ?? '', // Add this line to handle stream_type
     );
   }
 }
-
-
 
 class VideoScreen extends StatefulWidget {
   final List<Channel> channels;
@@ -328,7 +307,8 @@ class _VideoScreenState extends State<VideoScreen> {
   String _errorMessage = '';
   bool showChannels = false;
   int currentIndex = 0;
-  final FocusNode _fabFocusNode = FocusNode();
+   FocusNode _fabFocusNode = FocusNode();
+  bool _isFabFocusNode = false;
   Timer? _inactivityTimer;
 
   @override
@@ -338,10 +318,11 @@ class _VideoScreenState extends State<VideoScreen> {
     _initializeVideoPlayer(widget.channels[currentIndex].url);
 
     RawKeyboard.instance.addListener(_handleKeyEvent);
+    _fabFocusNode.addListener(_onfabFocusNode);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_fabFocusNode);
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   FocusScope.of(context).requestFocus(_fabFocusNode);
+    // });
   }
 
   @override
@@ -351,6 +332,12 @@ class _VideoScreenState extends State<VideoScreen> {
     RawKeyboard.instance.removeListener(_handleKeyEvent);
     _inactivityTimer?.cancel();
     super.dispose();
+  }
+
+  void _onfabFocusNode() {
+    setState(() {
+      _isFabFocusNode = _fabFocusNode.hasFocus;
+    });
   }
 
   void _handleKeyEvent(RawKeyEvent event) {
@@ -426,39 +413,42 @@ class _VideoScreenState extends State<VideoScreen> {
                                   onTap: () => _changeChannel(index),
                                   child: ChannelWidget(
                                     channel: channel,
-                                    onTap: () async{
+                                    onTap: () async {
+                                      // if (widget.channels['stream_type'] == 'YoutubeLive') {
+                                      //     final response = await http.get(
+                                      //       Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                      //           widget.channels['url']!),
+                                      //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                                      //     );
+                                      //     if (response.statusCode == 200) {
+                                      //       widget.channels['url'] = json.decode(response.body)['url'];
+                                      //       widget.channels['stream_type'] = "M3u8";
+                                      //     } else {
+                                      //       throw Exception('Failed to load networks');
+                                      //     }
+                                      //   }
 
-  // if (widget.channels['stream_type'] == 'YoutubeLive') {
-  //     final response = await http.get(
-  //       Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-  //           widget.channels['url']!),
-  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  //     );    
-  //     if (response.statusCode == 200) {
-  //       widget.channels['url'] = json.decode(response.body)['url'];
-  //       widget.channels['stream_type'] = "M3u8";
-  //     } else {
-  //       throw Exception('Failed to load networks');
-  //     }
-  //   }
+                                      if (channel.streamType == 'YoutubeLive') {
+                                        final response = await http.get(
+                                          Uri.parse(
+                                              'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                                  channel.url),
+                                          headers: {
+                                            'x-api-key': 'vLQTuPZUxktl5mVW'
+                                          },
+                                        );
 
- if (channel.streamType == 'YoutubeLive') {
-                            final response = await http.get(
-                              Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                  channel.url),
-                              headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                            );
-
-                            if (response.statusCode == 200 &&
-                                json.decode(response.body)['url'] != '') {
-                              channel.url = json.decode(response.body)['url'];
-                              channel.streamType = "M3u8";
-                            } else {
-                              throw Exception('Failed to load networks');
-                            }
-                          }
-
-
+                                        if (response.statusCode == 200 &&
+                                            json.decode(response.body)['url'] !=
+                                                '') {
+                                          channel.url =
+                                              json.decode(response.body)['url'];
+                                          channel.streamType = "M3u8";
+                                        } else {
+                                          throw Exception(
+                                              'Failed to load networks');
+                                        }
+                                      }
 
                                       Navigator.pushReplacement(
                                         context,
@@ -482,15 +472,27 @@ class _VideoScreenState extends State<VideoScreen> {
                         bottom: showChannels ? 220 : 16,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Focus(
-                            focusNode: _fabFocusNode,
-                            child: FloatingActionButton(
-                              onPressed: () {
-                                setState(() {
-                                  showChannels = !showChannels;
-                                });
-                              },
-                              child: Icon(showChannels ? Icons.close : Icons.grid_view),
+                          child: GestureDetector(
+                            onTap: (){
+                              showChannels = !showChannels;
+                            },
+                            child: Focus(
+                              focusNode: _fabFocusNode,
+                              child: IconButton(
+                                color: _isFabFocusNode?borderColor:Colors.transparent,
+                                // backgroundColor: _isFabFocusNode
+                                //         ? borderColor
+                                //         : Colors.transparent,
+                                onPressed: () {
+                                  setState((hasFocus) {
+                                    showChannels = !showChannels;
+                                    _isFabFocusNode = hasFocus;
+                                  } as VoidCallback);
+                                },
+                                icon: Icon(
+                                  
+                                    showChannels ? Icons.close : Icons.grid_view),
+                              ),
                             ),
                           ),
                         ),
