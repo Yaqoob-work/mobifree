@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 
 import '../video_widget/video_movie_screen.dart';
@@ -26,7 +26,7 @@ class _BannerSliderState extends State<BannerSlider> {
   bool _isSmallBannerFocused = false;
   int _focusedSmallBannerIndex = 0;
   bool _isPageViewBuilt = false;
-  bool  _isNavigating = true; 
+  bool  _isNavigating = false; 
 
   @override
   void initState() {
@@ -79,7 +79,7 @@ class _BannerSliderState extends State<BannerSlider> {
 
   Future<void> fetchBanners() async {
     try {
-      final response = await http.get(
+      final response = await https.get(
         Uri.parse('https://acomtv.com/android/getCustomImageSlider'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
@@ -119,7 +119,7 @@ class _BannerSliderState extends State<BannerSlider> {
 
   Future<void> fetchAndPlayVideo(String contentId) async {
     try {
-      final response = await http.get(
+      final response = await https.get(
         Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
@@ -140,7 +140,7 @@ if (_isNavigating) return;  // Check if navigation is already in progress
 
           final videoUrl = filteredData['url'] ?? '';
           if (filteredData['stream_type'] == 'YoutubeLive' || filteredData['type'] == 'Youtube') {
-            final response = await http.get(
+            final response = await https.get(
               Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
                   filteredData['url']!),
               headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},

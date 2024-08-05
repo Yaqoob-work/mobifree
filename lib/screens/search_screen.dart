@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
@@ -51,7 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
     try {
-      final response = await http.get(
+      final response = await https.get(
         Uri.parse(
             'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
         headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
@@ -78,7 +78,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<List<dynamic>> _fetchFromApi2(String searchTerm) async {
     try {
-      final response = await http.get(
+      final response = await https.get(
         Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
         headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
       );
@@ -283,7 +283,7 @@ if (_isNavigating) return;  // Check if navigation is already in progress
 
     if (searchResults[index]['stream_type'] == 'YoutubeLive' || searchResults[index]['type'] == 'Youtube') {
       try {
-        final response = await http.get(
+        final response = await https.get(
           Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
               searchResults[index]['url']),
           headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},

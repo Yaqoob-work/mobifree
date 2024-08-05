@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
@@ -26,7 +26,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
 
   Future<void> fetchEntertainment() async {
     try {
-      final response = await http.get(
+      final response = await https.get(
         Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
@@ -176,7 +176,7 @@ if (_isNavigating) return;  // Check if navigation is already in progress
     _isNavigating = true;  // Set the flag to true
 
     if (entertainmentItem['stream_type'] == 'YoutubeLive') {
-      final response = await http.get(
+      final response = await https.get(
         Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
             entertainmentItem['url']!),
         headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},

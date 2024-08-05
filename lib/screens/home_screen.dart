@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   SizedBox(
-                    height: 170,
+                    height: 200,
                     child: SubVod(),
                   ),
                 ],
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   SizedBox(
-                    height: 170,
+                    height: 200,
                     child: LiveSubScreen(),
                   ),
                 ],

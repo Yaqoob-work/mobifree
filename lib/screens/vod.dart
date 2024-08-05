@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_movie_screen.dart';
 
@@ -23,7 +23,7 @@ class NetworkApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      logo: json['logo'] ?? 'https://via.placeholder.com/150',
+      logo: json['logo'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
     );
   }
 }
@@ -41,7 +41,7 @@ class ContentApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ?? 'https://via.placeholder.com/150',
+      banner: json['banner'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
     );
   }
 }
@@ -66,8 +66,8 @@ class MovieDetailsApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ?? 'https://via.placeholder.com/150',
-      poster: json['poster'] ?? 'https://via.placeholder.com/150',
+      banner: json['banner'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
+      poster: json['poster'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
       genres: json['genres'] ?? 'Unknown',
     );
   }
@@ -75,7 +75,7 @@ class MovieDetailsApi {
 
 // Fetch Functions
 Future<List<NetworkApi>> fetchNetworks() async {
-  final response = await http.get(
+  final response = await https.get(
     Uri.parse('https://acomtv.com/android/getNetworks'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
@@ -89,7 +89,7 @@ Future<List<NetworkApi>> fetchNetworks() async {
 }
 
 Future<List<ContentApi>> fetchContent(int networkId) async {
-  final response = await http.get(
+  final response = await https.get(
     Uri.parse('https://acomtv.com/android/getAllContentsOfNetwork/$networkId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
@@ -103,7 +103,7 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
 }
 
 Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
-  final response = await http.get(
+  final response = await https.get(
     Uri.parse('https://acomtv.com/android/getMovieDetails/$contentId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
@@ -117,7 +117,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
 }
 
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
-  final response = await http.get(
+  final response = await https.get(
     Uri.parse('https://acomtv.com/android/getMoviePlayLinks/$movieId/0'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
@@ -476,15 +476,14 @@ class DetailsPage extends StatelessWidget {
 if (_isNavigating) return;  // Check if navigation is already in progress
     _isNavigating = true;  // Set the flag to true
 
-                            final playLink =
-                                await fetchMoviePlayLink(content.id);
+                            final playLink = await fetchMoviePlayLink(content.id);
                             // final movieDetails =
                             // await fetchMovieDetails(content.id);
                             // final playLink =
                             //     await fetchMoviePlayLink(movieDetails.id);
 
                             if (playLink['type'] == 'Youtube' || playLink['stream_type'] == 'YoutubeLive') {
-                              final response = await http.get(
+                              final response = await https.get(
                                 Uri.parse(
                                     'https://test.gigabitcdn.net/yt-dlp.php?v=' +
                                         playLink['url']!),

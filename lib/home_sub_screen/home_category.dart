@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
@@ -27,7 +27,7 @@ class _HomeCategoryState extends State<HomeCategory> {
   }
 
   Future<List<Category>> fetchCategories() async {
-    final response = await http.get(
+    final response = await https.get(
       Uri.parse('https://acomtv.com/android/getSelectHomeCategory'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );
@@ -68,6 +68,7 @@ class _HomeCategoryState extends State<HomeCategory> {
 }
 
 class CategoryWidget extends StatelessWidget {
+  bool _isNavigating = false;
   final Category category;
 
   CategoryWidget({required this.category});
@@ -103,9 +104,13 @@ class CategoryWidget extends StatelessWidget {
                       return ChannelWidget(
                         channel: filteredChannels[index],
                         onTap: () async {
+                          if (_isNavigating)
+                            return; // Check if navigation is already in progress
+                          _isNavigating = true;// Set the flag to true
+
                           if (filteredChannels[index].streamType ==
                               'YoutubeLive') {
-                            final response = await http.get(
+                            final response = await https.get(
                               Uri.parse(
                                   'https://test.gigabitcdn.net/yt-dlp.php?v=' +
                                       filteredChannels[index].url),
@@ -132,7 +137,10 @@ class CategoryWidget extends StatelessWidget {
                                 videoTitle: null,
                               ),
                             ),
-                          );
+                          ).then((_) {
+      // Reset the flag after the navigation is completed
+      _isNavigating = false;
+    });
                         },
                       );
                     },
@@ -266,8 +274,8 @@ class Channel {
   final String banner;
   final String genres;
   String url;
-  String streamType; // Add this line 
-  String Type; // Add this line 
+  String streamType; // Add this line
+  String Type; // Add this line
   Channel({
     required this.id,
     required this.name,
@@ -287,7 +295,7 @@ class Channel {
       url: json['url'] ?? '', // Default empty string if 'url' is null
       streamType:
           json['stream_type'] ?? '', // Add this line to handle stream_type
-      Type:    json['Type'] ?? '', // Add this line to handle stream_type
+      Type: json['Type'] ?? '', // Add this line to handle stream_type
     );
   }
 }
@@ -316,7 +324,7 @@ class _VideoScreenState extends State<VideoScreen> {
   FocusNode _fabFocusNode = FocusNode();
   bool _isFabFocusNode = false;
   Timer? _inactivityTimer;
-  bool  _isNavigating = true; 
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -422,12 +430,13 @@ class _VideoScreenState extends State<VideoScreen> {
                                   child: ChannelWidget(
                                     channel: channel,
                                     onTap: () async {
-                                    
+
 if (_isNavigating) return;  // Check if navigation is already in progress
     _isNavigating = true;  // Set the flag to true
 
-                                      if (channel.streamType == 'YoutubeLive' || channel.Type == 'Youtube') {
-                                        final response = await http.get(
+                                      if (channel.streamType == 'YoutubeLive' ||
+                                          channel.Type == 'Youtube') {
+                                        final response = await https.get(
                                           Uri.parse(
                                               'https://test.gigabitcdn.net/yt-dlp.php?v=' +
                                                   channel.url),
