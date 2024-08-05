@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
@@ -18,7 +19,7 @@ class _LiveScreenState extends State<LiveScreen> {
   List<dynamic> entertainmentList = [];
   bool isLoading = true;
   String errorMessage = '';
-  bool _isNavigating = false;  // Flag to prevent multiple navigations
+  bool _isNavigating = false; // Flag to prevent multiple navigations
 
   @override
   void initState() {
@@ -139,8 +140,10 @@ class _LiveScreenState extends State<LiveScreen> {
 
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
-              child: Image.network(
-                entertainmentList[index]['banner'],
+              child: CachedNetworkImage(
+                imageUrl: entertainmentList[index]['banner'],
+                placeholder: (context, url) => Image.network(
+                    'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                 width: entertainmentList[index]['isFocused']
                     ? screenwdt * 0.3
                     : screenwdt * 0.27,
@@ -183,9 +186,8 @@ class _LiveScreenState extends State<LiveScreen> {
 
   void _navigateToVideoScreen(
       BuildContext context, dynamic entertainmentItem) async {
-
-if (_isNavigating) return;  // Check if navigation is already in progress
-    _isNavigating = true;  // Set the flag to true
+    if (_isNavigating) return; // Check if navigation is already in progress
+    _isNavigating = true; // Set the flag to true
 
     if (entertainmentItem['stream_type'] == 'YoutubeLive') {
       final response = await https.get(

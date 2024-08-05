@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
@@ -24,8 +25,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _focusNode = FocusNode();
   Timer? _debounce;
   final List<FocusNode> _itemFocusNodes = [];
-   bool   _isNavigating = false;
-
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -259,8 +259,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 borderRadius: BorderRadius.circular(10)),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
-              child: Image.network(
-                searchResults[index]['banner'] ?? '',
+              child: CachedNetworkImage(
+                imageUrl: searchResults[index]['banner'] ?? '',
+                placeholder: (context, url) => Image.network(
+                    'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                 width: selectedIndex == index
                     ? MediaQuery.of(context).size.width * 0.35
                     : MediaQuery.of(context).size.width * 0.28,
@@ -277,11 +279,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onItemTap(BuildContext context, int index) async {
-    
-if (_isNavigating) return;  // Check if navigation is already in progress
-    _isNavigating = true;  // Set the flag to true
+    if (_isNavigating) return; // Check if navigation is already in progress
+    _isNavigating = true; // Set the flag to true
 
-    if (searchResults[index]['stream_type'] == 'YoutubeLive' || searchResults[index]['type'] == 'Youtube') {
+    if (searchResults[index]['stream_type'] == 'YoutubeLive' ||
+        searchResults[index]['type'] == 'Youtube') {
       try {
         final response = await https.get(
           Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +

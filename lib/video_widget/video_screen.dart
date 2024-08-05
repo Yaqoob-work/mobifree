@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
@@ -37,7 +38,7 @@ class _VideoScreenState extends State<VideoScreen> {
   Timer? _inactivityTimer; // Timer to track inactivity
   List<FocusNode> focusNodes = [];
   FocusNode fabFocusNode = FocusNode();
-   FocusNode _focusNode = FocusNode();
+  FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -113,8 +114,6 @@ class _VideoScreenState extends State<VideoScreen> {
     });
   }
 
- 
-
   void _resetInactivityTimer() {
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(const Duration(seconds: 10), () {
@@ -162,18 +161,15 @@ class _VideoScreenState extends State<VideoScreen> {
               }
             },
           ),
-          
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             bottom: isGridVisible ? 210 : 20,
             right: 20,
-         
-                  child: IconButton(
-                    focusColor: Colors.black26 ,
-                    onPressed: toggleGridVisibility,
-                    icon: Icon(isGridVisible ? Icons.close : Icons.grid_view),
-                  ),
-              
+            child: IconButton(
+              focusColor: Colors.black26,
+              onPressed: toggleGridVisibility,
+              icon: Icon(isGridVisible ? Icons.close : Icons.grid_view),
+            ),
           ),
           if (isGridVisible)
             Positioned(
@@ -201,7 +197,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                         LogicalKeyboardKey.enter)) {
                               _onItemTap(index);
                               return KeyEventResult.handled;
-                            } 
+                            }
                             _resetInactivityTimer(); // Reset inactivity timer on key event
                             return KeyEventResult.ignored;
                           },
@@ -214,7 +210,6 @@ class _VideoScreenState extends State<VideoScreen> {
                             children: [
                               Container(
                                 padding: EdgeInsets.all(5),
-
                                 child: AnimatedContainer(
                                   width: widget.channelList[index]['isFocused']
                                       ? screenwdt * 0.35
@@ -225,24 +220,29 @@ class _VideoScreenState extends State<VideoScreen> {
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeInOut,
                                   decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: widget.channelList[index]['isFocused']
-                                          ? borderColor
-                                          : Colors.transparent,
-                                          
-                                      width: 5.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10)
-                                  ),
+                                      border: Border.all(
+                                        color: widget.channelList[index]
+                                                ['isFocused']
+                                            ? borderColor
+                                            : Colors.transparent,
+                                        width: 5.0,
+                                      ),
+                                      borderRadius: BorderRadius.circular(10)),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(5),
-                                    child: Image.network(
-                                      widget.channelList[index]['banner'] ?? '',
+                                    child: CachedNetworkImage(
+                                      imageUrl: widget.channelList[index]
+                                              ['banner'] ??
+                                          '',
+                                      placeholder: (context, url) => Image.network(
+                                          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                                       fit: BoxFit.cover,
-                                      width: widget.channelList[index]['isFocused']
+                                      width: widget.channelList[index]
+                                              ['isFocused']
                                           ? screenwdt * 0.3
                                           : screenwdt * 0.27,
-                                      height: widget.channelList[index]['isFocused']
+                                      height: widget.channelList[index]
+                                              ['isFocused']
                                           ? screenhgt * 0.23
                                           : screenhgt * 0.2,
                                     ),

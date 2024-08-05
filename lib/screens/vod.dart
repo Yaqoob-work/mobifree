@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
@@ -23,7 +24,8 @@ class NetworkApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      logo: json['logo'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
+      logo: json['logo'] ??
+          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
     );
   }
 }
@@ -41,7 +43,8 @@ class ContentApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
+      banner: json['banner'] ??
+          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
     );
   }
 }
@@ -66,8 +69,10 @@ class MovieDetailsApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
-      poster: json['poster'] ?? 'https://mobifreetv.com/assets/images/Dooo_poster_placeholder.png',
+      banner: json['banner'] ??
+          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      poster: json['poster'] ??
+          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
       genres: json['genres'] ?? 'Unknown',
     );
   }
@@ -194,16 +199,15 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(5),
-                child: Image.network(
-                  widget.network.logo,
+                child: CachedNetworkImage(
+                  imageUrl: widget.network.logo,
+                  placeholder: (context, url) => Image.network(
+                      'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                   fit: BoxFit.cover,
                   width:
                       _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
                   height:
                       _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(child: Text('Image not available'));
-                  },
                 ),
               ),
             ),
@@ -276,8 +280,10 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
-                  child: Image.network(
-                    widget.content.banner,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.content.banner,
+                    placeholder: (context, url) => Image.network(
+                        'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                     fit: BoxFit.cover,
                     width: _focusNode.hasFocus
                         ? screenwdt * 0.35
@@ -285,9 +291,6 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                     height: _focusNode.hasFocus
                         ? screenhgt * 0.23
                         : screenhgt * 0.2,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(child: Text('Image not available'));
-                    },
                   ),
                 ),
               ),
@@ -426,7 +429,7 @@ class DetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   bool   _isNavigating = false;
+    bool _isNavigating = false;
 
     return Scaffold(
       backgroundColor: cardColor,
@@ -450,8 +453,10 @@ class DetailsPage extends StatelessWidget {
                     height: screenhgt * 0.5,
                     width: screenwdt,
                     alignment: Alignment.center,
-                    child: Image.network(
-                      movieDetails.poster,
+                    child: CachedNetworkImage(
+                      imageUrl: movieDetails.poster,
+                      placeholder: (context, url) => Image.network(
+                          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                       fit: BoxFit.cover,
                       height: screenhgt * 0.5,
                       width: screenwdt,
@@ -472,17 +477,19 @@ class DetailsPage extends StatelessWidget {
                         return FocusableGridItemContent(
                           content: content,
                           onTap: () async {
+                            if (_isNavigating)
+                              return; // Check if navigation is already in progress
+                            _isNavigating = true; // Set the flag to true
 
-if (_isNavigating) return;  // Check if navigation is already in progress
-    _isNavigating = true;  // Set the flag to true
-
-                            final playLink = await fetchMoviePlayLink(content.id);
+                            final playLink =
+                                await fetchMoviePlayLink(content.id);
                             // final movieDetails =
                             // await fetchMovieDetails(content.id);
                             // final playLink =
                             //     await fetchMoviePlayLink(movieDetails.id);
 
-                            if (playLink['type'] == 'Youtube' || playLink['stream_type'] == 'YoutubeLive') {
+                            if (playLink['type'] == 'Youtube' ||
+                                playLink['stream_type'] == 'YoutubeLive') {
                               final response = await https.get(
                                 Uri.parse(
                                     'https://test.gigabitcdn.net/yt-dlp.php?v=' +
@@ -516,9 +523,9 @@ if (_isNavigating) return;  // Check if navigation is already in progress
                                 // ),
                               ),
                             ).then((_) {
-      // Reset the flag after the navigation is completed
-      _isNavigating = false;
-    });
+                              // Reset the flag after the navigation is completed
+                              _isNavigating = false;
+                            });
                           },
                         );
                       },

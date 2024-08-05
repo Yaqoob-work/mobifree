@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
@@ -26,7 +27,7 @@ class _BannerSliderState extends State<BannerSlider> {
   bool _isSmallBannerFocused = false;
   int _focusedSmallBannerIndex = 0;
   bool _isPageViewBuilt = false;
-  bool  _isNavigating = false; 
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -134,12 +135,13 @@ class _BannerSliderState extends State<BannerSlider> {
         );
 
         if (filteredData != null) {
-
-if (_isNavigating) return;  // Check if navigation is already in progress
-    _isNavigating = true;  // Set the flag to true
+          if (_isNavigating)
+            return; // Check if navigation is already in progress
+          _isNavigating = true; // Set the flag to true
 
           final videoUrl = filteredData['url'] ?? '';
-          if (filteredData['stream_type'] == 'YoutubeLive' || filteredData['type'] == 'Youtube') {
+          if (filteredData['stream_type'] == 'YoutubeLive' ||
+              filteredData['type'] == 'Youtube') {
             final response = await https.get(
               Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
                   filteredData['url']!),
@@ -167,9 +169,9 @@ if (_isNavigating) return;  // Check if navigation is already in progress
               ),
             ),
           ).then((_) {
-      // Reset the flag after the navigation is completed
-      _isNavigating = false;
-    });
+            // Reset the flag after the navigation is completed
+            _isNavigating = false;
+          });
         } else {
           throw Exception('Video not found');
         }
@@ -240,10 +242,13 @@ if (_isNavigating) return;  // Check if navigation is already in progress
                                           width: 3.0,
                                         ),
                                       ),
-                                      child: Image.network(
-                                        banner['banner'] ?? '',
+                                      child: CachedNetworkImage(
+                                        imageUrl: banner['banner'] ?? '',
                                         fit: BoxFit.cover,
                                         width: screenwdt,
+                                        placeholder: (context, url) =>
+                                            Image.network(
+                                                'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                                       ),
                                     ),
                                   ),
@@ -341,9 +346,12 @@ if (_isNavigating) return;  // Check if navigation is already in progress
                                             width: 3.0,
                                           ),
                                         ),
-                                        child: Image.network(
-                                          smallBanner['banner'] ?? '',
+                                        child: CachedNetworkImage(
+                                          imageUrl: smallBanner['banner'] ?? '',
                                           fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Image.network(
+                                                  'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                                         ),
                                       ),
                                     ),

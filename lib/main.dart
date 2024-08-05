@@ -6,9 +6,19 @@ import 'package:mobi_tv_entertainment/screens/vod.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
+import 'dart:io';
 
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(MyApp());
 }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
@@ -106,7 +107,7 @@ class CategoryWidget extends StatelessWidget {
                         onTap: () async {
                           if (_isNavigating)
                             return; // Check if navigation is already in progress
-                          _isNavigating = true;// Set the flag to true
+                          _isNavigating = true; // Set the flag to true
 
                           if (filteredChannels[index].streamType ==
                               'YoutubeLive') {
@@ -138,9 +139,9 @@ class CategoryWidget extends StatelessWidget {
                               ),
                             ),
                           ).then((_) {
-      // Reset the flag after the navigation is completed
-      _isNavigating = false;
-    });
+                            // Reset the flag after the navigation is completed
+                            _isNavigating = false;
+                          });
                         },
                       );
                     },
@@ -209,9 +210,11 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   borderRadius: BorderRadius.circular(5),
                   child: Material(
                     elevation: 0,
-                    child: Image.network(
-                      widget.channel.banner,
+                    child: CachedNetworkImage(
+                      imageUrl: widget.channel.banner,
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Image.network(
+                          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
                       width: isFocused ? screenwdt * 0.35 : screenwdt * 0.27,
                       height: isFocused ? screenhgt * 0.23 : screenhgt * 0.2,
                     ),
@@ -430,9 +433,10 @@ class _VideoScreenState extends State<VideoScreen> {
                                   child: ChannelWidget(
                                     channel: channel,
                                     onTap: () async {
-
-if (_isNavigating) return;  // Check if navigation is already in progress
-    _isNavigating = true;  // Set the flag to true
+                                      if (_isNavigating)
+                                        return; // Check if navigation is already in progress
+                                      _isNavigating =
+                                          true; // Set the flag to true
 
                                       if (channel.streamType == 'YoutubeLive' ||
                                           channel.Type == 'Youtube') {
@@ -468,9 +472,9 @@ if (_isNavigating) return;  // Check if navigation is already in progress
                                           ),
                                         ),
                                       ).then((_) {
-      // Reset the flag after the navigation is completed
-      _isNavigating = false;
-    });
+                                        // Reset the flag after the navigation is completed
+                                        _isNavigating = false;
+                                      });
                                     },
                                   ),
                                 );
