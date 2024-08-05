@@ -5,9 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
-
-
-
 // var liveHeight;
 class LiveSubScreen extends StatefulWidget {
   @override
@@ -18,6 +15,8 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   List<dynamic> entertainmentList = [];
   bool isLoading = true;
   String errorMessage = '';
+   bool   _isNavigating = false;
+
 
   @override
   void initState() {
@@ -28,7 +27,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   Future<void> fetchEntertainment() async {
     try {
       final response = await http.get(
-        Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -70,7 +69,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
                   : LayoutBuilder(builder: (context, constraints) {
-                    //  liveHeight = constraints.maxHeight;
+                      //  liveHeight = constraints.maxHeight;
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: entertainmentList.length,
@@ -111,42 +110,42 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-         Container(
-              padding: EdgeInsets.all(10),
-
-           child: AnimatedContainer(
-              // curve: Curves.ease,
-              width: entertainmentList[index]['isFocused']
-                  ? screenwdt * 0.35
-                  : screenwdt * 0.3,
-              height: entertainmentList[index]['isFocused']
-                  ? screenhgt * 0.25
-                  : screenhgt * 0.2,
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                  color:hintColor,
-                  border: Border.all(
-                    color: 
-                    entertainmentList[index]['isFocused']?borderColor: hintColor,
-                    width: 5.0,
-                  ),
-                  borderRadius: BorderRadius.circular(10)),
-           
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.network(
-                  entertainmentList[index]['banner'],
-                  width: entertainmentList[index]['isFocused']
-                      ? screenwdt * 0.3
-                      : screenwdt * 0.27,
-                  height: entertainmentList[index]['isFocused']
-                      ? screenhgt * 0.23
-                      : screenhgt * 0.2,
-                  fit: BoxFit.cover,
+        Container(
+          padding: EdgeInsets.all(10),
+          child: AnimatedContainer(
+            // curve: Curves.ease,
+            width: entertainmentList[index]['isFocused']
+                ? screenwdt * 0.35
+                : screenwdt * 0.3,
+            height: entertainmentList[index]['isFocused']
+                ? screenhgt * 0.25
+                : screenhgt * 0.2,
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+                color: hintColor,
+                border: Border.all(
+                  color: entertainmentList[index]['isFocused']
+                      ? borderColor
+                      : hintColor,
+                  width: 5.0,
                 ),
+                borderRadius: BorderRadius.circular(10)),
+
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Image.network(
+                entertainmentList[index]['banner'],
+                width: entertainmentList[index]['isFocused']
+                    ? screenwdt * 0.3
+                    : screenwdt * 0.27,
+                height: entertainmentList[index]['isFocused']
+                    ? screenhgt * 0.23
+                    : screenhgt * 0.2,
+                fit: BoxFit.cover,
               ),
             ),
-         ),
+          ),
+        ),
         // Container(
         //   width: entertainmentList[index]['isFocused']
         //       ? screenwdt * 0.3
@@ -170,7 +169,12 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
     );
   }
 
-  void _navigateToVideoScreen(BuildContext context, dynamic entertainmentItem) async{
+  void _navigateToVideoScreen(
+      BuildContext context, dynamic entertainmentItem) async {
+
+if (_isNavigating) return;  // Check if navigation is already in progress
+    _isNavigating = true;  // Set the flag to true
+
     if (entertainmentItem['stream_type'] == 'YoutubeLive') {
       final response = await http.get(
         Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
@@ -194,10 +198,13 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
           channelList: entertainmentList,
           onFabFocusChanged: (bool) {},
           genres: '',
-           channels: [],
-            initialIndex: 1,
+          channels: [],
+          initialIndex: 1,
         ),
       ),
-    );
+    ).then((_) {
+      // Reset the flag after the navigation is completed
+      _isNavigating = false;
+    });
   }
 }

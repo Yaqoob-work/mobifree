@@ -3,7 +3,7 @@
 <uses-feature android:name="android.software.leanback" android:required="true"/>
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
-        android:label="mobi_tv_entertainment"
+        android:label="Mobi Free TV"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

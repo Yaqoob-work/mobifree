@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Padding(
                             padding: const EdgeInsets.only(left: 10),
                             child: Text(
-                              "NETWORK",
+                              "CONTENTS",
                               textAlign: TextAlign.left,
                               style: TextStyle(
                                 fontSize: 20,
@@ -158,3 +158,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+

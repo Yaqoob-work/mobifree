@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
-
 void main() {
   runApp(LiveScreen());
 }
@@ -19,6 +18,7 @@ class _LiveScreenState extends State<LiveScreen> {
   List<dynamic> entertainmentList = [];
   bool isLoading = true;
   String errorMessage = '';
+  bool _isNavigating = false;  // Flag to prevent multiple navigations
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _LiveScreenState extends State<LiveScreen> {
   Future<void> fetchEntertainment() async {
     try {
       final response = await http.get(
-        Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -71,8 +71,8 @@ class _LiveScreenState extends State<LiveScreen> {
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
                   : Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: GridView.builder(
+                      padding: const EdgeInsets.all(10.0),
+                      child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           // childAspectRatio: 0.75,
@@ -86,7 +86,7 @@ class _LiveScreenState extends State<LiveScreen> {
                           );
                         },
                       ),
-                  ),
+                    ),
     );
   }
 
@@ -130,8 +130,7 @@ class _LiveScreenState extends State<LiveScreen> {
             decoration: BoxDecoration(
                 // color: Colors.white,
                 border: Border.all(
-                  color: 
-                  entertainmentList[index]['isFocused']
+                  color: entertainmentList[index]['isFocused']
                       ? borderColor
                       : hintColor,
                   width: 5.0,
@@ -184,6 +183,10 @@ class _LiveScreenState extends State<LiveScreen> {
 
   void _navigateToVideoScreen(
       BuildContext context, dynamic entertainmentItem) async {
+
+if (_isNavigating) return;  // Check if navigation is already in progress
+    _isNavigating = true;  // Set the flag to true
+
     if (entertainmentItem['stream_type'] == 'YoutubeLive') {
       final response = await http.get(
         Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
@@ -207,10 +210,13 @@ class _LiveScreenState extends State<LiveScreen> {
           channelList: entertainmentList,
           onFabFocusChanged: (bool) {},
           genres: '',
-           channels: [],
-            initialIndex: 1,
+          channels: [],
+          initialIndex: 1,
         ),
       ),
-    );
+    ).then((_) {
+      // Reset the flag after the navigation is completed
+      _isNavigating = false;
+    });
   }
 }

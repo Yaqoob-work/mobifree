@@ -24,6 +24,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _focusNode = FocusNode();
   Timer? _debounce;
   final List<FocusNode> _itemFocusNodes = [];
+   bool   _isNavigating = false;
+
 
   @override
   void initState() {
@@ -50,15 +52,21 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
     try {
       final response = await http.get(
-        Uri.parse('https://mobifreetv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
+        Uri.parse(
+            'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
         headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
-        return responseData.where((channel) =>
-            channel['name'] != null &&
-            channel['name'].toString().toLowerCase().contains(searchTerm.toLowerCase())).toList();
+        return responseData
+            .where((channel) =>
+                channel['name'] != null &&
+                channel['name']
+                    .toString()
+                    .toLowerCase()
+                    .contains(searchTerm.toLowerCase()))
+            .toList();
       } else {
         throw Exception('Failed to load data from API 1');
       }
@@ -71,15 +79,20 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<List<dynamic>> _fetchFromApi2(String searchTerm) async {
     try {
       final response = await http.get(
-        Uri.parse('https://mobifreetv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
         headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
-        return responseData.where((channel) =>
-            channel['name'] != null &&
-            channel['name'].toString().toLowerCase().contains(searchTerm.toLowerCase())).toList();
+        return responseData
+            .where((channel) =>
+                channel['name'] != null &&
+                channel['name']
+                    .toString()
+                    .toLowerCase()
+                    .contains(searchTerm.toLowerCase()))
+            .toList();
       } else {
         throw Exception('Failed to load data from API 2');
       }
@@ -88,54 +101,56 @@ class _SearchScreenState extends State<SearchScreen> {
       return [];
     }
   }
-void _performSearch(String searchTerm) {
-  if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-  // Check if the search term is empty or contains only whitespace
-  if (searchTerm.trim().isEmpty) {
-    setState(() {
-      isLoading = false;
-      searchResults.clear(); // Clear the results if the search term is empty
-      _itemFocusNodes.clear(); // Clear previous nodes
+  void _performSearch(String searchTerm) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+
+    // Check if the search term is empty or contains only whitespace
+    if (searchTerm.trim().isEmpty) {
+      setState(() {
+        isLoading = false;
+        searchResults.clear(); // Clear the results if the search term is empty
+        _itemFocusNodes.clear(); // Clear previous nodes
+      });
+      return; // Exit the function early
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      setState(() {
+        isLoading = true;
+        searchResults.clear();
+        _itemFocusNodes.clear(); // Clear previous nodes
+      });
+
+      try {
+        final api1Results = await _fetchFromApi1(searchTerm);
+        final api2Results = await _fetchFromApi2(searchTerm);
+
+        setState(() {
+          searchResults = [...api1Results, ...api2Results];
+          _itemFocusNodes.addAll(List.generate(
+            searchResults.length,
+            (index) => FocusNode(),
+          ));
+          isLoading = false;
+        });
+
+        // Schedule focus request after build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_itemFocusNodes.isNotEmpty &&
+              _itemFocusNodes[0].context != null) {
+            FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
+          }
+        });
+      } catch (e) {
+        print('Error fetching data: $e');
+        setState(() {
+          isLoading = false;
+        });
+      }
     });
-    return; // Exit the function early
   }
 
-  _debounce = Timer(const Duration(milliseconds: 300), () async {
-    setState(() {
-      isLoading = true;
-      searchResults.clear();
-      _itemFocusNodes.clear(); // Clear previous nodes
-    });
-
-    try {
-      final api1Results = await _fetchFromApi1(searchTerm);
-      final api2Results = await _fetchFromApi2(searchTerm);
-
-      setState(() {
-        searchResults = [...api1Results, ...api2Results];
-        _itemFocusNodes.addAll(List.generate(
-          searchResults.length,
-          (index) => FocusNode(),
-        ));
-        isLoading = false;
-      });
-
-      // Schedule focus request after build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
-          FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
-        }
-      });
-
-    } catch (e) {
-      print('Error fetching data: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
-  });
-}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,10 +165,13 @@ void _performSearch(String searchTerm) {
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
-                  borderSide: BorderSide(color: hintColor, width: 4.0), // Replace with primaryColor
+                  borderSide: BorderSide(
+                      color: hintColor,
+                      width: 4.0), // Replace with primaryColor
                 ),
                 labelText: 'Search By Name',
-                labelStyle: TextStyle(color: Colors.white), // Replace with hintColor
+                labelStyle:
+                    TextStyle(color: Colors.white), // Replace with hintColor
               ),
               style: TextStyle(color: Colors.white), // Replace with hintColor
               textInputAction: TextInputAction.search,
@@ -175,7 +193,9 @@ void _performSearch(String searchTerm) {
                           children: [
                             Text(
                               'No results found',
-                              style: TextStyle(color: Colors.white), // Replace with hintColor
+                              style: TextStyle(
+                                  color:
+                                      Colors.white), // Replace with hintColor
                             ),
                           ],
                         ),
@@ -185,7 +205,8 @@ void _performSearch(String searchTerm) {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 4,
                           ),
                           itemCount: searchResults.length,
@@ -226,21 +247,13 @@ void _performSearch(String searchTerm) {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            
-            width: selectedIndex == index 
-                ? screenwdt * 0.35
-                : screenwdt * 0.3,
-            height: selectedIndex == index 
-                ? screenhgt * 0.25
-                : screenhgt * 0.2,
+            width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.3,
+            height: selectedIndex == index ? screenhgt * 0.25 : screenhgt * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
                 // color: Colors.white,
                 border: Border.all(
-                  color: 
-                  selectedIndex == index 
-                      ? borderColor
-                      : hintColor,
+                  color: selectedIndex == index ? borderColor : hintColor,
                   width: 5.0,
                 ),
                 borderRadius: BorderRadius.circular(10)),
@@ -248,8 +261,12 @@ void _performSearch(String searchTerm) {
               borderRadius: BorderRadius.circular(5),
               child: Image.network(
                 searchResults[index]['banner'] ?? '',
-                width: selectedIndex == index ? MediaQuery.of(context).size.width * 0.35 : MediaQuery.of(context).size.width * 0.28,
-                height: selectedIndex == index ? MediaQuery.of(context).size.height * 0.23 : MediaQuery.of(context).size.height * 0.2,
+                width: selectedIndex == index
+                    ? MediaQuery.of(context).size.width * 0.35
+                    : MediaQuery.of(context).size.width * 0.28,
+                height: selectedIndex == index
+                    ? MediaQuery.of(context).size.height * 0.23
+                    : MediaQuery.of(context).size.height * 0.2,
                 fit: BoxFit.cover,
               ),
             ),
@@ -260,10 +277,15 @@ void _performSearch(String searchTerm) {
   }
 
   void _onItemTap(BuildContext context, int index) async {
-    if (searchResults[index]['stream_type'] == 'YoutubeLive') {
+    
+if (_isNavigating) return;  // Check if navigation is already in progress
+    _isNavigating = true;  // Set the flag to true
+
+    if (searchResults[index]['stream_type'] == 'YoutubeLive' || searchResults[index]['type'] == 'Youtube') {
       try {
         final response = await http.get(
-          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' + searchResults[index]['url']),
+          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+              searchResults[index]['url']),
           headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
         );
 
@@ -294,7 +316,10 @@ void _performSearch(String searchTerm) {
           initialIndex: index,
         ),
       ),
-    );
+    ).then((_) {
+      // Reset the flag after the navigation is completed
+      _isNavigating = false;
+    });
   }
 
   void _handleFabFocusChanged(bool hasFocus) {

@@ -28,7 +28,7 @@ class _HomeCategoryState extends State<HomeCategory> {
 
   Future<List<Category>> fetchCategories() async {
     final response = await http.get(
-      Uri.parse('https://mobifreetv.com/android/getSelectHomeCategory'),
+      Uri.parse('https://acomtv.com/android/getSelectHomeCategory'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );
 
@@ -127,7 +127,9 @@ class CategoryWidget extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (context) => VideoScreen(
                                 channels: filteredChannels,
-                                initialIndex: index, videoUrl: null, videoTitle: null,
+                                initialIndex: index,
+                                videoUrl: null,
+                                videoTitle: null,
                               ),
                             ),
                           );
@@ -264,8 +266,8 @@ class Channel {
   final String banner;
   final String genres;
   String url;
-  String streamType; // Add this line
-
+  String streamType; // Add this line 
+  String Type; // Add this line 
   Channel({
     required this.id,
     required this.name,
@@ -273,6 +275,7 @@ class Channel {
     required this.genres,
     required this.url,
     required this.streamType, // Add this line
+    required this.Type, // Add this line
   });
 
   factory Channel.fromJson(Map<String, dynamic> json) {
@@ -284,6 +287,7 @@ class Channel {
       url: json['url'] ?? '', // Default empty string if 'url' is null
       streamType:
           json['stream_type'] ?? '', // Add this line to handle stream_type
+      Type:    json['Type'] ?? '', // Add this line to handle stream_type
     );
   }
 }
@@ -294,7 +298,9 @@ class VideoScreen extends StatefulWidget {
 
   VideoScreen({
     required this.channels,
-    required this.initialIndex, required videoUrl, required videoTitle,
+    required this.initialIndex,
+    required videoUrl,
+    required videoTitle,
   });
 
   @override
@@ -310,6 +316,7 @@ class _VideoScreenState extends State<VideoScreen> {
   FocusNode _fabFocusNode = FocusNode();
   bool _isFabFocusNode = false;
   Timer? _inactivityTimer;
+  bool  _isNavigating = true; 
 
   @override
   void initState() {
@@ -338,7 +345,6 @@ class _VideoScreenState extends State<VideoScreen> {
     setState(() {
       _isFabFocusNode = _fabFocusNode.hasFocus;
       _isFabFocusNode = true;
-      
     });
   }
 
@@ -416,21 +422,11 @@ class _VideoScreenState extends State<VideoScreen> {
                                   child: ChannelWidget(
                                     channel: channel,
                                     onTap: () async {
-                                      // if (widget.channels['stream_type'] == 'YoutubeLive') {
-                                      //     final response = await http.get(
-                                      //       Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                      //           widget.channels['url']!),
-                                      //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                                      //     );
-                                      //     if (response.statusCode == 200) {
-                                      //       widget.channels['url'] = json.decode(response.body)['url'];
-                                      //       widget.channels['stream_type'] = "M3u8";
-                                      //     } else {
-                                      //       throw Exception('Failed to load networks');
-                                      //     }
-                                      //   }
+                                    
+if (_isNavigating) return;  // Check if navigation is already in progress
+    _isNavigating = true;  // Set the flag to true
 
-                                      if (channel.streamType == 'YoutubeLive') {
+                                      if (channel.streamType == 'YoutubeLive' || channel.Type == 'Youtube') {
                                         final response = await http.get(
                                           Uri.parse(
                                               'https://test.gigabitcdn.net/yt-dlp.php?v=' +
@@ -457,10 +453,15 @@ class _VideoScreenState extends State<VideoScreen> {
                                         MaterialPageRoute(
                                           builder: (context) => VideoScreen(
                                             channels: widget.channels,
-                                            initialIndex: index, videoUrl: null, videoTitle: null,
+                                            initialIndex: index,
+                                            videoUrl: null,
+                                            videoTitle: null,
                                           ),
                                         ),
-                                      );
+                                      ).then((_) {
+      // Reset the flag after the navigation is completed
+      _isNavigating = false;
+    });
                                     },
                                   ),
                                 );

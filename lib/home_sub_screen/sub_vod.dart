@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_movie_screen.dart';
 
-
 void main() {
   runApp(SubVod());
 }
@@ -77,7 +76,7 @@ class MovieDetailsApi {
 // Fetch Functions
 Future<List<NetworkApi>> fetchNetworks() async {
   final response = await http.get(
-    Uri.parse('https://mobifreetv.com/android/getNetworks'),
+    Uri.parse('https://acomtv.com/android/getNetworks'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -91,8 +90,7 @@ Future<List<NetworkApi>> fetchNetworks() async {
 
 Future<List<ContentApi>> fetchContent(int networkId) async {
   final response = await http.get(
-    Uri.parse(
-        'https://mobifreetv.com/android/getAllContentsOfNetwork/$networkId'),
+    Uri.parse('https://acomtv.com/android/getAllContentsOfNetwork/$networkId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -106,7 +104,7 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
 
 Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
   final response = await http.get(
-    Uri.parse('https://mobifreetv.com/android/getMovieDetails/$contentId'),
+    Uri.parse('https://acomtv.com/android/getMovieDetails/$contentId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -120,7 +118,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
 
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final response = await http.get(
-    Uri.parse('https://mobifreetv.com/android/getMoviePlayLinks/$movieId/0'),
+    Uri.parse('https://acomtv.com/android/getMoviePlayLinks/$movieId/0'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -184,15 +182,16 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-
+              padding: EdgeInsets.symmetric(horizontal: 10),
               child: AnimatedContainer(
-                width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
-                height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                width:
+                    _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
+                height:
+                    _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: _focusNode.hasFocus ?borderColor: hintColor,
+                    color: _focusNode.hasFocus ? borderColor : hintColor,
                     width: 5.0,
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -202,10 +201,12 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                   child: Image.network(
                     widget.network.logo,
                     fit: BoxFit.cover,
-                    width:
-                        _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
-                    height:
-                        _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                    width: _focusNode.hasFocus
+                        ? screenwdt * 0.35
+                        : screenwdt * 0.3,
+                    height: _focusNode.hasFocus
+                        ? screenhgt * 0.23
+                        : screenhgt * 0.2,
                     errorBuilder: (context, error, stackTrace) {
                       return Center(child: Text('Image not available'));
                     },
@@ -275,7 +276,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: _focusNode.hasFocus ?borderColor: hintColor,
+                    color: _focusNode.hasFocus ? borderColor : hintColor,
                     width: 5.0,
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -376,7 +377,6 @@ class _SubVodState extends State<SubVod> {
   }
 }
 
-
 class NetworkContentsScreen extends StatelessWidget {
   final NetworkApi network;
 
@@ -416,7 +416,7 @@ class NetworkContentsScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => DetailsPage(
                             // contentId: content.id,
-                             content: content,
+                            content: content,
                           ),
                         ),
                       );
@@ -432,9 +432,6 @@ class NetworkContentsScreen extends StatelessWidget {
   }
 }
 
-
-
-
 class DetailsPage extends StatelessWidget {
   final ContentApi content;
 
@@ -442,6 +439,7 @@ class DetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool _isNavigating = true;
     return Scaffold(
       backgroundColor: cardColor,
       body: Padding(
@@ -462,14 +460,14 @@ class DetailsPage extends StatelessWidget {
                 children: [
                   Container(
                     height: screenhgt * 0.5,
-                    width: screenwdt ,
-                  alignment: Alignment.center,
-                  child: Image.network(
-                    movieDetails.poster,
-                    fit: BoxFit.cover,
-                    height: screenhgt * 0.5,
-                    width: screenwdt ,
-                  ),
+                    width: screenwdt,
+                    alignment: Alignment.center,
+                    child: Image.network(
+                      movieDetails.poster,
+                      fit: BoxFit.cover,
+                      height: screenhgt * 0.5,
+                      width: screenwdt,
+                    ),
                   ),
                   Center(
                     child: Text(
@@ -486,38 +484,55 @@ class DetailsPage extends StatelessWidget {
                         return FocusableGridItemContent(
                           content: content,
                           onTap: () async {
-                            final playLink = await fetchMoviePlayLink(content.id);
+
+if (_isNavigating) return;  // Check if navigation is already in progress
+    _isNavigating = true;  // Set the flag to true
+
+
+                            final playLink =
+                                await fetchMoviePlayLink(content.id);
                             // final movieDetails =
                             // await fetchMovieDetails(content.id);
-                        // final playLink =
-                        //     await fetchMoviePlayLink(movieDetails.id);
+                            // final playLink =
+                            //     await fetchMoviePlayLink(movieDetails.id);
 
-                        if (playLink['type'] == 'Youtube') {
-                          final response = await http.get(
-                            Uri.parse(
-                                'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                    playLink['url']!),
-                            headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                          );
+                            if (playLink['type'] == 'Youtube' || playLink['stream_type'] == 'YoutubeLive') {
+                              final response = await http.get(
+                                Uri.parse(
+                                    'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                        playLink['url']!),
+                                headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                              );
 
-                          if (response.statusCode == 200) {
-                            playLink['url'] = json.decode(response.body)['url'];
-                            playLink['type'] = "M3u8";
-                            
-                          } else {
-                            throw Exception('Failed to load networks');
-                          }
-                        }
+                              if (response.statusCode == 200) {
+                                playLink['url'] =
+                                    json.decode(response.body)['url'];
+                                playLink['type'] = "M3u8";
+                              } else {
+                                throw Exception('Failed to load networks');
+                              }
+                            }
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => VideoMovieScreen(
-                               videoUrl: playLink['url']!, videoTitle: '', channelList: [], videoBanner: '', onFabFocusChanged: (bool focused) {  }, genres: '', videoType: '', url: '', type: '',
-                             ),
+                                  videoUrl: playLink['url']!,
+                                  videoTitle: '',
+                                  channelList: [],
+                                  videoBanner: '',
+                                  onFabFocusChanged: (bool focused) {},
+                                  genres: '',
+                                  videoType: '',
+                                  url: '',
+                                  type: '',
+                                ),
                                 //   playLink: playLink['url']!,
                                 // ),
                               ),
-                            );
+                            ).then((_) {
+      // Reset the flag after the navigation is completed
+      _isNavigating = false;
+    });
                           },
                         );
                       },
