@@ -71,35 +71,46 @@ class _SearchScreenState extends State<SearchScreen> {
         throw Exception('Failed to load data from API 1');
       }
     } catch (e) {
-      print('Error fetching from API 1: $e');
       return [];
     }
   }
 
-  Future<List<dynamic>> _fetchFromApi2(String searchTerm) async {
-    try {
-      final response = await https.get(
-        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
-        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      );
+  // Future<List<dynamic>> _fetchFromApi2(String searchTerm) async {
+  //   try {
+  //     final response = await https.get(
+  //       Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
+  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  //     );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-        return responseData
-            .where((channel) =>
-                channel['name'] != null &&
-                channel['name']
-                    .toString()
-                    .toLowerCase()
-                    .contains(searchTerm.toLowerCase()))
-            .toList();
-      } else {
-        throw Exception('Failed to load data from API 2');
-      }
-    } catch (e) {
-      print('Error fetching from API 2: $e');
-      return [];
-    }
+  //     if (response.statusCode == 200) {
+  //       final List<dynamic> responseData = json.decode(response.body);
+  //       return responseData
+  //           .where((channel) =>
+  //               channel['name'] != null &&
+  //               channel['name']
+  //                   .toString()
+  //                   .toLowerCase()
+  //                   .contains(searchTerm.toLowerCase()))
+  //           .toList();
+  //     } else {
+  //       throw Exception('Failed to load data from API 2');
+  //     }
+  //   } catch (e) {
+  //     return [];
+  //   }
+  // }
+
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevents dismissing the dialog by tapping outside
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
   }
 
   void _performSearch(String searchTerm) {
@@ -124,10 +135,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
       try {
         final api1Results = await _fetchFromApi1(searchTerm);
-        final api2Results = await _fetchFromApi2(searchTerm);
+        // final api2Results = await _fetchFromApi2(searchTerm);
 
         setState(() {
-          searchResults = [...api1Results, ...api2Results];
+          searchResults = [...api1Results,
+          //  ...api2Results
+           ];
           _itemFocusNodes.addAll(List.generate(
             searchResults.length,
             (index) => FocusNode(),
@@ -143,7 +156,6 @@ class _SearchScreenState extends State<SearchScreen> {
           }
         });
       } catch (e) {
-        print('Error fetching data: $e');
         setState(() {
           isLoading = false;
         });
@@ -260,9 +272,8 @@ class _SearchScreenState extends State<SearchScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
               child: CachedNetworkImage(
-                imageUrl: searchResults[index]['banner'] ?? '',
-                placeholder: (context, url) => Image.network(
-                    'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                imageUrl: searchResults[index]['banner'] ?? localImage,
+                placeholder: (context, url) => localImage,
                 width: selectedIndex == index
                     ? MediaQuery.of(context).size.width * 0.35
                     : MediaQuery.of(context).size.width * 0.28,
@@ -281,6 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _onItemTap(BuildContext context, int index) async {
     if (_isNavigating) return; // Check if navigation is already in progress
     _isNavigating = true; // Set the flag to true
+    _showLoadingIndicator(context);
 
     if (searchResults[index]['stream_type'] == 'YoutubeLive' ||
         searchResults[index]['type'] == 'Youtube') {
@@ -300,28 +312,35 @@ class _SearchScreenState extends State<SearchScreen> {
         } else {
           throw Exception('Failed to load networks');
         }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: searchResults[index]['url'] ?? '',
+              videoTitle: searchResults[index]['name'] ?? 'Unknown',
+              channelList: searchResults,
+              onFabFocusChanged: _handleFabFocusChanged,
+              genres: '',
+              channels: [],
+              initialIndex: index,
+            ),
+          ),
+        ).then((_) {
+          // Reset the flag after the navigation is completed
+          _isNavigating = false;
+        Navigator.of(context, rootNavigator: true).pop();
+
+        });
       } catch (e) {
-        print('Error fetching video URL: $e');
+        // Hide the loading indicator in case of an error
+        Navigator.of(context, rootNavigator: true).pop();
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Something Went Wrong')),
+        );
       }
     }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VideoScreen(
-          videoUrl: searchResults[index]['url'] ?? '',
-          videoTitle: searchResults[index]['name'] ?? 'Unknown',
-          channelList: searchResults,
-          onFabFocusChanged: _handleFabFocusChanged,
-          genres: '',
-          channels: [],
-          initialIndex: index,
-        ),
-      ),
-    ).then((_) {
-      // Reset the flag after the navigation is completed
-      _isNavigating = false;
-    });
   }
 
   void _handleFabFocusChanged(bool hasFocus) {

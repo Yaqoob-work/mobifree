@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+// import 'package:wakelock/wakelock.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
@@ -34,7 +36,6 @@ class _VideoScreenState extends State<VideoScreen> {
   bool isFullScreen = false;
   double volume = 0.5;
   bool isVolumeControlVisible = false;
-  Timer? _hideVolumeControlTimer;
   Timer? _inactivityTimer; // Timer to track inactivity
   List<FocusNode> focusNodes = [];
   FocusNode fabFocusNode = FocusNode();
@@ -47,8 +48,9 @@ class _VideoScreenState extends State<VideoScreen> {
     _initializeVideoPlayerFuture = _controller.initialize();
     _controller.setLooping(true);
     _controller.play();
-
+    // Wakelock.enable(); // Keep the screen on for this page
     // Initialize focus nodes for each channel item
+    KeepScreenOn.turnOn();
     focusNodes =
         List.generate(widget.channelList.length, (index) => FocusNode());
 
@@ -67,6 +69,8 @@ class _VideoScreenState extends State<VideoScreen> {
     for (var node in focusNodes) {
       node.dispose();
     }
+    KeepScreenOn.turnOff();
+    // Wakelock.disable(); // Disable screen wake when leaving this page
     // fabFocusNode.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -106,7 +110,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
     String selectedUrl = widget.channelList[index]['url'] ?? '';
     _controller.pause();
-    _controller = VideoPlayerController.network(selectedUrl);
+    _controller = VideoPlayerController.networkUrl(Uri.parse(selectedUrl));
     _initializeVideoPlayerFuture = _controller.initialize().then((_) {
       setState(() {});
       _controller.play();
@@ -234,8 +238,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                       imageUrl: widget.channelList[index]
                                               ['banner'] ??
                                           '',
-                                      placeholder: (context, url) => Image.network(
-                                          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                                      placeholder: (context, url) => localImage,
                                       fit: BoxFit.cover,
                                       width: widget.channelList[index]
                                               ['isFocused']
@@ -249,23 +252,6 @@ class _VideoScreenState extends State<VideoScreen> {
                                   ),
                                 ),
                               ),
-                              // const SizedBox(height: 8.0),
-                              // Text(
-                              //   widget.channelList[index]['name'] ?? '',
-                              //   style: TextStyle(
-                              //     color: widget.channelList[index]['isFocused']
-                              //         ? Colors.yellow
-                              //         : Colors.white,
-                              //     fontSize: widget.channelList[index]
-                              //             ['isFocused']
-                              //         ? 20.0
-                              //         : 16.0,
-                              //     fontWeight: widget.channelList[index]
-                              //             ['isFocused']
-                              //         ? FontWeight.bold
-                              //         : FontWeight.normal,
-                              //   ),
-                              // ),
                             ],
                           ),
                         ),

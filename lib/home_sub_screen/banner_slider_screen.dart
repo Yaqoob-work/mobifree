@@ -94,7 +94,7 @@ class _BannerSliderState extends State<BannerSlider> {
           bannerList = responseData.map((banner) {
             return {
               'content_id': banner['content_id'] ?? '',
-              'banner': banner['banner'] ?? '',
+              'banner': banner['banner'] ?? localImage,
               'title': banner['title'] ?? 'No Title',
             };
           }).toList();
@@ -243,12 +243,11 @@ class _BannerSliderState extends State<BannerSlider> {
                                         ),
                                       ),
                                       child: CachedNetworkImage(
-                                        imageUrl: banner['banner'] ?? '',
+                                        imageUrl: banner['banner'] ?? localImage,
                                         fit: BoxFit.cover,
                                         width: screenwdt,
                                         placeholder: (context, url) =>
-                                            Image.network(
-                                                'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                                            localImage,
                                       ),
                                     ),
                                   ),
@@ -347,11 +346,10 @@ class _BannerSliderState extends State<BannerSlider> {
                                           ),
                                         ),
                                         child: CachedNetworkImage(
-                                          imageUrl: smallBanner['banner'] ?? '',
+                                          imageUrl: smallBanner['banner'] ?? localImage,
                                           fit: BoxFit.cover,
                                           placeholder: (context, url) =>
-                                              Image.network(
-                                                  'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                                             localImage,
                                         ),
                                       ),
                                     ),

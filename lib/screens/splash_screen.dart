@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 
-
-
 void main() {
   runApp(SplashScreen());
 }
@@ -19,8 +17,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 3),(){
-      Navigator.pushReplacement(context, MaterialPageRoute(builder:(context)=> MyHomePage()));
+    Timer(Duration(seconds: 2), () {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => MyHomePage()));
     });
   }
 
@@ -30,8 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: cardColor,
       body: Center(
         // child: Image.asset('assets/images/logo.png'),
-        child: Image.asset('assets/logo.png',
-                  width: screenwdt * 0.5),
+        child: Image.asset('assets/logo.png', width: screenwdt * 0.5),
       ),
     );
   }

@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+// import 'package:wakelock/wakelock.dart';
 
 class VideoMovieScreen extends StatefulWidget {
   final String videoUrl;
@@ -48,7 +50,9 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
         });
         _controller.play();
         _startPositionUpdater();
+        // Wakelock.enable(); // Keep the screen on for this page
       });
+    KeepScreenOn.turnOn();
 
     _startHideControlsTimer();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
@@ -65,6 +69,9 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
+    // Wakelock.disable(); // Disable screen wake when leaving this page
+    KeepScreenOn.turnOff();
+
     super.dispose();
   }
 

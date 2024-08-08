@@ -22,34 +22,36 @@ void main() {
   runApp(MyApp());
 }
 
+var primaryColor;
+var highlightColor;
+var cardColor;
+var hintColor;
+var borderColor;
 
+var screenhgt;
+var screenwdt;
+var screensz;
 
-var primaryColor ;
-var highlightColor ;
-var cardColor ;
-var hintColor  ;
-var borderColor  ;
-
-var screenhgt ;
-var screenwdt ;
-var screensz ;
+var localImage;
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-     screenhgt = MediaQuery.of(context).size.height;
-     screenwdt = MediaQuery.of(context).size.height;
-     screensz = MediaQuery.of(context).size;
-      primaryColor = Color.fromARGB(255, 248, 8, 8);
-   highlightColor = Colors.blue;
-   cardColor = Color.fromARGB(255, 8, 1, 34);
-   hintColor = Colors.white;
-   borderColor = Color.fromARGB(255, 247, 6, 118);
+    screenhgt = MediaQuery.of(context).size.height;
+    screenwdt = MediaQuery.of(context).size.height;
+    screensz = MediaQuery.of(context).size;
+    primaryColor = Color.fromARGB(255, 248, 8, 8);
+    highlightColor = Colors.blue;
+    cardColor = Color.fromARGB(255, 8, 1, 34);
+    hintColor = Colors.white;
+    borderColor = Color.fromARGB(255, 247, 6, 118);
+
+    localImage = Image.asset('assets/logo.png');
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Side Navigation Bar',
-     
+      // title: 'Flutter Side Navigation Bar',
+
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),
@@ -57,9 +59,8 @@ class MyApp extends StatelessWidget {
         '/category': (context) => HomeCategory(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
-        '/live':(context) => LiveScreen(),
+        '/live': (context) => LiveScreen(),
       },
-      // home: MyHomePage(),
     );
   }
 }
@@ -114,7 +115,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 SearchScreen(),
                 LiveScreen(),
                 VOD(),
-                // Network(),
                 HomeCategory(),
               ],
             ),
@@ -163,36 +163,18 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     return Container(
       width: MediaQuery.of(context).size.width *
           0.22, // Adjust percentage as needed
-      // color: const Color.fromARGB(255, 136, 51, 122),
       decoration: BoxDecoration(
         color: hintColor,
-        // gradient: LinearGradient(
-        //   begin: Alignment.centerLeft,
-        //   end: Alignment.centerRight,
-        //   colors: [primaryColor, Colors.blue],
-        //   stops: [0.0, 1.0],
-        //   tileMode: TileMode.clamp,
-        // ),
       ),
       child: Column(
         children: <Widget>[
           Container(
-            // color: Colors.white,
             decoration: BoxDecoration(
               color: hintColor,
-              // gradient: LinearGradient(
-              //   begin: Alignment.centerLeft,
-              //   end: Alignment.centerRight,
-              //   colors: [primaryColor, Colors.blue],
-              //   stops: [0.0, 1.0],
-              //   tileMode: TileMode.clamp,
-              // ),
             ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
-              // borderRadius: BorderRadius.circular(40),
-              child: Image.asset('assets/logo.png',
-                  width: screenwdt * 0.5),
+              child: Image.asset('assets/logo.png', width: screenwdt * 0.5),
             ),
           ),
           Expanded(
@@ -253,8 +235,10 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         }
       },
       onKeyEvent: (node, event) {
-        if (HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.select) ||
-            HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
+        if (HardwareKeyboard.instance
+                .isLogicalKeyPressed(LogicalKeyboardKey.select) ||
+            HardwareKeyboard.instance
+                .isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
           widget.onPageSelected(index);
           return KeyEventResult.handled;
         }
@@ -268,25 +252,27 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         child: Center(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
-            color:  hintColor,
+            color: hintColor,
             child: ListTile(
               leading: Icon(
                 iconData,
-                color: focusNode.hasFocus?      Color.fromARGB(255, 247, 6, 118):Color.fromARGB(255, 20, 27, 122),
-                size:  isSelected? 23:20,
+                color: focusNode.hasFocus
+                    ? Color.fromARGB(255, 247, 6, 118)
+                    : Color.fromARGB(255, 20, 27, 122),
+                size: isSelected ? 23 : 20,
               ),
               title: Text(
                 title,
                 style: TextStyle(
-                  color:focusNode.hasFocus?   Color.fromARGB(255, 247, 6, 118):Color.fromARGB(255, 20, 27, 122),
-                  fontSize: isSelected? 25:20,
+                  color: focusNode.hasFocus
+                      ? Color.fromARGB(255, 247, 6, 118)
+                      : Color.fromARGB(255, 20, 27, 122),
+                  fontSize: isSelected ? 25 : 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            
           ),
-        
         ),
       ),
     );

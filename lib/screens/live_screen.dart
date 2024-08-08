@@ -53,12 +53,24 @@ class _LiveScreenState extends State<LiveScreen> {
         throw Exception('Failed to load data');
       }
     } catch (e) {
-      print('Error fetching data: $e');
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
       });
     }
+  }
+
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevents dismissing the dialog by tapping outside
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
   }
 
   @override
@@ -68,9 +80,9 @@ class _LiveScreenState extends State<LiveScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(child: Text('Error: $errorMessage'))
+              ? Center(child: Text('Something Went Wrong'))
               : entertainmentList.isEmpty
-                  ? Center(child: Text('No entertainment channels found'))
+                  ? Center(child: Text('Something Went Wrong'))
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: GridView.builder(
@@ -110,17 +122,8 @@ class _LiveScreenState extends State<LiveScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Padding(
-          // padding: const EdgeInsets.all(10.0),
-          // child:
-          // Material(
-          //   elevation: 0,
-          // child: Container(
-          // decoration: BoxDecoration(boxShadow: entertainmentList[index]['isFocused']?[]:[]),
-          // child:
           AnimatedContainer(
-            // padding: EdgeInsets.all(10),
-            // curve: Curves.ease,
+            curve: Curves.ease,
             width: entertainmentList[index]['isFocused']
                 ? screenwdt * 0.35
                 : screenwdt * 0.3,
@@ -137,13 +140,11 @@ class _LiveScreenState extends State<LiveScreen> {
                   width: 5.0,
                 ),
                 borderRadius: BorderRadius.circular(10)),
-
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
               child: CachedNetworkImage(
                 imageUrl: entertainmentList[index]['banner'],
-                placeholder: (context, url) => Image.network(
-                    'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                placeholder: (context, url) => localImage,
                 width: entertainmentList[index]['isFocused']
                     ? screenwdt * 0.3
                     : screenwdt * 0.27,
@@ -154,31 +155,6 @@ class _LiveScreenState extends State<LiveScreen> {
               ),
             ),
           ),
-          // ),
-          // ),
-          // ),
-          // ),
-          // ),
-
-          // const SizedBox(height: 8.0),
-          // Container(
-          //   width: entertainmentList[index]['isFocused'] ? 180 : 120,
-          //   child: Text(
-          //     // entertainmentList[index]['name'] ?? 'Unknown',
-          //     (entertainmentList[index]['name'] ?? 'UNKNOWN').toUpperCase(),
-
-          //     style: TextStyle(
-          //       fontSize: 20,
-          //       color: entertainmentList[index]['isFocused']
-          //           ? highlightColor
-          //           : Colors.white,
-          //     ),
-
-          //     textAlign: TextAlign.center,
-          //     maxLines: 1,
-          //     overflow: TextOverflow.ellipsis,
-          //   ),
-          // ),
         ],
       ),
     );
@@ -189,36 +165,50 @@ class _LiveScreenState extends State<LiveScreen> {
     if (_isNavigating) return; // Check if navigation is already in progress
     _isNavigating = true; // Set the flag to true
 
-    if (entertainmentItem['stream_type'] == 'YoutubeLive') {
-      final response = await https.get(
-        Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-            entertainmentItem['url']!),
-        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      );
+    // Show loading indicator
+    _showLoadingIndicator(context);
 
-      if (response.statusCode == 200) {
-        entertainmentItem['url'] = json.decode(response.body)['url']!;
-        entertainmentItem['stream_type'] = "M3u8";
-      } else {
-        throw Exception('Failed to load networks');
+    try {
+      if (entertainmentItem['stream_type'] == 'YoutubeLive') {
+        final response = await https.get(
+          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
+              entertainmentItem['url']!),
+          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+        );
+
+        if (response.statusCode == 200) {
+          entertainmentItem['url'] = json.decode(response.body)['url']!;
+          entertainmentItem['stream_type'] = "M3u8";
+        } else {
+          throw Exception('Failed to load networks');
+        }
       }
-    }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VideoScreen(
-          videoUrl: entertainmentItem['url'],
-          videoTitle: entertainmentItem['name'],
-          channelList: entertainmentList,
-          onFabFocusChanged: (bool) {},
-          genres: '',
-          channels: [],
-          initialIndex: 1,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoScreen(
+            videoUrl: entertainmentItem['url'],
+            videoTitle: entertainmentItem['name'],
+            channelList: entertainmentList,
+            onFabFocusChanged: (bool) {},
+            genres: '',
+            channels: [],
+            initialIndex: 1,
+          ),
         ),
-      ),
-    ).then((_) {
-      // Reset the flag after the navigation is completed
-      _isNavigating = false;
-    });
+      ).then((_) {
+        // Reset the flag after the navigation is completed
+        _isNavigating = false;
+        // Hide the loading indicator
+        Navigator.of(context, rootNavigator: true).pop();
+      });
+    } catch (e) {
+      // Hide the loading indicator in case of an error
+      Navigator.of(context, rootNavigator: true).pop();
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Link Error')),
+      );
+    }
   }
 }

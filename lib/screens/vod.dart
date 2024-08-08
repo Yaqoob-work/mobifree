@@ -24,8 +24,7 @@ class NetworkApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      logo: json['logo'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      logo: json['logo'] ?? localImage,
     );
   }
 }
@@ -43,8 +42,7 @@ class ContentApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      banner: json['banner'] ?? localImage,
     );
   }
 }
@@ -69,10 +67,8 @@ class MovieDetailsApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
-      poster: json['poster'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      banner: json['banner'] ?? localImage,
+      poster: json['poster'] ?? localImage,
       genres: json['genres'] ?? 'Unknown',
     );
   }
@@ -201,8 +197,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                 borderRadius: BorderRadius.circular(5),
                 child: CachedNetworkImage(
                   imageUrl: widget.network.logo,
-                  placeholder: (context, url) => Image.network(
-                      'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                  placeholder: (context, url) => localImage,
                   fit: BoxFit.cover,
                   width:
                       _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
@@ -282,8 +277,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
                     imageUrl: widget.content.banner,
-                    placeholder: (context, url) => Image.network(
-                        'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                    placeholder: (context, url) => localImage,
                     fit: BoxFit.cover,
                     width: _focusNode.hasFocus
                         ? screenwdt * 0.35
@@ -294,20 +288,6 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                   ),
                 ),
               ),
-              // SizedBox(height: 5),
-              // Container(
-              //   width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
-              //   child: Text(
-              //     widget.content.name,
-              //     style: TextStyle(
-              //       color: _focusNode.hasFocus ? Colors.yellow : Colors.white,
-              //       fontSize: _focusNode.hasFocus ? 20 : 16,
-              //     ),
-              //     textAlign: TextAlign.center,
-              //     overflow: TextOverflow.ellipsis,
-              //     maxLines: 2,
-              //   ),
-              // ),
             ],
           ),
         ),
@@ -430,6 +410,7 @@ class DetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool _isNavigating = false;
+    bool _isLoadingVideo = false;
 
     return Scaffold(
       backgroundColor: cardColor,
@@ -455,8 +436,7 @@ class DetailsPage extends StatelessWidget {
                     alignment: Alignment.center,
                     child: CachedNetworkImage(
                       imageUrl: movieDetails.poster,
-                      placeholder: (context, url) => Image.network(
-                          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                      placeholder: (context, url) => localImage,
                       fit: BoxFit.cover,
                       height: screenhgt * 0.5,
                       width: screenwdt,
@@ -480,52 +460,71 @@ class DetailsPage extends StatelessWidget {
                             if (_isNavigating)
                               return; // Check if navigation is already in progress
                             _isNavigating = true; // Set the flag to true
+                            _isLoadingVideo = true; // Start loading video
 
-                            final playLink =
-                                await fetchMoviePlayLink(content.id);
-                            // final movieDetails =
-                            // await fetchMovieDetails(content.id);
-                            // final playLink =
-                            //     await fetchMoviePlayLink(movieDetails.id);
-
-                            if (playLink['type'] == 'Youtube' ||
-                                playLink['stream_type'] == 'YoutubeLive') {
-                              final response = await https.get(
-                                Uri.parse(
-                                    'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                        playLink['url']!),
-                                headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                              );
-
-                              if (response.statusCode == 200) {
-                                playLink['url'] =
-                                    json.decode(response.body)['url'];
-                                playLink['type'] = "M3u8";
-                              } else {
-                                throw Exception('Failed to load networks');
-                              }
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VideoMovieScreen(
-                                  videoUrl: playLink['url']!,
-                                  videoTitle: '',
-                                  channelList: [],
-                                  videoBanner: '',
-                                  onFabFocusChanged: (bool focused) {},
-                                  genres: '',
-                                  videoType: '',
-                                  url: '',
-                                  type: '',
-                                ),
-                                //   playLink: playLink['url']!,
-                                // ),
+                            // Show loading indicator
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => Center(
+                                child: CircularProgressIndicator(),
                               ),
-                            ).then((_) {
-                              // Reset the flag after the navigation is completed
-                              _isNavigating = false;
-                            });
+                            );
+
+                            try {
+                              final playLink =
+                                  await fetchMoviePlayLink(content.id);
+
+                              if (playLink['type'] == 'Youtube' ||
+                                  playLink['type'] == 'YoutubeLive') {
+                                final response = await https.get(
+                                  Uri.parse(
+                                      'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                          playLink['url']!),
+                                  headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                                );
+
+                                if (response.statusCode == 200) {
+                                  playLink['url'] =
+                                      json.decode(response.body)['url'];
+                                  playLink['type'] = "M3u8";
+                                } else {
+                                  throw Exception('Failed to load video URL');
+                                }
+                              }
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VideoMovieScreen(
+                                    videoUrl: playLink['url']!,
+                                    videoTitle: movieDetails.name,
+                                    channelList: [],
+                                    videoBanner: movieDetails.banner,
+                                    onFabFocusChanged: (bool focused) {},
+                                    genres: movieDetails.genres,
+                                    videoType: playLink['type']!,
+                                    url: playLink['url']!,
+                                    type: playLink['type']!,
+                                  ),
+                                ),
+                              ).then((_) {
+                                          // Reset the flag after the navigation is completed
+                                          _isNavigating = false;
+                                          Navigator.of(context,
+                                                  rootNavigator: true)
+                                              .pop();
+                                        });
+                                      } catch (e) {
+                                        Navigator.of(context,
+                                                rootNavigator: true)
+                                            .pop();
+                                        // Show error message
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(content: Text('Something Went Wrong')),
+                                        );
+                                      }
                           },
                         );
                       },

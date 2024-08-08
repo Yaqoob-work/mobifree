@@ -24,8 +24,7 @@ class NetworkApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      logo: json['logo'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      logo: json['logo'] ?? localImage,
     );
   }
 }
@@ -43,8 +42,7 @@ class ContentApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      banner: json['banner'] ?? localImage,
     );
   }
 }
@@ -69,10 +67,8 @@ class MovieDetailsApi {
           ? json['id'] as int
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
-      banner: json['banner'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
-      poster: json['poster'] ??
-          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png',
+      banner: json['banner'] ?? localImage,
+      poster: json['poster'] ?? localImage,
       genres: json['genres'] ?? 'Unknown',
     );
   }
@@ -89,7 +85,7 @@ Future<List<NetworkApi>> fetchNetworks() async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
   } else {
-    throw Exception('Failed to load networks');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -103,7 +99,7 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
   } else {
-    throw Exception('Failed to load content');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -117,7 +113,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
     final Map<String, dynamic> body = json.decode(response.body);
     return MovieDetailsApi.fromJson(body);
   } else {
-    throw Exception('Failed to load movie details');
+    throw Exception('S');
   }
 }
 
@@ -135,7 +131,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     }
     return {'url': '', 'type': ''};
   } else {
-    throw Exception('Failed to load movie play link');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -205,8 +201,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
                     imageUrl: widget.network.logo,
-                    placeholder: (context, url) => Image.network(
-                        'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                    placeholder: (context, url) => localImage,
                     fit: BoxFit.cover,
                     width: _focusNode.hasFocus
                         ? screenwdt * 0.35
@@ -289,8 +284,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
                     imageUrl: widget.content.banner,
-                    placeholder: (context, url) => Image.network(
-                        'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                    placeholder: (context, url) => localImage,
                     fit: BoxFit.cover,
                     width: _focusNode.hasFocus
                         ? screenwdt * 0.35
@@ -340,7 +334,6 @@ class _SubVodState extends State<SubVod> {
 
   @override
   Widget build(BuildContext context) {
-    print('Building SubVod'); // Debug print
     return Scaffold(
       backgroundColor: cardColor,
       body: FutureBuilder<List<NetworkApi>>(
@@ -349,9 +342,9 @@ class _SubVodState extends State<SubVod> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Failed to load networks'));
+            return Center(child: Text('Something Went Wrong'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No networks available'));
+            return Center(child: Text('Something Went Wrong'));
           } else {
             return ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -397,9 +390,9 @@ class NetworkContentsScreen extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Center(child: Text('Failed to load content'));
+              return Center(child: Text('Something Went Wrong'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Center(child: Text('No content available'));
+              return Center(child: Text('Something Went Wrong'));
             } else {
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -443,6 +436,7 @@ class DetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool _isNavigating = false;
+    bool _isLoadingVideo = false;
 
     return Scaffold(
       backgroundColor: cardColor,
@@ -468,8 +462,7 @@ class DetailsPage extends StatelessWidget {
                     alignment: Alignment.center,
                     child: CachedNetworkImage(
                       imageUrl: movieDetails.poster,
-                      placeholder: (context, url) => Image.network(
-                          'https://acomtv.com/assets/images/Dooo_poster_placeholder.png '),
+                      placeholder: (context, url) => localImage,
                       fit: BoxFit.cover,
                       height: screenhgt * 0.5,
                       width: screenwdt,
@@ -493,52 +486,71 @@ class DetailsPage extends StatelessWidget {
                             if (_isNavigating)
                               return; // Check if navigation is already in progress
                             _isNavigating = true; // Set the flag to true
+                            _isLoadingVideo = true; // Start loading video
 
-                            final playLink =
-                                await fetchMoviePlayLink(content.id);
-                            // final movieDetails =
-                            // await fetchMovieDetails(content.id);
-                            // final playLink =
-                            //     await fetchMoviePlayLink(movieDetails.id);
-
-                            if (playLink['type'] == 'Youtube' ||
-                                playLink['stream_type'] == 'YoutubeLive') {
-                              final response = await https.get(
-                                Uri.parse(
-                                    'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                        playLink['url']!),
-                                headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                              );
-
-                              if (response.statusCode == 200) {
-                                playLink['url'] =
-                                    json.decode(response.body)['url'];
-                                playLink['type'] = "M3u8";
-                              } else {
-                                throw Exception('Failed to load networks');
-                              }
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VideoMovieScreen(
-                                  videoUrl: playLink['url']!,
-                                  videoTitle: '',
-                                  channelList: [],
-                                  videoBanner: '',
-                                  onFabFocusChanged: (bool focused) {},
-                                  genres: '',
-                                  videoType: '',
-                                  url: '',
-                                  type: '',
-                                ),
-                                //   playLink: playLink['url']!,
-                                // ),
+                            // Show loading indicator
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => Center(
+                                child: CircularProgressIndicator(),
                               ),
-                            ).then((_) {
-                              // Reset the flag after the navigation is completed
-                              _isNavigating = false;
-                            });
+                            );
+
+                            try {
+                              final playLink =
+                                  await fetchMoviePlayLink(content.id);
+
+                              if (playLink['type'] == 'Youtube' ||
+                                  playLink['type'] == 'YoutubeLive') {
+                                final response = await https.get(
+                                  Uri.parse(
+                                      'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                          playLink['url']!),
+                                  headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                                );
+
+                                if (response.statusCode == 200) {
+                                  playLink['url'] =
+                                      json.decode(response.body)['url'];
+                                  playLink['type'] = "M3u8";
+                                } else {
+                                  throw Exception('Failed to load video URL');
+                                }
+                              }
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VideoMovieScreen(
+                                    videoUrl: playLink['url']!,
+                                    videoTitle: movieDetails.name,
+                                    channelList: [],
+                                    videoBanner: movieDetails.banner,
+                                    onFabFocusChanged: (bool focused) {},
+                                    genres: movieDetails.genres,
+                                    videoType: playLink['type']!,
+                                    url: playLink['url']!,
+                                    type: playLink['type']!,
+                                  ),
+                                ),
+                              ).then((_) {
+                                          // Reset the flag after the navigation is completed
+                                          _isNavigating = false;
+                                          Navigator.of(context,
+                                                  rootNavigator: true)
+                                              .pop();
+                                        });
+                                      } catch (e) {
+                                        Navigator.of(context,
+                                                rootNavigator: true)
+                                            .pop();
+                                        // Show error message
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(content: Text('Something Went Wrong')),
+                                        );
+                                      }
                           },
                         );
                       },
