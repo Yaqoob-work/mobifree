@@ -81,7 +81,7 @@ class _BannerSliderState extends State<BannerSlider> {
   Future<void> fetchBanners() async {
     try {
       final response = await https.get(
-        Uri.parse('https://acomtv.com/android/getCustomImageSlider'),
+        Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -121,7 +121,7 @@ class _BannerSliderState extends State<BannerSlider> {
   Future<void> fetchAndPlayVideo(String contentId) async {
     try {
       final response = await https.get(
-        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -243,7 +243,8 @@ class _BannerSliderState extends State<BannerSlider> {
                                         ),
                                       ),
                                       child: CachedNetworkImage(
-                                        imageUrl: banner['banner'] ?? localImage,
+                                        imageUrl:
+                                            banner['banner'] ?? localImage,
                                         fit: BoxFit.cover,
                                         width: screenwdt,
                                         placeholder: (context, url) =>
@@ -346,10 +347,11 @@ class _BannerSliderState extends State<BannerSlider> {
                                           ),
                                         ),
                                         child: CachedNetworkImage(
-                                          imageUrl: smallBanner['banner'] ?? localImage,
+                                          imageUrl: smallBanner['banner'] ??
+                                              localImage,
                                           fit: BoxFit.cover,
                                           placeholder: (context, url) =>
-                                             localImage,
+                                              localImage,
                                         ),
                                       ),
                                     ),

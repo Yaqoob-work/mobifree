@@ -31,7 +31,7 @@ class _HomeCategoryState extends State<HomeCategory> {
 
   Future<List<Category>> fetchCategories() async {
     final response = await https.get(
-      Uri.parse('https://acomtv.com/android/getSelectHomeCategory'),
+      Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );
 
@@ -349,7 +349,6 @@ class _VideoScreenState extends State<VideoScreen> {
     //   FocusScope.of(context).requestFocus(_fabFocusNode);
     // });
     KeepScreenOn.turnOn();
-
   }
 
   @override
@@ -508,13 +507,17 @@ class _VideoScreenState extends State<VideoScreen> {
                                               .pop();
                                         });
                                       } catch (e) {
+                                          _isNavigating = false;
+
                                         Navigator.of(context,
                                                 rootNavigator: true)
                                             .pop();
                                         // Show error message
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          SnackBar(content: Text('Something Went Wrong')),
+                                          SnackBar(
+                                              content:
+                                                  Text('Something Went Wrong')),
                                         );
                                       }
                                     },

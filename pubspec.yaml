@@ -39,14 +39,14 @@ dependencies:
   video_player: ^2.8.7
   http: ^1.2.1
   cached_network_image: ^3.3.1
-  chewie: ^1.8.1
+  # chewie: ^1.8.1
 
-  better_player: ^0.0.84
+  # better_player: ^0.0.84
   flutter_launcher_icons: ^0.13.1
-  carousel_slider: ^4.2.1
-  container_gradient_border: ^0.0.2
+  # carousel_slider: ^4.2.1
+  # container_gradient_border: ^0.0.2
   youtube_player_flutter: ^9.0.1
-  webview_flutter: ^4.8.0
+  # webview_flutter: ^4.8.0
   keep_screen_on: ^3.0.0
 
 dev_dependencies:
@@ -58,7 +58,7 @@ flutter_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  image_path: "assets/MFT_T.png"
+  image_path: "assets/logo2.png"
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

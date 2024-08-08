@@ -77,7 +77,7 @@ class MovieDetailsApi {
 // Fetch Functions
 Future<List<NetworkApi>> fetchNetworks() async {
   final response = await https.get(
-    Uri.parse('https://acomtv.com/android/getNetworks'),
+    Uri.parse('https://api.ekomflix.com/android/getNetworks'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -91,7 +91,8 @@ Future<List<NetworkApi>> fetchNetworks() async {
 
 Future<List<ContentApi>> fetchContent(int networkId) async {
   final response = await https.get(
-    Uri.parse('https://acomtv.com/android/getAllContentsOfNetwork/$networkId'),
+    Uri.parse(
+        'https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -105,7 +106,7 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
 
 Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
   final response = await https.get(
-    Uri.parse('https://acomtv.com/android/getMovieDetails/$contentId'),
+    Uri.parse('https://api.ekomflix.com/android/getMovieDetails/$contentId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -119,7 +120,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
 
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final response = await https.get(
-    Uri.parse('https://acomtv.com/android/getMoviePlayLinks/$movieId/0'),
+    Uri.parse('https://api.ekomflix.com/android/getMoviePlayLinks/$movieId/0'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -535,22 +536,18 @@ class DetailsPage extends StatelessWidget {
                                   ),
                                 ),
                               ).then((_) {
-                                          // Reset the flag after the navigation is completed
-                                          _isNavigating = false;
-                                          Navigator.of(context,
-                                                  rootNavigator: true)
-                                              .pop();
-                                        });
-                                      } catch (e) {
-                                        Navigator.of(context,
-                                                rootNavigator: true)
-                                            .pop();
-                                        // Show error message
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(content: Text('Something Went Wrong')),
-                                        );
-                                      }
+                                // Reset the flag after the navigation is completed
+                                _isNavigating = false;
+                                Navigator.of(context, rootNavigator: true)
+                                    .pop();
+                              });
+                            } catch (e) {
+                              Navigator.of(context, rootNavigator: true).pop();
+                              // Show error message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Something Went Wrong')),
+                              );
+                            }
                           },
                         );
                       },

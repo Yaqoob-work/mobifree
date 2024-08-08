@@ -30,7 +30,7 @@ class _LiveScreenState extends State<LiveScreen> {
   Future<void> fetchEntertainment() async {
     try {
       final response = await https.get(
-        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -203,6 +203,8 @@ class _LiveScreenState extends State<LiveScreen> {
         Navigator.of(context, rootNavigator: true).pop();
       });
     } catch (e) {
+                                          _isNavigating = false;
+
       // Hide the loading indicator in case of an error
       Navigator.of(context, rootNavigator: true).pop();
       // Show error message

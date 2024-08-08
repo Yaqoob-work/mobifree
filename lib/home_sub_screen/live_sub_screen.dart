@@ -27,7 +27,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   Future<void> fetchEntertainment() async {
     try {
       final response = await https.get(
-        Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
+        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
         headers: {
           'x-api-key': 'vLQTuPZUxktl5mVW',
         },
@@ -57,7 +57,8 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
       });
     }
   }
-   void _showLoadingIndicator(BuildContext context) {
+
+  void _showLoadingIndicator(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible:
