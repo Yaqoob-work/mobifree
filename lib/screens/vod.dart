@@ -423,9 +423,19 @@ class DetailsPage extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Center(child: Text('Failed to load movie details'));
+              return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+            ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))],);
             } else if (!snapshot.hasData) {
-              return Center(child: Text('No movie details available'));
+              return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+            ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))],);
             } else {
               final movieDetails = snapshot.data!;
               return Column(
@@ -519,7 +529,11 @@ class DetailsPage extends StatelessWidget {
                               Navigator.of(context, rootNavigator: true).pop();
                               // Show error message
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Something Went Wrong')),
+                                SnackBar(
+                                    content: Text(
+                                  'Something Went Wrong',
+                                  style: TextStyle(fontSize: 20),
+                                )),
                               );
                             }
                           },

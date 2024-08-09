@@ -80,9 +80,11 @@ class _LiveScreenState extends State<LiveScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(child: Text('Something Went Wrong'))
+              ? Center(child: Text('Something Went Wrong',style: TextStyle(fontSize: 20),))
               : entertainmentList.isEmpty
-                  ? Center(child: Text('Something Went Wrong'))
+                  ? 
+                  Center(child: Text('Something Went Wrong'))
+                  
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: GridView.builder(

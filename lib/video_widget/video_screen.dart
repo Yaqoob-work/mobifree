@@ -170,6 +170,7 @@ class _VideoScreenState extends State<VideoScreen> {
             bottom: isGridVisible ? 210 : 20,
             right: 20,
             child: IconButton(
+              color: borderColor,
               focusColor: Colors.black26,
               onPressed: toggleGridVisibility,
               icon: Icon(isGridVisible ? Icons.close : Icons.grid_view),
@@ -205,7 +206,7 @@ class _VideoScreenState extends State<VideoScreen> {
                             _resetInactivityTimer(); // Reset inactivity timer on key event
                             return KeyEventResult.ignored;
                           },
-                          onFocusChange: (hasFocus) {
+                          onFocusChange: (hasFocus) { 
                             _onItemFocus(index, hasFocus);
                           },
                           child: Column(
@@ -237,7 +238,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                     child: CachedNetworkImage(
                                       imageUrl: widget.channelList[index]
                                               ['banner'] ??
-                                          '',
+                                          localImage,
                                       placeholder: (context, url) => localImage,
                                       fit: BoxFit.cover,
                                       width: widget.channelList[index]

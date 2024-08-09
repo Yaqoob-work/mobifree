@@ -343,9 +343,17 @@ class _SubVodState extends State<SubVod> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Something Went Wrong'));
+            return Center(
+                child: Text(
+              'Something Went Wrong',
+              style: TextStyle(fontSize: 20),
+            ));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('Something Went Wrong'));
+            return Center(
+                child: Text(
+              'Something Went Wrong',
+              style: TextStyle(fontSize: 20),
+            ));
           } else {
             return ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -391,9 +399,17 @@ class NetworkContentsScreen extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Center(child: Text('Something Went Wrong'));
+              return Center(
+                  child: Text(
+                'Something Went Wrong',
+                style: TextStyle(fontSize: 20),
+              ));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return Center(child: Text('Something Went Wrong'));
+              return Center(
+                  child: Text(
+                'Something Went Wrong',
+                style: TextStyle(fontSize: 20),
+              ));
             } else {
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -449,9 +465,28 @@ class DetailsPage extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Center(child: Text('Failed to load movie details'));
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      },
+                      child: Text(
+                        'Go Back',
+                        style: TextStyle(fontSize: 25, color: borderColor),
+                      ))
+                ],
+              );
             } else if (!snapshot.hasData) {
-              return Center(child: Text('No movie details available'));
+              return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+            ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))],);
             } else {
               final movieDetails = snapshot.data!;
               return Column(

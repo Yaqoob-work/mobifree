@@ -45,7 +45,6 @@ class MyApp extends StatelessWidget {
     cardColor = Color.fromARGB(255, 8, 1, 34);
     hintColor = Colors.white;
     borderColor = Color.fromARGB(255, 247, 6, 118);
-
     localImage = Image.asset('assets/logo.png');
 
     return MaterialApp(
@@ -162,7 +161,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width *
-          0.22, // Adjust percentage as needed
+          0.25, // Adjust percentage as needed
       decoration: BoxDecoration(
         color: hintColor,
       ),
@@ -178,45 +177,48 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             ),
           ),
           Expanded(
-            child: ListView(
-              children: <Widget>[
-                _buildNavigationItem(
-                  Icons.home,
-                  'HOME',
-                  0,
-                  _focusNodes[0],
-                ),
-                _buildNavigationItem(
-                  Icons.search,
-                  'SEARCH',
-                  1,
-                  _focusNodes[1],
-                ),
-                _buildNavigationItem(
-                  Icons.tv,
-                  'LIVE TV',
-                  2,
-                  _focusNodes[2],
-                ),
-                _buildNavigationItem(
-                  Icons.video_camera_front,
-                  'VOD',
-                  3,
-                  _focusNodes[3],
-                ),
-                // _buildNavigationItem(
-                //   Icons.network_wifi_rounded,
-                //   'NETWORK',
-                //   4,
-                //   _focusNodes[4],
-                // ),
-                _buildNavigationItem(
-                  Icons.category,
-                  'CATEGORY',
-                  4,
-                  _focusNodes[4],
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.only(left:8.0),
+              child: ListView(
+                children: <Widget>[
+                  _buildNavigationItem(
+                    Icons.home,
+                    'HOME',
+                    0,
+                    _focusNodes[0],
+                  ),
+                  _buildNavigationItem(
+                    Icons.search,
+                    'SEARCH',
+                    1,
+                    _focusNodes[1],
+                  ),
+                  _buildNavigationItem(
+                    Icons.tv,
+                    'LIVE TV',
+                    2,
+                    _focusNodes[2],
+                  ),
+                  _buildNavigationItem(
+                    Icons.video_camera_front,
+                    'VOD',
+                    3,
+                    _focusNodes[3],
+                  ),
+                  // _buildNavigationItem(
+                  //   Icons.network_wifi_rounded,
+                  //   'NETWORK',
+                  //   4,
+                  //   _focusNodes[4],
+                  // ),
+                  _buildNavigationItem(
+                    Icons.category,
+                    'CATEGORY',
+                    4,
+                    _focusNodes[4],
+                  ),
+                ],
+              ),
             ),
           ),
         ],

@@ -203,7 +203,12 @@ class _BannerSliderState extends State<BannerSlider> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(child: Text('Error: $errorMessage'))
+              ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+            ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))],)
               : bannerList.isEmpty
                   ? const Center(child: Text('No banners found'))
                   : Stack(
