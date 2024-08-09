@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
+import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
@@ -341,7 +342,7 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   void initState() {
     super.initState();
-    // KeepScreenOn.turnOn();
+    KeepScreenOn.turnOn();
 
     currentIndex = widget.initialIndex;
     _initializeVideoPlayer(widget.channels[currentIndex].url);
@@ -354,7 +355,7 @@ class _VideoScreenState extends State<VideoScreen> {
   void dispose() {
     _controller.dispose();
     _fabFocusNode.dispose();
-    // KeepScreenOn.turnOff();
+    KeepScreenOn.turnOff();
     RawKeyboard.instance.removeListener(_handleKeyEvent);
     _inactivityTimer?.cancel();
     super.dispose();
