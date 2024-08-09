@@ -341,6 +341,8 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   void initState() {
     super.initState();
+    // KeepScreenOn.turnOn();
+
     currentIndex = widget.initialIndex;
     _initializeVideoPlayer(widget.channels[currentIndex].url);
 
@@ -352,6 +354,7 @@ class _VideoScreenState extends State<VideoScreen> {
   void dispose() {
     _controller.dispose();
     _fabFocusNode.dispose();
+    // KeepScreenOn.turnOff();
     RawKeyboard.instance.removeListener(_handleKeyEvent);
     _inactivityTimer?.cancel();
     super.dispose();
@@ -499,13 +502,17 @@ class _VideoScreenState extends State<VideoScreen> {
                           focusNode: _fabFocusNode,
                           child: IconButton(
                             color: _isFabFocused ? borderColor : Colors.white,
-                            focusColor: _isFabFocused?hintColor:Colors.blue,
+                            // focusColor: _isFabFocused?hintColor:Colors.blue,
                             onPressed: () {
                               setState(() {
                                 showChannels = !showChannels;
                               });
                             },
-                            icon: Icon(showChannels ? Icons.close : Icons.grid_view),
+                            icon: Container(
+                              padding: EdgeInsets.all(3),
+                            color: _isFabFocused ? const Color.fromARGB(195, 0, 0, 0) : Colors.transparent,
+
+                              child: Icon(showChannels ? Icons.close : Icons.grid_view,size: _isFabFocused?30:20,)),
                           ),
                         ),
                       ),

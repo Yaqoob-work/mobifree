@@ -173,7 +173,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
-              child: Image.asset('assets/logo.png', width: screenwdt * 0.5),
+              child: Image.asset('assets/logo.png', width: screenwdt * 0.3),
             ),
           ),
           Expanded(

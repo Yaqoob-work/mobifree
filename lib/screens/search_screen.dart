@@ -331,13 +331,14 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       }
     }
+        Navigator.of(context, rootNavigator: true).pop();
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VideoScreen(
           videoUrl: searchResults[index]['url'] ?? '',
-          videoTitle: searchResults[index]['name'] ?? 'Unknown',
+          videoTitle: searchResults[index]['name'] ?? '',
           channelList: searchResults,
           onFabFocusChanged: _handleFabFocusChanged,
           genres: '',

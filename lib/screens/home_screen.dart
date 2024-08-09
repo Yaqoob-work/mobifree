@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
-import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
+// import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 
@@ -99,45 +99,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   SizedBox(
-                    height: 200,
+                    height: screenhgt *0.3,
                     child: SubVod(),
                   ),
                 ],
               ),
             ),
-            Container(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    color: cardColor,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10),
-                          child: Text(
-                            "LIVE",
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: hintColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Text('')
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 200,
-                    child: LiveSubScreen(),
-                  ),
-                ],
-              ),
-            ),
+            // Container(
+            //   child: Column(
+            //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //     children: [
+            //       Container(
+            //         color: cardColor,
+            //         child: Row(
+            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //           children: [
+            //             Padding(
+            //               padding: const EdgeInsets.only(left: 10),
+            //               child: Text(
+            //                 "LIVE",
+            //                 style: TextStyle(
+            //                   fontSize: 20,
+            //                   color: hintColor,
+            //                   fontWeight: FontWeight.bold,
+            //                 ),
+            //               ),
+            //             ),
+            //             Text('')
+            //           ],
+            //         ),
+            //       ),
+            //       SizedBox(
+            //         height: 200,
+            //         child: LiveSubScreen(),
+            //       ),
+            //     ],
+            //   ),
+            // ),
             SizedBox(
-              height: 1500,
+              height: screenhgt * 3,
               child: HomeCategory(),
             ),
             Container(
