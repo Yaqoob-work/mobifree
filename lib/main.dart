@@ -168,12 +168,18 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
       child: Column(
         children: <Widget>[
           Container(
+            width: screenwdt ,
+            height: screenhgt * 0.3,
             decoration: BoxDecoration(
               color: hintColor,
             ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
-              child: Image.asset('assets/logo.png', width: screenwdt * 0.3),
+              child: Image.asset('assets/logo.png',
+              //  width: screenwdt * 0.5,
+              //  height:screenhgt * 0.3,
+              fit: BoxFit.cover,
+               ),
             ),
           ),
           Expanded(

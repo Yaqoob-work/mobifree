@@ -80,6 +80,18 @@ class CategoryWidget extends StatelessWidget {
   final Category category;
 
   CategoryWidget({required this.category});
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevents dismissing the dialog by tapping outside
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,43 +127,54 @@ class CategoryWidget extends StatelessWidget {
                           if (_isNavigating)
                             return; // Check if navigation is already in progress
                           _isNavigating = true; // Set the flag to true
+                          _showLoadingIndicator(context);
 
-                          if (filteredChannels[index].streamType ==
-                              'YoutubeLive') {
-                            final response = await https.get(
-                              Uri.parse(
-                                  'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                      filteredChannels[index].url),
-                              headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                            );
+                          try {
+                            if (filteredChannels[index].streamType ==
+                                'YoutubeLive') {
+                              final response = await https.get(
+                                Uri.parse(
+                                    'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                        filteredChannels[index].url),
+                                headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                              );
 
-                            if (response.statusCode == 200 &&
-                                json.decode(response.body)['url'] != '') {
-                              filteredChannels[index].url =
-                                  json.decode(response.body)['url'];
-                              filteredChannels[index].streamType = "M3u8";
-                            } else {
-                              throw Exception('Failed to load networks');
+                              if (response.statusCode == 200 &&
+                                  json.decode(response.body)['url'] != '') {
+                                filteredChannels[index].url =
+                                    json.decode(response.body)['url'];
+                                filteredChannels[index].streamType = "M3u8";
+                              } else {
+                                throw Exception('Failed to load networks');
+                              }
                             }
-                          }
+                            Navigator.of(context, rootNavigator: true).pop();
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VideoScreen(
-                                channels: filteredChannels,
-                                initialIndex: index,
-                                videoUrl: null,
-                                videoTitle: null,
-                                
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VideoScreen(
+                                  channels: filteredChannels,
+                                  initialIndex: index,
+                                  videoUrl: null,
+                                  videoTitle: null,
+                                ),
                               ),
-                            ),
-                          ).then((_) {
-                            // Reset the flag after the navigation is completed
+                            ).then((_) {
+                              // Reset the flag after the navigation is completed
+                              _isNavigating = false;
+                            });
+                          } catch (e) {
+                            // Reset navigation flag
                             _isNavigating = false;
+
+                            // Hide the loading indicator in case of an error
+                            Navigator.of(context, rootNavigator: true).pop();
+                            // Show error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Link Error')),
+                            );
                           }
-                          
-                          );
                         },
                       );
                     },
@@ -312,8 +335,6 @@ class Channel {
   }
 }
 
-
-
 class VideoScreen extends StatefulWidget {
   final List<Channel> channels;
   final int initialIndex;
@@ -328,6 +349,7 @@ class VideoScreen extends StatefulWidget {
   @override
   _VideoScreenState createState() => _VideoScreenState();
 }
+
 class _VideoScreenState extends State<VideoScreen> {
   late VideoPlayerController _controller;
   bool _isError = false;
@@ -368,7 +390,8 @@ class _VideoScreenState extends State<VideoScreen> {
   }
 
   void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+    if (event is RawKeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.select) {
       if (_isFabFocused) {
         setState(() {
           showChannels = !showChannels;
@@ -407,6 +430,19 @@ class _VideoScreenState extends State<VideoScreen> {
     });
   }
 
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevents dismissing the dialog by tapping outside
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -414,11 +450,20 @@ class _VideoScreenState extends State<VideoScreen> {
       body: Center(
         child: _isError
             ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
-            ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))],)
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      },
+                      child: Text(
+                        'Go Back',
+                        style: TextStyle(fontSize: 25, color: borderColor),
+                      ))
+                ],
+              )
             : _controller.value.isInitialized
                 ? Stack(
                     children: [
@@ -449,45 +494,67 @@ class _VideoScreenState extends State<VideoScreen> {
                                     onTap: () async {
                                       if (_isNavigating)
                                         return; // Check if navigation is already in progress
-                                      _isNavigating = true; // Set the flag to true
+                                      _isNavigating =
+                                          true; // Set the flag to true
+                                      _showLoadingIndicator(context);
 
-                                      if (channel.streamType == 'YoutubeLive' ||
-                                          channel.Type == 'Youtube') {
-                                        final response = await https.get(
-                                          Uri.parse(
-                                              'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                                  channel.url),
-                                          headers: {
-                                            'x-api-key': 'vLQTuPZUxktl5mVW'
-                                          },
-                                        );
+                                      try {
+                                        if (channel.streamType ==
+                                                'YoutubeLive' ||
+                                            channel.Type == 'Youtube') {
+                                          final response = await https.get(
+                                            Uri.parse(
+                                                'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                                    channel.url),
+                                            headers: {
+                                              'x-api-key': 'vLQTuPZUxktl5mVW'
+                                            },
+                                          );
 
-                                        if (response.statusCode == 200 &&
-                                            json.decode(response.body)['url'] !=
-                                                '') {
-                                          channel.url =
-                                              json.decode(response.body)['url'];
-                                          channel.streamType = "M3u8";
-                                        } else {
-                                          throw Exception(
-                                              'Failed to load networks');
+                                          if (response.statusCode == 200 &&
+                                              json.decode(
+                                                      response.body)['url'] !=
+                                                  '') {
+                                            channel.url = json
+                                                .decode(response.body)['url'];
+                                            channel.streamType = "M3u8";
+                                          } else {
+                                            throw Exception(
+                                                'Failed to load networks');
+                                          }
                                         }
-                                      }
+                                         Navigator.of(context,
+                                                rootNavigator: true)
+                                            .pop();
 
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => VideoScreen(
-                                            channels: widget.channels,
-                                            initialIndex: index,
-                                            videoUrl: null,
-                                            videoTitle: null,
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => VideoScreen(
+                                              channels: widget.channels,
+                                              initialIndex: index,
+                                              videoUrl: null,
+                                              videoTitle: null,
+                                            ),
                                           ),
-                                        ),
-                                      ).then((_) {
-                                        // Reset the flag after the navigation is completed
+                                        ).then((_) {
+                                          // Reset the flag after the navigation is completed
+                                          _isNavigating = false;
+                                        });
+                                      } catch (e) {
+                                        // Reset navigation flag
                                         _isNavigating = false;
-                                      });
+
+                                        // Hide the loading indicator in case of an error
+                                        Navigator.of(context,
+                                                rootNavigator: true)
+                                            .pop();
+                                        // Show error message
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(content: Text('Link Error')),
+                                        );
+                                      }
                                     },
                                   ),
                                 );
@@ -510,10 +577,14 @@ class _VideoScreenState extends State<VideoScreen> {
                               });
                             },
                             icon: Container(
-                              padding: EdgeInsets.all(3),
-                            color: _isFabFocused ? const Color.fromARGB(195, 0, 0, 0) : Colors.transparent,
-
-                              child: Icon(showChannels ? Icons.close : Icons.grid_view,size: _isFabFocused?30:20,)),
+                                padding: EdgeInsets.all(3),
+                                color: _isFabFocused
+                                    ? const Color.fromARGB(195, 0, 0, 0)
+                                    : Colors.transparent,
+                                child: Icon(
+                                  showChannels ? Icons.close : Icons.grid_view,
+                                  size: _isFabFocused ? 30 : 20,
+                                )),
                           ),
                         ),
                       ),

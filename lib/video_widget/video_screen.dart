@@ -130,7 +130,7 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor:cardColor,
       body: Stack(
         children: [
           FutureBuilder(
@@ -243,7 +243,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                       fit: BoxFit.cover,
                                       width: widget.channelList[index]
                                               ['isFocused']
-                                          ? screenwdt * 0.3
+                                          ? screenwdt * 0.35
                                           : screenwdt * 0.27,
                                       height: widget.channelList[index]
                                               ['isFocused']
