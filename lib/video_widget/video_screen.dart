@@ -130,34 +130,63 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:cardColor,
+      backgroundColor: cardColor,
       body: Stack(
         children: [
           FutureBuilder(
             future: _initializeVideoPlayerFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                return Center(
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Stack(
-                      alignment: Alignment.bottomCenter,
+                if (_controller.value.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        VideoPlayer(_controller),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: LinearProgressIndicator(
-                            value: _controller.value.position.inSeconds /
-                                _controller.value.duration.inSeconds,
-                            backgroundColor: Colors.transparent,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.grey),
-                          ),
-                        ),
+                        Text('Something Went Wrong',
+                            style: TextStyle(fontSize: 20)),
+                        ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context, rootNavigator: true).pop();
+                            },
+                            child: Text(
+                              'Go Back',
+                              style: TextStyle(fontSize: 25, color: borderColor),
+                            ))
                       ],
                     ),
+                  );
+                } else {
+                  return Center(
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          VideoPlayer(_controller),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: LinearProgressIndicator(
+                              value: _controller.value.position.inSeconds /
+                                  _controller.value.duration.inSeconds,
+                              backgroundColor: Colors.transparent,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'An error occurred while loading the video.',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    textAlign: TextAlign.center,
                   ),
                 );
               } else {
@@ -206,7 +235,7 @@ class _VideoScreenState extends State<VideoScreen> {
                             _resetInactivityTimer(); // Reset inactivity timer on key event
                             return KeyEventResult.ignored;
                           },
-                          onFocusChange: (hasFocus) { 
+                          onFocusChange: (hasFocus) {
                             _onItemFocus(index, hasFocus);
                           },
                           child: Column(

@@ -22,7 +22,7 @@ void main() {
   runApp(MyApp());
 }
 
-var primaryColor;
+// var primaryColor;
 var highlightColor;
 var cardColor;
 var hintColor;
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
     screenhgt = MediaQuery.of(context).size.height;
     screenwdt = MediaQuery.of(context).size.height;
     screensz = MediaQuery.of(context).size;
-    primaryColor = Color.fromARGB(255, 248, 8, 8);
+    // primaryColor = Color.fromARGB(255, 248, 8, 8);
     highlightColor = Colors.blue;
     cardColor = Color.fromARGB(255, 8, 1, 34);
     hintColor = Colors.white;
@@ -161,7 +161,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width *
-          0.25, // Adjust percentage as needed
+          0.24, // Adjust percentage as needed
       decoration: BoxDecoration(
         color: hintColor,
       ),
@@ -169,7 +169,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         children: <Widget>[
           Container(
             width: screenwdt ,
-            height: screenhgt * 0.3,
+            // height: screenhgt * 0.3,
             decoration: BoxDecoration(
               color: hintColor,
             ),

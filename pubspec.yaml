@@ -48,6 +48,7 @@ dependencies:
   youtube_player_flutter: ^9.0.1
   # webview_flutter: ^4.8.0
   keep_screen_on: ^3.0.0
+  fluttertoast: ^8.2.5
 
 dev_dependencies:
   flutter_test:
