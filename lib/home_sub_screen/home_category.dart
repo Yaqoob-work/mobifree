@@ -222,57 +222,75 @@ class _ChannelWidgetState extends State<ChannelWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              // padding: EdgeInsets.all(10),
-              margin: EdgeInsets.all(10),
-              child: AnimatedContainer(
-                // padding: EdgeInsets.all(10),
-                width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
-                height: isFocused ? screenhgt * 0.23 : screenhgt * 0.2,
-                duration: const Duration(milliseconds: 300),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isFocused ? borderColor : hintColor,
-                    width: 5.0,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                // child: Opacity(
-                //   opacity: isFocused ? 1 : 0.7,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: Material(
-                    elevation: 0,
-                    child: CachedNetworkImage(
-                      imageUrl: widget.channel.banner,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => localImage,
-                      width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
-                      height: isFocused ? screenhgt * 0.23 : screenhgt * 0.2,
+            Stack(
+              children: [
+                Container(
+                  // padding: EdgeInsets.all(10),
+                  margin: EdgeInsets.all(10),
+                  child: AnimatedContainer(
+                    // padding: EdgeInsets.all(10),
+                    width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
+                    height: isFocused ? screenhgt * 0.20 : screenhgt * 0.18,
+                    duration: const Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: isFocused ? borderColor : hintColor,
+                        width: 5.0,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    // child: Opacity(
+                    //   opacity: isFocused ? 1 : 0.7,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: Material(
+                        elevation: 0,
+                        child: CachedNetworkImage(
+                          imageUrl: widget.channel.banner,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => localImage,
+                          width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
+                          height: isFocused ? screenhgt * 0.20 : screenhgt * 0.18,
+                        ),
+                      ),
+                    ),
+                    // ),
                   ),
                 ),
-                // ),
-              ),
+                Positioned(
+              left: screenwdt *0.03,
+              top: screenhgt * 0.02,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('LIVE',style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold,fontSize: 18),),
+                  SizedBox(width: 2,),
+                  // Icon(Icons.live_tv_rounded ,color: Colors.red,)
+                ],
+              ))
+              ],
             ),
 
-            // Container(
-            //     width: isFocused
-            // ? screenwdt * 0.3
-            // : screenwdt * 0.27,
+            Container(
+                width: isFocused
+            ? screenwdt * 0.3
+            : screenwdt * 0.27,
+            
 
-            //   child: Text(
-            //     widget.channel.name,
-            //     style: TextStyle(
-            //       color: isFocused ?highlightColor : hintColor,
-            //       fontSize: 20,
-            //       fontWeight: FontWeight.bold,
-            //     ),
-            //     textAlign: TextAlign.center,
-            //     overflow: TextOverflow.ellipsis,
-            //     maxLines: 1,
-            //   ),
-            // ),
+              child: Text(
+                widget.channel.name,
+                style: TextStyle(
+                  color: isFocused ?highlightColor : hintColor,
+                  // fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            
           ],
         ),
       ),
