@@ -288,6 +288,23 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
+           Container(
+          width: screenwdt * 0.25,
+          child: Text(
+            (searchResults[index]['name'] ?? '')
+                .toString()
+                .toUpperCase(),
+            style: TextStyle(
+              fontSize: 15,
+              color: searchResults[index]['isFocused']
+                  ? highlightColor
+                  : Colors.white,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         ],
       ),
     );

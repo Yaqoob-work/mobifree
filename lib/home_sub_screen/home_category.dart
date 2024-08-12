@@ -230,7 +230,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   child: AnimatedContainer(
                     // padding: EdgeInsets.all(10),
                     width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
-                    height: isFocused ? screenhgt * 0.20 : screenhgt * 0.18,
+                    height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
                     duration: const Duration(milliseconds: 300),
                     decoration: BoxDecoration(
                       border: Border.all(
@@ -250,7 +250,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                           fit: BoxFit.cover,
                           placeholder: (context, url) => localImage,
                           width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
-                          height: isFocused ? screenhgt * 0.20 : screenhgt * 0.18,
+                          height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
                         ),
                       ),
                     ),
@@ -265,7 +265,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text('LIVE',style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold,fontSize: 18),),
-                  SizedBox(width: 2,),
+                  // SizedBox(width: 2,),
                   // Icon(Icons.live_tv_rounded ,color: Colors.red,)
                 ],
               ))
@@ -273,9 +273,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
             ),
 
             Container(
-                width: isFocused
-            ? screenwdt * 0.3
-            : screenwdt * 0.27,
+                width:  screenwdt * 0.27,
             
 
               child: Text(

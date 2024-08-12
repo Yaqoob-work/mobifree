@@ -131,60 +131,76 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
       children: [
         Container(
           padding: EdgeInsets.all(10),
-          child: AnimatedContainer(
-            // curve: Curves.ease,
-            width: entertainmentList[index]['isFocused']
-                ? screenwdt * 0.35
-                : screenwdt * 0.3,
-            height: entertainmentList[index]['isFocused']
-                ? screenhgt * 0.25
-                : screenhgt * 0.2,
-            duration: const Duration(milliseconds: 300),
-            decoration: BoxDecoration(
-                color: hintColor,
-                border: Border.all(
-                  color: entertainmentList[index]['isFocused']
-                      ? borderColor
-                      : hintColor,
-                  width: 5.0,
-                ),
-                borderRadius: BorderRadius.circular(10)),
-
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: CachedNetworkImage(
-                imageUrl: entertainmentList[index]['banner'],
-                placeholder: (context, url) => localImage,
+          child: Stack(
+            children: [
+              AnimatedContainer(
+                // curve: Curves.ease,
                 width: entertainmentList[index]['isFocused']
-                    ? screenwdt * 0.3
-                    : screenwdt * 0.27,
+                    ? screenwdt * 0.35
+                    : screenwdt * 0.3,
                 height: entertainmentList[index]['isFocused']
-                    ? screenhgt * 0.23
+                    ? screenhgt * 0.25
                     : screenhgt * 0.2,
-                fit: BoxFit.cover,
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                    color: hintColor,
+                    border: Border.all(
+                      color: entertainmentList[index]['isFocused']
+                          ? borderColor
+                          : hintColor,
+                      width: 5.0,
+                    ),
+                    borderRadius: BorderRadius.circular(10)),
+              
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: CachedNetworkImage(
+                    imageUrl: entertainmentList[index]['banner'],
+                    placeholder: (context, url) => localImage,
+                    width: entertainmentList[index]['isFocused']
+                        ? screenwdt * 0.3
+                        : screenwdt * 0.27,
+                    height: entertainmentList[index]['isFocused']
+                        ? screenhgt * 0.23
+                        : screenhgt * 0.2,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
+                 Positioned(
+              left: screenwdt *0.03,
+              top: screenhgt * 0.02,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('LIVE',style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold,fontSize: 18),),
+                  // SizedBox(width: 2,),
+                  // Icon(Icons.live_tv_rounded ,color: Colors.red,)
+            ]),)
+              
+            ],
           ),
         ),
-        // Container(
-        //   width: entertainmentList[index]['isFocused']
-        //       ? screenwdt * 0.3
-        //       : screenwdt * 0.25,
-        //   child: Text(
-        //     (entertainmentList[index]['name'] ?? 'Unknown')
-        //         .toString()
-        //         .toUpperCase(),
-        //     style: TextStyle(
-        //       fontSize: 20,
-        //       color: entertainmentList[index]['isFocused']
-        //           ? highlightColor
-        //           : Colors.white,
-        //     ),
-        //     textAlign: TextAlign.center,
-        //     maxLines: 1,
-        //     overflow: TextOverflow.ellipsis,
-        //   ),
-        // ),
+        Container(
+          width: entertainmentList[index]['isFocused']
+              ? screenwdt * 0.3
+              : screenwdt * 0.25,
+          child: Text(
+            (entertainmentList[index]['name'] ?? 'Unknown')
+                .toString()
+                .toUpperCase(),
+            style: TextStyle(
+              fontSize: 15,
+              color: entertainmentList[index]['isFocused']
+                  ? highlightColor
+                  : Colors.white,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

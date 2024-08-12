@@ -207,6 +207,20 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                 ),
               ),
             ),
+                      Container(
+                width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
+                child: Text(
+                  widget.network.name,
+                  style: TextStyle(
+                    color: _focusNode.hasFocus ? highlightColor : Colors.white,
+                    fontSize: 15,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ),
+           
           ],
         ),
       ),
@@ -287,6 +301,19 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                         ? screenhgt * 0.23
                         : screenhgt * 0.2,
                   ),
+                ),
+              ),
+               Container(
+                width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
+                child: Text(
+                  widget.content.name,
+                  style: TextStyle(
+                    color: _focusNode.hasFocus ? highlightColor : Colors.white,
+                    fontSize: 15,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ),
             ],
