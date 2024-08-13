@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -18,14 +17,48 @@ class LiveScreen extends StatefulWidget {
 
 class _LiveScreenState extends State<LiveScreen> {
   List<dynamic> entertainmentList = [];
+  List<int> allowedChannelIds = [];
   bool isLoading = true;
   String errorMessage = '';
-  bool _isNavigating = false; // Flag to prevent multiple navigations
+  bool _isNavigating = false;
+  bool enableAll = false;
 
   @override
   void initState() {
     super.initState();
-    fetchEntertainment();
+    fetchSettings();
+  }
+
+  Future<void> fetchSettings() async {
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getSettings'),
+        headers: {
+          'x-api-key': 'vLQTuPZUxktl5mVW',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final settingsData = json.decode(response.body);
+        setState(() {
+          allowedChannelIds = List<int>.from(settingsData['channels']);
+          enableAll = settingsData['enableAll'] == 1;
+        });
+
+        print('Allowed Channel IDs: $allowedChannelIds');
+        print('Enable All: $enableAll');
+
+        fetchEntertainment();
+      } else {
+        throw Exception('Failed to load settings, status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error in fetchSettings: $e';
+        isLoading = false;
+      });
+      print('Error in fetchSettings: $e');
+    }
   }
 
   Future<void> fetchEntertainment() async {
@@ -40,38 +73,38 @@ class _LiveScreenState extends State<LiveScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
-        setState(() {
-          entertainmentList = responseData
-              .where((channel) =>
-                  channel['status'] != null && channel['status'].contains('1'))
-              .map((channel) {
-            channel['isFocused'] = false; // Add isFocused field
-            return channel;
-          }).toList();
+       setState(() {
+  entertainmentList = responseData
+      .where((channel) {
+        // Ensure 'id' is parsed as an int and check 'status' properly
+        int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+        String channelStatus = channel['status'].toString();
+
+        return channelStatus.contains('1') &&
+            (enableAll || allowedChannelIds.contains(channelId));
+      })
+      .map((channel) {
+        channel['isFocused'] = false;
+        return channel;
+      })
+      .toList();
+
+
+          print('Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          print('Filtered Entertainment List Length: ${entertainmentList.length}');
+          
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load data');
+        throw Exception('Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = 'Error in fetchEntertainment: $e';
         isLoading = false;
       });
+      print('Error in fetchEntertainment: $e');
     }
-  }
-
-  void _showLoadingIndicator(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible:
-          false, // Prevents dismissing the dialog by tapping outside
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
   }
 
   @override
@@ -81,7 +114,7 @@ class _LiveScreenState extends State<LiveScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(child: Text('Something Went Wrong', style: TextStyle(fontSize: 20),))
+              ? Center(child: Text(errorMessage, style: TextStyle(fontSize: 20),))
               : entertainmentList.isEmpty
                   ? Center(child: Text('No Channels Available'))
                   : Padding(
@@ -89,7 +122,6 @@ class _LiveScreenState extends State<LiveScreen> {
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
-                          // childAspectRatio: 0.75,
                         ),
                         itemCount: entertainmentList.length,
                         itemBuilder: (context, index) {
@@ -145,7 +177,7 @@ class _LiveScreenState extends State<LiveScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
-                    imageUrl: entertainmentList[index]['banner']??localImage,
+                    imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
                     width: entertainmentList[index]['isFocused']
                         ? screenwdt * 0.3
@@ -157,37 +189,44 @@ class _LiveScreenState extends State<LiveScreen> {
                   ),
                 ),
               ),
-                 Positioned(
-              left: screenwdt *0.03,
-              top: screenhgt * 0.02,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('LIVE',style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold,fontSize: 18),),
-                  SizedBox(width: 2,),
-                  // Icon(Icons.live_tv_rounded ,color: Colors.red,)
-                ],
-              ))
+              Positioned(
+                  left: screenwdt * 0.03,
+                  top: screenhgt * 0.02,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'LIVE',
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18),
+                      ),
+                      SizedBox(
+                        width: 2,
+                      ),
+                    ],
+                  ))
             ],
           ),
-           Container(
-          width: screenwdt * 0.25,
-          child: Text(
-            (entertainmentList[index]['name'] ?? 'Unknown')
-                .toString()
-                .toUpperCase(),
-            style: TextStyle(
-              fontSize: 15,
-              color: entertainmentList[index]['isFocused']
-                  ? highlightColor
-                  : Colors.white,
+          Container(
+            width: screenwdt * 0.25,
+            child: Text(
+              (entertainmentList[index]['name'] ?? 'Unknown')
+                  .toString()
+                  .toUpperCase(),
+              style: TextStyle(
+                fontSize: 15,
+                color: entertainmentList[index]['isFocused']
+                    ? highlightColor
+                    : Colors.white,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
         ],
       ),
     );
@@ -195,10 +234,9 @@ class _LiveScreenState extends State<LiveScreen> {
 
   void _navigateToVideoScreen(
       BuildContext context, dynamic entertainmentItem) async {
-    if (_isNavigating) return; // Check if navigation is already in progress
-    _isNavigating = true; // Set the flag to true
+    if (_isNavigating) return;
+    _isNavigating = true;
 
-    // Show loading indicator
     _showLoadingIndicator(context);
 
     try {
@@ -213,7 +251,7 @@ class _LiveScreenState extends State<LiveScreen> {
           entertainmentItem['url'] = json.decode(response.body)['url']!;
           entertainmentItem['stream_type'] = "M3u8";
         } else {
-          throw Exception('Failed to load networks');
+          throw Exception('Failed to load networks, status code: ${response.statusCode}');
         }
       }
 
@@ -231,23 +269,28 @@ class _LiveScreenState extends State<LiveScreen> {
           ),
         ),
       ).then((_) {
-        // Reset the flag after the navigation is completed
         _isNavigating = false;
-        // Hide the loading indicator
         Navigator.of(context, rootNavigator: true).pop();
       });
     } catch (e) {
-      // Reset navigation flag
       _isNavigating = false;
-
-      // Hide the loading indicator in case of an error
       Navigator.of(context, rootNavigator: true).pop();
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Link Error')),
+        SnackBar(content: Text('Link Error: $e')),
       );
+      print('Error in _navigateToVideoScreen: $e');
     }
   }
+
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
 }
-
-

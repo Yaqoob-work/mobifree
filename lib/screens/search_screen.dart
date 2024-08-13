@@ -7,6 +7,27 @@ import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
+// Add a global variable for settings
+Map<String, dynamic> settings = {};
+
+// Function to fetch settings
+Future<void> fetchSettings() async {
+  try {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getSettings'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
+
+    if (response.statusCode == 200) {
+      settings = json.decode(response.body);
+    } else {
+      throw Exception('Failed to load settings');
+    }
+  } catch (e) {
+    print('Error fetching settings: $e');
+  }
+}
+
 void main() {
   runApp(MaterialApp(home: SearchScreen()));
 }
@@ -31,6 +52,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _focusNode.addListener(_onFocusChanged);
+    fetchSettings(); // Fetch settings when initializing
   }
 
   @override
@@ -49,16 +71,32 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
-    try {
-      final response = await https.get(
-        Uri.parse(
-            'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
-        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      );
+Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
+  try {
+    final response = await https.get(
+      Uri.parse(
+          'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+
+      if (settings['enableAll'] == 0) {
+        // Filter based on enabled channel IDs
+        final enabledChannels = settings['channels']?.map((id) => id.toString()).toSet() ?? {};
+
+        return responseData
+            .where((channel) =>
+                channel['name'] != null &&
+                channel['name']
+                    .toString()
+                    .toLowerCase()
+                    .contains(searchTerm.toLowerCase()) &&
+                enabledChannels.contains(channel['id'].toString()))
+            .toList();
+      } else {
+        // No filtering based on channel IDs
         return responseData
             .where((channel) =>
                 channel['name'] != null &&
@@ -67,70 +105,41 @@ class _SearchScreenState extends State<SearchScreen> {
                     .toLowerCase()
                     .contains(searchTerm.toLowerCase()))
             .toList();
-      } else {
-        throw Exception('Failed to load data from API 1');
       }
-    } catch (e) {
-      print('Error fetching from API 1: $e');
-      return [];
+    } else {
+      throw Exception('Failed to load data from API 1');
     }
+  } catch (e) {
+    print('Error fetching from API 1: $e');
+    return [];
   }
+}
 
-  // Future<List<dynamic>> _fetchFromApi2(String searchTerm) async {
-  //   try {
-  //     final response = await https.get(
-  //       Uri.parse('https://acomtv.com/android/getFeaturedLiveTV'),
-  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> responseData = json.decode(response.body);
-  //       return responseData
-  //           .where((channel) =>
-  //               channel['name'] != null &&
-  //               channel['name']
-  //                   .toString()
-  //                   .toLowerCase()
-  //                   .contains(searchTerm.toLowerCase()))
-  //           .toList();
-  //     } else {
-  //       throw Exception('Failed to load data from API 2');
-  //     }
-  //   } catch (e) {
-  //     print('Error fetching from API 2: $e');
-  //     return [];
-  //   }
-  // }
 
   void _performSearch(String searchTerm) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    // Check if the search term is empty or contains only whitespace
     if (searchTerm.trim().isEmpty) {
       setState(() {
         isLoading = false;
-        searchResults.clear(); // Clear the results if the search term is empty
-        _itemFocusNodes.clear(); // Clear previous nodes
+        searchResults.clear();
+        _itemFocusNodes.clear();
       });
-      return; // Exit the function early
+      return;
     }
 
     _debounce = Timer(const Duration(milliseconds: 300), () async {
       setState(() {
         isLoading = true;
         searchResults.clear();
-        _itemFocusNodes.clear(); // Clear previous nodes
+        _itemFocusNodes.clear();
       });
 
       try {
         final api1Results = await _fetchFromApi1(searchTerm);
-        // final api2Results = await _fetchFromApi2(searchTerm);
 
         setState(() {
-          searchResults = [
-            ...api1Results,
-            //  ...api2Results
-          ];
+          searchResults = api1Results;
           _itemFocusNodes.addAll(List.generate(
             searchResults.length,
             (index) => FocusNode(),
@@ -138,7 +147,6 @@ class _SearchScreenState extends State<SearchScreen> {
           isLoading = false;
         });
 
-        // Schedule focus request after build
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_itemFocusNodes.isNotEmpty &&
               _itemFocusNodes[0].context != null) {
@@ -146,7 +154,6 @@ class _SearchScreenState extends State<SearchScreen> {
           }
         });
       } catch (e) {
-        // print('Error fetching data: $e');
         setState(() {
           isLoading = false;
         });
@@ -157,7 +164,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor, // Replace with your cardColor
+      backgroundColor: Colors.black, // Replace with your cardColor
       body: Column(
         children: [
           Container(
@@ -169,8 +176,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
                   borderSide: BorderSide(
-                      color: hintColor,
-                      width: 4.0), // Replace with primaryColor
+                      color: Colors.grey, // Replace with hintColor
+                      width: 4.0),
                 ),
                 labelText: 'Search By Name',
                 labelStyle:
@@ -197,8 +204,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Text(
                               'No results found',
                               style: TextStyle(
-                                  color:
-                                      Colors.white), // Replace with hintColor
+                                  color: Colors.white), // Replace with hintColor
                             ),
                           ],
                         ),
@@ -233,7 +239,7 @@ class _SearchScreenState extends State<SearchScreen> {
     showDialog(
       context: context,
       barrierDismissible:
-          false, // Prevents dismissing the dialog by tapping outside
+          false,
       builder: (BuildContext context) {
         return Center(
           child: CircularProgressIndicator(),
@@ -263,20 +269,19 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: selectedIndex == index ? screenwdt * 0.35 : screenwdt * 0.3,
-            height: selectedIndex == index ? screenhgt * 0.25 : screenhgt * 0.2,
+            width: selectedIndex == index ? MediaQuery.of(context).size.width * 0.35 : MediaQuery.of(context).size.width * 0.3,
+            height: selectedIndex == index ? MediaQuery.of(context).size.height * 0.25 : MediaQuery.of(context).size.height * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-                // color: Colors.white,
                 border: Border.all(
-                  color: selectedIndex == index ? borderColor : hintColor,
+                  color: selectedIndex == index ? Colors.yellow : Colors.grey, // Replace with your borderColor
                   width: 5.0,
                 ),
                 borderRadius: BorderRadius.circular(10)),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(5),
               child: CachedNetworkImage(
-                imageUrl: searchResults[index]['banner'] ?? localImage,
+                imageUrl: searchResults[index]['banner'] ?? 'localImage',
                 placeholder: (context, url) => localImage,
                 width: selectedIndex == index
                     ? MediaQuery.of(context).size.width * 0.35
@@ -288,31 +293,31 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-           Container(
-          width: screenwdt * 0.25,
-          child: Text(
-            (searchResults[index]['name'] ?? '')
-                .toString()
-                .toUpperCase(),
-            style: TextStyle(
-              fontSize: 15,
-              color: searchResults[index]['isFocused']
-                  ? highlightColor
-                  : Colors.white,
+          Container(
+            width: MediaQuery.of(context).size.width * 0.25,
+            child: Text(
+              (searchResults[index]['name'] ?? '')
+                  .toString()
+                  .toUpperCase(),
+              style: TextStyle(
+                fontSize: 15,
+                color: selectedIndex == index
+                    ? Colors.yellow
+                    : Colors.white, // Replace with your highlightColor
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
         ],
       ),
     );
   }
 
   void _onItemTap(BuildContext context, int index) async {
-    if (_isNavigating) return; // Check if navigation is already in progress
-    _isNavigating = true; // Set the flag to true
+    if (_isNavigating) return;
+    _isNavigating = true;
     _showLoadingIndicator(context);
 
     if (searchResults[index]['stream_type'] == 'YoutubeLive' ||
@@ -332,24 +337,18 @@ class _SearchScreenState extends State<SearchScreen> {
           }
         } else {
           _isNavigating = false;
-
           Navigator.of(context, rootNavigator: true).pop();
-
           throw Exception('Failed to load networks');
         }
       } catch (e) {
         _isNavigating = false;
-
-        // Hide the loading indicator in case of an error
         Navigator.of(context, rootNavigator: true).pop();
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Link Error')),
         );
       }
     }
-        Navigator.of(context, rootNavigator: true).pop();
-
+    Navigator.of(context, rootNavigator: true).pop();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -364,7 +363,6 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     ).then((_) {
-      // Reset the flag after the navigation is completed
       _isNavigating = false;
     });
   }

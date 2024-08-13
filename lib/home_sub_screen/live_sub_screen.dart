@@ -17,13 +17,51 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
+  bool enableAll = false;
+  List<int> allowedChannelIds = [];
+
 
   @override
   void initState() {
     super.initState();
-    fetchEntertainment();
+    // fetchEntertainment();
+    fetchSettings();
+
   }
 
+    Future<void> fetchSettings() async {
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getSettings'),
+        headers: {
+          'x-api-key': 'vLQTuPZUxktl5mVW',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final settingsData = json.decode(response.body);
+        setState(() {
+          allowedChannelIds = List<int>.from(settingsData['channels']);
+          enableAll = settingsData['enableAll'] == 1;
+        });
+
+        print('Allowed Channel IDs: $allowedChannelIds');
+        print('Enable All: $enableAll');
+
+        fetchEntertainment();
+      } else {
+        throw Exception('Failed to load settings, status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error in fetchSettings: $e';
+        isLoading = false;
+      });
+      print('Error in fetchSettings: $e');
+    }
+  }
+
+ 
   Future<void> fetchEntertainment() async {
     try {
       final response = await https.get(
@@ -36,25 +74,37 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
-        setState(() {
-          entertainmentList = responseData
-              .where((channel) =>
-                  channel['status'] != null && channel['status'].contains('1'))
-              .map((channel) {
-            channel['isFocused'] = false; // Add isFocused field
-            return channel;
-          }).toList();
+       setState(() {
+  entertainmentList = responseData
+      .where((channel) {
+        // Ensure 'id' is parsed as an int and check 'status' properly
+        int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+        String channelStatus = channel['status'].toString();
+
+        return channelStatus.contains('1') &&
+            (enableAll || allowedChannelIds.contains(channelId));
+      })
+      .map((channel) {
+        channel['isFocused'] = false;
+        return channel;
+      })
+      .toList();
+
+
+          print('Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          print('Filtered Entertainment List Length: ${entertainmentList.length}');
+          
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load data');
+        throw Exception('Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching data: $e');
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = 'Error in fetchEntertainment: $e';
         isLoading = false;
       });
+      print('Error in fetchEntertainment: $e');
     }
   }
 

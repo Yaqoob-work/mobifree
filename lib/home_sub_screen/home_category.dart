@@ -8,11 +8,52 @@ import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
-void main() {
-  runApp(HomeCategory());
+// Add a global variable for settings
+Map<String, dynamic> settings = {};
+
+// Function to fetch settings
+Future<void> fetchSettings() async {
+  final response = await https.get(
+    Uri.parse('https://api.ekomflix.com/android/getSettings'),
+    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  );
+
+  if (response.statusCode == 200) {
+    settings = json.decode(response.body);
+  } else {
+    throw Exception('Failed to load settings');
+  }
 }
 
-// double categoryheight = 0;
+// Function to fetch categories with settings applied
+Future<List<Category>> fetchCategories() async {
+  // Fetch settings before fetching categories
+  await fetchSettings();
+
+  final response = await https.get(
+    Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
+    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  );
+
+  if (response.statusCode == 200) {
+    List jsonResponse = json.decode(response.body);
+    List<Category> categories = jsonResponse
+        .map((category) => Category.fromJson(category))
+        .toList();
+
+    if (settings['enableAll'] == 0) {
+      // Filter categories based on the settings
+      for (var category in categories) {
+        category.channels.retainWhere(
+            (channel) => settings['channels'].contains(int.parse(channel.id)));
+      }
+    }
+
+    return categories;
+  } else {
+    throw Exception('Failed to load categories');
+  }
+}
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -26,28 +67,6 @@ class _HomeCategoryState extends State<HomeCategory> {
   void initState() {
     super.initState();
     _categories = fetchCategories();
-  }
-
-  Future<List<Category>> fetchCategories() async {
-    final response = await https.get(
-      Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
-      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    );
-
-    if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse
-          .map((category) => Category.fromJson(category))
-          .toList();
-    } else {
-      throw Exception('Failed to load categories');
-    }
-  }
-
-  void _refresh() {
-    setState(() {
-      fetchCategories();
-    });
   }
 
   @override
@@ -74,6 +93,34 @@ class _HomeCategoryState extends State<HomeCategory> {
     );
   }
 }
+
+// Your existing Category, Channel, and CategoryWidget classes go here
+
+class Category {
+  final String id;
+  final String text;
+  List<Channel> channels; // Changed to List for mutability
+
+  Category({
+    required this.id,
+    required this.text,
+    required this.channels,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    var list = json['channels'] as List;
+    List<Channel> channelsList = list.map((i) => Channel.fromJson(i)).toList();
+
+    return Category(
+      id: json['id'],
+      text: json['text'],
+      channels: channelsList,
+    );
+  }
+}
+
+// Channel class remains the same
+
 
 class CategoryWidget extends StatelessWidget {
   bool _isNavigating = false;
@@ -229,7 +276,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   margin: EdgeInsets.all(10),
                   child: AnimatedContainer(
                     // padding: EdgeInsets.all(10),
-                    width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
+                    width: isFocused ? screenwdt * 0.25 : screenwdt * 0.2,
                     height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
                     duration: const Duration(milliseconds: 300),
                     decoration: BoxDecoration(
@@ -249,7 +296,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                           imageUrl: widget.channel.banner,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => localImage,
-                          width: isFocused ? screenwdt * 0.35 : screenwdt * 0.3,
+                          width: isFocused ? screenwdt * 0.25 : screenwdt * 0.2,
                           height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
                         ),
                       ),
@@ -273,7 +320,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
             ),
 
             Container(
-                width:  screenwdt * 0.27,
+                width:  screenwdt * 0.2,
             
 
               child: Text(
@@ -296,28 +343,28 @@ class _ChannelWidgetState extends State<ChannelWidget> {
   }
 }
 
-class Category {
-  final String id;
-  final String text;
-  final List<Channel> channels;
+// class Category {
+//   final String id;
+//   final String text;
+//   final List<Channel> channels;
 
-  Category({
-    required this.id,
-    required this.text,
-    required this.channels,
-  });
+//   Category({
+//     required this.id,
+//     required this.text,
+//     required this.channels,
+//   });
 
-  factory Category.fromJson(Map<String, dynamic> json) {
-    var list = json['channels'] as List;
-    List<Channel> channelsList = list.map((i) => Channel.fromJson(i)).toList();
+//   factory Category.fromJson(Map<String, dynamic> json) {
+//     var list = json['channels'] as List;
+//     List<Channel> channelsList = list.map((i) => Channel.fromJson(i)).toList();
 
-    return Category(
-      id: json['id'],
-      text: json['text'],
-      channels: channelsList,
-    );
-  }
-}
+//     return Category(
+//       id: json['id'],
+//       text: json['text'],
+//       channels: channelsList,
+//     );
+//   }
+// }
 
 class Channel {
   final String id;

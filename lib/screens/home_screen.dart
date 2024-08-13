@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 // import 'package:mobi_tv_entertainment/home_sub_screen/live_sub_screen.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:http/http.dart' as https;
+
 
 void main() {
   runApp(HomeScreen());
@@ -15,10 +19,10 @@ class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+  bool _enableAll = false; // Add a variable to track enableAll status
 
   @override
   void initState() {
@@ -29,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    // Dispose of the ScrollController
     _scrollController.dispose();
     super.dispose();
   }
@@ -42,6 +45,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Simulate network request delay
     await Future.delayed(const Duration(seconds: 2));
+
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getSettings'),
+        headers: {
+          'x-api-key': 'vLQTuPZUxktl5mVW',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _enableAll = data['enableAll'] == 1;
+        });
+      } else {
+        // Handle errors or non-200 responses
+        print('Failed to load settings');
+      }
+    } catch (e) {
+      // Handle network errors or JSON parsing errors
+      print('Error: $e');
+    }
 
     setState(() {
       _isLoading = false;
@@ -72,6 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
               height: MediaQuery.of(context).size.height * 0.7,
               child: BannerSlider(),
             ),
+                  if (_enableAll) // Conditionally display SubVod
+
             Container(
               child: Column(
                 children: [
@@ -98,44 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(
-                    height: screenhgt *0.3,
-                    child: SubVod(),
-                  ),
+                    SizedBox(
+                      height: screenhgt * 0.3,
+                      child: SubVod(),
+                    ),
                 ],
               ),
             ),
-            // Container(
-            //   child: Column(
-            //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //     children: [
-            //       Container(
-            //         color: cardColor,
-            //         child: Row(
-            //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //           children: [
-            //             Padding(
-            //               padding: const EdgeInsets.only(left: 10),
-            //               child: Text(
-            //                 "LIVE",
-            //                 style: TextStyle(
-            //                   fontSize: 20,
-            //                   color: hintColor,
-            //                   fontWeight: FontWeight.bold,
-            //                 ),
-            //               ),
-            //             ),
-            //             Text('')
-            //           ],
-            //         ),
-            //       ),
-            //       SizedBox(
-            //         height: 200,
-            //         child: LiveSubScreen(),
-            //       ),
-            //     ],
-            //   ),
-            // ),
             SizedBox(
               height: screenhgt * 3,
               child: HomeCategory(),
