@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               color: cardColor,
               child: SizedBox(
-                height: screenhgt * 1.5,
+                height: screenhgt ,
                 child: HomeCategory(),
               ),
             ),
