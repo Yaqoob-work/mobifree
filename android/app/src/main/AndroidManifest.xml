@@ -8,12 +8,14 @@
 
 
     <application
-        android:label="Ekomflix"
+        android:label="Ekom Flix"
         android:name="${applicationName}"
+        android:banner="@drawable/ic_launcher"
         android:icon="@mipmap/ic_launcher"
         >
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="landscape"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

@@ -71,50 +71,50 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
-  try {
-    final response = await https.get(
-      Uri.parse(
-          'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
-      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    );
+  Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
+    try {
+      final response = await https.get(
+        Uri.parse(
+            'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
 
-      if (settings['enableAll'] == 0) {
-        // Filter based on enabled channel IDs
-        final enabledChannels = settings['channels']?.map((id) => id.toString()).toSet() ?? {};
+        if (settings['tvenableAll'] == 0) {
+          // Filter based on enabled channel IDs
+          final enabledChannels =
+              settings['channels']?.map((id) => id.toString()).toSet() ?? {};
 
-        return responseData
-            .where((channel) =>
-                channel['name'] != null &&
-                channel['name']
-                    .toString()
-                    .toLowerCase()
-                    .contains(searchTerm.toLowerCase()) &&
-                enabledChannels.contains(channel['id'].toString()))
-            .toList();
+          return responseData
+              .where((channel) =>
+                  channel['name'] != null &&
+                  channel['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(searchTerm.toLowerCase()) &&
+                  enabledChannels.contains(channel['id'].toString()))
+              .toList();
+        } else {
+          // No filtering based on channel IDs
+          return responseData
+              .where((channel) =>
+                  channel['name'] != null &&
+                  channel['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(searchTerm.toLowerCase()))
+              .toList();
+        }
       } else {
-        // No filtering based on channel IDs
-        return responseData
-            .where((channel) =>
-                channel['name'] != null &&
-                channel['name']
-                    .toString()
-                    .toLowerCase()
-                    .contains(searchTerm.toLowerCase()))
-            .toList();
+        throw Exception('Failed to load data from API 1');
       }
-    } else {
-      throw Exception('Failed to load data from API 1');
+    } catch (e) {
+      print('Error fetching from API 1: $e');
+      return [];
     }
-  } catch (e) {
-    print('Error fetching from API 1: $e');
-    return [];
   }
-}
-
 
   void _performSearch(String searchTerm) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
@@ -204,7 +204,8 @@ Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
                             Text(
                               'No results found',
                               style: TextStyle(
-                                  color: Colors.white), // Replace with hintColor
+                                  color:
+                                      Colors.white), // Replace with hintColor
                             ),
                           ],
                         ),
@@ -238,8 +239,7 @@ Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
   void _showLoadingIndicator(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible:
-          false,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
           child: CircularProgressIndicator(),
@@ -269,12 +269,18 @@ Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: selectedIndex == index ? MediaQuery.of(context).size.width * 0.35 : MediaQuery.of(context).size.width * 0.3,
-            height: selectedIndex == index ? MediaQuery.of(context).size.height * 0.25 : MediaQuery.of(context).size.height * 0.2,
+            width: selectedIndex == index
+                ? MediaQuery.of(context).size.width * 0.35
+                : MediaQuery.of(context).size.width * 0.3,
+            height: selectedIndex == index
+                ? MediaQuery.of(context).size.height * 0.25
+                : MediaQuery.of(context).size.height * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
                 border: Border.all(
-                  color: selectedIndex == index ? Colors.yellow : Colors.grey, // Replace with your borderColor
+                  color: selectedIndex == index
+                      ? Colors.yellow
+                      : Colors.grey, // Replace with your borderColor
                   width: 5.0,
                 ),
                 borderRadius: BorderRadius.circular(10)),
@@ -296,9 +302,7 @@ Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
           Container(
             width: MediaQuery.of(context).size.width * 0.25,
             child: Text(
-              (searchResults[index]['name'] ?? '')
-                  .toString()
-                  .toUpperCase(),
+              (searchResults[index]['name'] ?? '').toString().toUpperCase(),
               style: TextStyle(
                 fontSize: 15,
                 color: selectedIndex == index

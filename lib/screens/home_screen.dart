@@ -8,7 +8,6 @@ import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:http/http.dart' as https;
 
-
 void main() {
   runApp(HomeScreen());
 }
@@ -19,10 +18,11 @@ class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
+
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  bool _enableAll = false; // Add a variable to track enableAll status
+  bool _tvenableAll = false; // Add a variable to track tvenableAll status
 
   @override
   void initState() {
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _enableAll = data['enableAll'] == 1;
+          _tvenableAll = data['tvenableAll'] == 1;
         });
       } else {
         // Handle errors or non-200 responses
@@ -94,47 +94,55 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(''),
             ),
             Container(
-              height: MediaQuery.of(context).size.height * 0.7,
+              color: cardColor,
+              height: screenhgt,
               child: BannerSlider(),
             ),
-                  if (_enableAll) // Conditionally display SubVod
+            if (_tvenableAll) // Conditionally display SubVod
 
-            Container(
-              child: Column(
-                children: [
-                  Container(
-                    color: cardColor,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 10),
-                            child: Text(
-                              "CONTENTS",
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: hintColor,
+              Container(
+                color: cardColor,
+                child: Column(
+                  children: [
+                    Container(
+                      color: cardColor,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Text(
+                                "CONTENTS",
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: hintColor,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Text('')
-                      ],
+                          Text('')
+                        ],
+                      ),
                     ),
-                  ),
-                    SizedBox(
-                      height: screenhgt * 0.3,
-                      child: SubVod(),
+                    Container(
+                      color: cardColor,
+                      child: SizedBox(
+                        height: screenhgt * 0.3,
+                        child: SubVod(),
+                      ),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            SizedBox(
-              height: screenhgt * 3,
-              child: HomeCategory(),
+            Container(
+              color: cardColor,
+              child: SizedBox(
+                height: screenhgt * 1.5,
+                child: HomeCategory(),
+              ),
             ),
             Container(
               height: 0,

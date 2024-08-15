@@ -12,7 +12,6 @@ import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'dart:io';
 import 'package:http/http.dart' as https;
 
-
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -21,12 +20,11 @@ class MyHttpOverrides extends HttpOverrides {
           (X509Certificate cert, String host, int port) => true;
   }
 }
+
 void main() {
   HttpOverrides.global = MyHttpOverrides();
   runApp(MyApp());
 }
-
-
 
 // Variables for colors, dimensions, and images
 var highlightColor;
@@ -38,8 +36,8 @@ var screenwdt;
 var screensz;
 var localImage;
 
-// Fetch the `enableAll` setting from the API
-Future<int> fetchEnableAll() async {
+// Fetch the `tvenableAll` setting from the API
+Future<int> fetchtvenableAll() async {
   final response = await https.get(
     Uri.parse('https://api.ekomflix.com/android/getSettings'),
     headers: {
@@ -49,7 +47,7 @@ Future<int> fetchEnableAll() async {
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    return data['enableAll'];
+    return data['tvenableAll'];
   } else {
     throw Exception('Failed to load settings');
   }
@@ -85,15 +83,17 @@ class MyApp extends StatelessWidget {
           return PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) {
               return FutureBuilder<int>(
-                future: fetchEnableAll(),
+                future: fetchtvenableAll(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Scaffold(body: Center(child: CircularProgressIndicator()));
+                    return Scaffold(
+                        body: Center(child: CircularProgressIndicator()));
                   } else if (snapshot.hasError) {
-                    return Scaffold(body: Center(child: Text('Error: ${snapshot.error}')));
+                    return Scaffold(
+                        body: Center(child: Text('Error: ${snapshot.error}')));
                   } else if (snapshot.hasData) {
-                    final enableAll = snapshot.data ?? 0;
-                    return MyHomePage(enableVOD: enableAll == 1);
+                    final tvenableAll = snapshot.data ?? 0;
+                    return MyHomePage(enableVOD: tvenableAll == 1);
                   } else {
                     return Scaffold(body: Center(child: Text('No Data')));
                   }
@@ -196,7 +196,8 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(widget.enableVOD ? 5 : 4, (index) => FocusNode());
+    _focusNodes =
+        List.generate(widget.enableVOD ? 5 : 4, (index) => FocusNode());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNodes[0]);
     });
@@ -224,7 +225,8 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
           child: Column(
             children: <Widget>[
               Container(
-                width: isCompact ? 80 : MediaQuery.of(context).size.width * 0.24,
+                width:
+                    isCompact ? 80 : MediaQuery.of(context).size.width * 0.24,
                 padding: const EdgeInsets.all(20.0),
                 child: ClipRRect(
                   child: Image.asset(
@@ -259,13 +261,14 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                         _focusNodes[2],
                         isCompact,
                       ),
-                      if (widget.enableVOD) _buildNavigationItem(
-                        Icons.video_camera_front,
-                        'VOD',
-                        3,
-                        _focusNodes[3],
-                        isCompact,
-                      ),
+                      if (widget.enableVOD)
+                        _buildNavigationItem(
+                          Icons.video_camera_front,
+                          'VOD',
+                          3,
+                          _focusNodes[3],
+                          isCompact,
+                        ),
                       _buildNavigationItem(
                         Icons.category,
                         'CATEGORY',
@@ -284,8 +287,8 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     );
   }
 
-  Widget _buildNavigationItem(
-      IconData iconData, String title, int index, FocusNode focusNode, bool isCompact) {
+  Widget _buildNavigationItem(IconData iconData, String title, int index,
+      FocusNode focusNode, bool isCompact) {
     bool isSelected = widget.selectedPage == index;
     return Focus(
       focusNode: focusNode,
@@ -295,8 +298,10 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
         }
       },
       onKeyEvent: (node, event) {
-        if (HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.select) ||
-            HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
+        if (HardwareKeyboard.instance
+                .isLogicalKeyPressed(LogicalKeyboardKey.select) ||
+            HardwareKeyboard.instance
+                .isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
           widget.onPageSelected(index);
           return KeyEventResult.handled;
         }
@@ -317,17 +322,20 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                 color: focusNode.hasFocus
                     ? Color.fromARGB(255, 247, 6, 118)
                     : Color.fromARGB(255, 20, 27, 122),
-                size: isSelected ? 23 : 20,
+                size: isSelected ? 30 : 20,
               ),
-              title: isCompact ? null : Text(
-                title,
-                style: TextStyle(
-                  color: focusNode.hasFocus
-                      ? Color.fromARGB(255, 247, 6, 118)
-                      : Color.fromARGB(255, 20, 27, 122),
-                  fontSize: isSelected ? 17 : 14,
-                ),
-              ),
+              title: isCompact
+                  ? null
+                  : Text(
+                      title,
+                      style: TextStyle(
+                        color: focusNode.hasFocus
+                            ? Color.fromARGB(255, 247, 6, 118)
+                            : Color.fromARGB(255, 20, 27, 122),
+                        fontSize: isSelected ? 18 : 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ),

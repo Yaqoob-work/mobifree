@@ -37,11 +37,10 @@ Future<List<Category>> fetchCategories() async {
 
   if (response.statusCode == 200) {
     List jsonResponse = json.decode(response.body);
-    List<Category> categories = jsonResponse
-        .map((category) => Category.fromJson(category))
-        .toList();
+    List<Category> categories =
+        jsonResponse.map((category) => Category.fromJson(category)).toList();
 
-    if (settings['enableAll'] == 0) {
+    if (settings['tvenableAll'] == 0) {
       // Filter categories based on the settings
       for (var category in categories) {
         category.channels.retainWhere(
@@ -87,7 +86,9 @@ class _HomeCategoryState extends State<HomeCategory> {
             return Center(child: Text("${snapshot.error}"));
           }
 
-          return const Center(child: CircularProgressIndicator());
+          return Container(
+              color: cardColor,
+              child: const Center(child: CircularProgressIndicator()));
         },
       ),
     );
@@ -121,7 +122,6 @@ class Category {
 
 // Channel class remains the same
 
-
 class CategoryWidget extends StatelessWidget {
   bool _isNavigating = false;
   final Category category;
@@ -135,6 +135,7 @@ class CategoryWidget extends StatelessWidget {
       builder: (BuildContext context) {
         return Center(
           child: CircularProgressIndicator(),
+          //  Container(color: cardColor,child: Center(child: CircularProgressIndicator()));
         );
       },
     );
@@ -276,7 +277,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   margin: EdgeInsets.all(10),
                   child: AnimatedContainer(
                     // padding: EdgeInsets.all(10),
-                    width: isFocused ? screenwdt * 0.25 : screenwdt * 0.2,
+                    width: isFocused ? screenwdt * 0.17 : screenwdt * 0.14,
                     height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
                     duration: const Duration(milliseconds: 300),
                     decoration: BoxDecoration(
@@ -294,10 +295,12 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                         elevation: 0,
                         child: CachedNetworkImage(
                           imageUrl: widget.channel.banner,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           placeholder: (context, url) => localImage,
-                          width: isFocused ? screenwdt * 0.25 : screenwdt * 0.2,
-                          height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
+                          width:
+                              isFocused ? screenwdt * 0.17 : screenwdt * 0.14,
+                          height:
+                              isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
                         ),
                       ),
                     ),
@@ -305,28 +308,31 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   ),
                 ),
                 Positioned(
-              left: screenwdt *0.03,
-              top: screenhgt * 0.02,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('LIVE',style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold,fontSize: 18),),
-                  // SizedBox(width: 2,),
-                  // Icon(Icons.live_tv_rounded ,color: Colors.red,)
-                ],
-              ))
+                    left: screenwdt * 0.03,
+                    top: screenhgt * 0.02,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18),
+                        ),
+                        // SizedBox(width: 2,),
+                        // Icon(Icons.live_tv_rounded ,color: Colors.red,)
+                      ],
+                    ))
               ],
             ),
-
             Container(
-                width:  screenwdt * 0.2,
-            
-
+              width: screenwdt * 0.2,
               child: Text(
                 widget.channel.name,
                 style: TextStyle(
-                  color: isFocused ?highlightColor : hintColor,
+                  color: isFocused ? highlightColor : hintColor,
                   // fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -335,7 +341,6 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                 maxLines: 1,
               ),
             ),
-            
           ],
         ),
       ),
@@ -586,7 +591,7 @@ class _VideoScreenState extends State<VideoScreen> {
                                                 'Failed to load networks');
                                           }
                                         }
-                                         Navigator.of(context,
+                                        Navigator.of(context,
                                                 rootNavigator: true)
                                             .pop();
 

@@ -17,19 +17,17 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
-  bool enableAll = false;
+  bool tvenableAll = false;
   List<int> allowedChannelIds = [];
-
 
   @override
   void initState() {
     super.initState();
     // fetchEntertainment();
     fetchSettings();
-
   }
 
-    Future<void> fetchSettings() async {
+  Future<void> fetchSettings() async {
     try {
       final response = await https.get(
         Uri.parse('https://api.ekomflix.com/android/getSettings'),
@@ -42,15 +40,16 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
         final settingsData = json.decode(response.body);
         setState(() {
           allowedChannelIds = List<int>.from(settingsData['channels']);
-          enableAll = settingsData['enableAll'] == 1;
+          tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
         print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $enableAll');
+        print('Enable All: $tvenableAll');
 
         fetchEntertainment();
       } else {
-        throw Exception('Failed to load settings, status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load settings, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -61,7 +60,6 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
     }
   }
 
- 
   Future<void> fetchEntertainment() async {
     try {
       final response = await https.get(
@@ -74,30 +72,29 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
-       setState(() {
-  entertainmentList = responseData
-      .where((channel) {
-        // Ensure 'id' is parsed as an int and check 'status' properly
-        int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-        String channelStatus = channel['status'].toString();
+        setState(() {
+          entertainmentList = responseData.where((channel) {
+            // Ensure 'id' is parsed as an int and check 'status' properly
+            int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+            String channelStatus = channel['status'].toString();
 
-        return channelStatus.contains('1') &&
-            (enableAll || allowedChannelIds.contains(channelId));
-      })
-      .map((channel) {
-        channel['isFocused'] = false;
-        return channel;
-      })
-      .toList();
+            return channelStatus.contains('1') &&
+                (tvenableAll || allowedChannelIds.contains(channelId));
+          }).map((channel) {
+            channel['isFocused'] = false;
+            return channel;
+          }).toList();
 
+          print(
+              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          print(
+              'Filtered Entertainment List Length: ${entertainmentList.length}');
 
-          print('Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print('Filtered Entertainment List Length: ${entertainmentList.length}');
-          
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load entertainment data, status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -129,12 +126,14 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
-            // ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))
-             ],)
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text('Something Went Wrong',
+                        style: TextStyle(fontSize: 20)),
+                    // ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))
+                  ],
+                )
               : entertainmentList.isEmpty
                   ? Center(child: Text('No entertainment channels found'))
                   : LayoutBuilder(builder: (context, constraints) {
@@ -201,7 +200,7 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                       width: 5.0,
                     ),
                     borderRadius: BorderRadius.circular(10)),
-              
+
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
@@ -217,18 +216,24 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                   ),
                 ),
               ),
-                 Positioned(
-              left: screenwdt *0.03,
-              top: screenhgt * 0.02,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('LIVE',style: TextStyle(color: Colors.red,fontWeight: FontWeight.bold,fontSize: 18),),
-                  // SizedBox(width: 2,),
-                  // Icon(Icons.live_tv_rounded ,color: Colors.red,)
-            ]),)
-              
+              Positioned(
+                left: screenwdt * 0.03,
+                top: screenhgt * 0.02,
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'LIVE',
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18),
+                      ),
+                      // SizedBox(width: 2,),
+                      // Icon(Icons.live_tv_rounded ,color: Colors.red,)
+                    ]),
+              )
             ],
           ),
         ),

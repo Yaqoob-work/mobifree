@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-
 import '../video_widget/video_movie_screen.dart';
 
 class BannerSlider extends StatefulWidget {
@@ -39,8 +38,7 @@ class _BannerSliderState extends State<BannerSlider> {
     });
     _startAutoSlide();
     _emptytextFocusNode.addListener(_onemptytextFocusNode);
-    _smallBannerFocusNodes =
-        List.generate(bannerList.length, (_) => FocusNode());
+    _smallBannerFocusNodes = List.generate(bannerList.length, (_) => FocusNode());
   }
 
   @override
@@ -226,11 +224,12 @@ class _BannerSliderState extends State<BannerSlider> {
                           itemBuilder: (context, index) {
                             final banner = bannerList[index];
                             return Stack(
+                              alignment: AlignmentDirectional.topCenter,
                               children: [
                                 Container(
-                                  margin: EdgeInsets.all(screenhgt * 0.05),
-                                  width: MediaQuery.of(context).size.width,
-                                  height: screenhgt * 0.5,
+                                  margin: EdgeInsets.symmetric( vertical: screenhgt * 0.1,horizontal: screenwdt*0.05),
+                                  width: MediaQuery.of(context).size.width * 0.7 ,
+                                  // height: screenhgt * 0.7,
                                   child: GestureDetector(
                                     onTap: () {
                                       if (selectedContentId != null) {
@@ -250,8 +249,11 @@ class _BannerSliderState extends State<BannerSlider> {
                                       ),
                                       child: CachedNetworkImage(
                                         imageUrl:
-                                            banner['banner'] ?? localImage,
-                                        fit: BoxFit.cover,
+                                            banner['banner'] ?? Container(
+                                              width: screenwdt*0.8,
+                                              height: screenhgt*0.6,
+                                              child: localImage,) ,
+                                        fit: BoxFit.contain,
                                         width: screenwdt,
                                         placeholder: (context, url) =>
                                             localImage,
@@ -274,13 +276,13 @@ class _BannerSliderState extends State<BannerSlider> {
                                   ),
                                 ),
                                 Positioned(
-                                  top: screenhgt * 0.05,
+                                  top: screenhgt * 0.11,
                                   left: screenwdt * 0.1,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10.0, vertical: 5.0),
                                     child: Text(
-                                      (banner['title'] ?? 'No Title')
+                                      (banner['title'] ?? '')
                                           .toString()
                                           .toUpperCase(), // Handle null title here
                                       style: TextStyle(
@@ -296,9 +298,9 @@ class _BannerSliderState extends State<BannerSlider> {
                           },
                         ),
                         Positioned(
-                          top: screenhgt * 0.55,
-                          left: screenwdt * 0.05,
-                          right: screenwdt * 0.05,
+                          top: screenhgt * 0.85,
+                          left: screenwdt * 0.053,
+                          right: screenwdt * 0.053,
                           child: Container(
                             color: cardColor,
                             height: screenhgt * 0.15,
@@ -340,8 +342,7 @@ class _BannerSliderState extends State<BannerSlider> {
                                         return KeyEventResult.ignored;
                                       },
                                       child: Container(
-                                        width: screenhgt *
-                                            0.3, // Adjust the width as needed
+                                        // width: screenhgt * 0.25, // Adjust the width as needed
                                         decoration: BoxDecoration(
                                           border: Border.all(
                                             color: _isSmallBannerFocused &&
@@ -355,7 +356,9 @@ class _BannerSliderState extends State<BannerSlider> {
                                         child: CachedNetworkImage(
                                           imageUrl: smallBanner['banner'] ??
                                               localImage,
-                                          fit: BoxFit.cover,
+                                              width: screenwdt *
+                                            0.11,
+                                          fit: BoxFit.fill,
                                           placeholder: (context, url) =>
                                               localImage,
                                         ),

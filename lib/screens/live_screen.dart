@@ -21,7 +21,7 @@ class _LiveScreenState extends State<LiveScreen> {
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
-  bool enableAll = false;
+  bool tvenableAll = false;
 
   @override
   void initState() {
@@ -42,15 +42,16 @@ class _LiveScreenState extends State<LiveScreen> {
         final settingsData = json.decode(response.body);
         setState(() {
           allowedChannelIds = List<int>.from(settingsData['channels']);
-          enableAll = settingsData['enableAll'] == 1;
+          tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
         print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $enableAll');
+        print('Enable All: $tvenableAll');
 
         fetchEntertainment();
       } else {
-        throw Exception('Failed to load settings, status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load settings, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -73,30 +74,29 @@ class _LiveScreenState extends State<LiveScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
-       setState(() {
-  entertainmentList = responseData
-      .where((channel) {
-        // Ensure 'id' is parsed as an int and check 'status' properly
-        int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-        String channelStatus = channel['status'].toString();
+        setState(() {
+          entertainmentList = responseData.where((channel) {
+            // Ensure 'id' is parsed as an int and check 'status' properly
+            int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+            String channelStatus = channel['status'].toString();
 
-        return channelStatus.contains('1') &&
-            (enableAll || allowedChannelIds.contains(channelId));
-      })
-      .map((channel) {
-        channel['isFocused'] = false;
-        return channel;
-      })
-      .toList();
+            return channelStatus.contains('1') &&
+                (tvenableAll || allowedChannelIds.contains(channelId));
+          }).map((channel) {
+            channel['isFocused'] = false;
+            return channel;
+          }).toList();
 
+          print(
+              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          print(
+              'Filtered Entertainment List Length: ${entertainmentList.length}');
 
-          print('Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print('Filtered Entertainment List Length: ${entertainmentList.length}');
-          
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load entertainment data, status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -114,7 +114,11 @@ class _LiveScreenState extends State<LiveScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage, style: TextStyle(fontSize: 20),))
+              ? Center(
+                  child: Text(
+                  errorMessage,
+                  style: TextStyle(fontSize: 20),
+                ))
               : entertainmentList.isEmpty
                   ? Center(child: Text('No Channels Available'))
                   : Padding(
@@ -160,8 +164,8 @@ class _LiveScreenState extends State<LiveScreen> {
               AnimatedContainer(
                 curve: Curves.ease,
                 width: entertainmentList[index]['isFocused']
-                    ? screenwdt * 0.35
-                    : screenwdt * 0.27,
+                    ? screenwdt * 0.2
+                    : screenwdt * 0.15,
                 height: entertainmentList[index]['isFocused']
                     ? screenhgt * 0.25
                     : screenhgt * 0.2,
@@ -180,8 +184,8 @@ class _LiveScreenState extends State<LiveScreen> {
                     imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
                     width: entertainmentList[index]['isFocused']
-                        ? screenwdt * 0.3
-                        : screenwdt * 0.27,
+                        ? screenwdt * 0.2
+                        : screenwdt * 0.15,
                     height: entertainmentList[index]['isFocused']
                         ? screenhgt * 0.23
                         : screenhgt * 0.2,
@@ -203,15 +207,12 @@ class _LiveScreenState extends State<LiveScreen> {
                             fontWeight: FontWeight.bold,
                             fontSize: 18),
                       ),
-                      SizedBox(
-                        width: 2,
-                      ),
                     ],
                   ))
             ],
           ),
           Container(
-            width: screenwdt * 0.25,
+            width: screenwdt * 0.15,
             child: Text(
               (entertainmentList[index]['name'] ?? 'Unknown')
                   .toString()
@@ -251,7 +252,8 @@ class _LiveScreenState extends State<LiveScreen> {
           entertainmentItem['url'] = json.decode(response.body)['url']!;
           entertainmentItem['stream_type'] = "M3u8";
         } else {
-          throw Exception('Failed to load networks, status code: ${response.statusCode}');
+          throw Exception(
+              'Failed to load networks, status code: ${response.statusCode}');
         }
       }
 
