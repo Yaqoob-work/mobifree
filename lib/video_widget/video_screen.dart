@@ -245,12 +245,12 @@ class _VideoScreenState extends State<VideoScreen> {
                               Container(
                                 padding: EdgeInsets.all(5),
                                 child: AnimatedContainer(
-                                  width: widget.channelList[index]['isFocused']
-                                      ? screenwdt * 0.35
-                                      : screenwdt * 0.27,
-                                  height: widget.channelList[index]['isFocused']
-                                      ? screenhgt * 0.23
-                                      : screenhgt * 0.2,
+                                  width:
+                                  //  widget.channelList[index]['isFocused']? screenwdt * 0.35 : 
+                                      screenwdt * 0.14,
+                                  height: 
+                                  // widget.channelList[index]['isFocused']? screenhgt * 0.23: 
+                                      screenhgt * 0.2,
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeInOut,
                                   decoration: BoxDecoration(
@@ -270,14 +270,12 @@ class _VideoScreenState extends State<VideoScreen> {
                                           localImage,
                                       placeholder: (context, url) => localImage,
                                       fit: BoxFit.cover,
-                                      width: widget.channelList[index]
-                                              ['isFocused']
-                                          ? screenwdt * 0.35
-                                          : screenwdt * 0.27,
-                                      height: widget.channelList[index]
-                                              ['isFocused']
-                                          ? screenhgt * 0.23
-                                          : screenhgt * 0.2,
+                                      width: 
+                                      // widget.channelList[index]['isFocused']? screenwdt * 0.35 : 
+                                          screenwdt * 0.14,
+                                      height: 
+                                      // widget.channelList[index] ['isFocused'] ? screenhgt * 0.23:
+                                           screenhgt * 0.2,
                                     ),
                                   ),
                                 ),

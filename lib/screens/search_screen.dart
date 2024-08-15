@@ -269,12 +269,12 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: selectedIndex == index
-                ? MediaQuery.of(context).size.width * 0.35
-                : MediaQuery.of(context).size.width * 0.3,
-            height: selectedIndex == index
-                ? MediaQuery.of(context).size.height * 0.25
-                : MediaQuery.of(context).size.height * 0.2,
+            width: 
+            // selectedIndex == index? MediaQuery.of(context).size.width * 0.35:
+             MediaQuery.of(context).size.width * 0.3,
+            height: 
+            // selectedIndex == index ? MediaQuery.of(context).size.height * 0.25:
+                 MediaQuery.of(context).size.height * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
                 border: Border.all(
@@ -289,12 +289,12 @@ class _SearchScreenState extends State<SearchScreen> {
               child: CachedNetworkImage(
                 imageUrl: searchResults[index]['banner'] ?? 'localImage',
                 placeholder: (context, url) => localImage,
-                width: selectedIndex == index
-                    ? MediaQuery.of(context).size.width * 0.35
-                    : MediaQuery.of(context).size.width * 0.28,
-                height: selectedIndex == index
-                    ? MediaQuery.of(context).size.height * 0.23
-                    : MediaQuery.of(context).size.height * 0.2,
+                width: 
+                // selectedIndex == index? MediaQuery.of(context).size.width * 0.35:
+                     MediaQuery.of(context).size.width * 0.28,
+                height: 
+                selectedIndex == index? MediaQuery.of(context).size.height * 0.23:
+                     MediaQuery.of(context).size.height * 0.2,
                 fit: BoxFit.cover,
               ),
             ),

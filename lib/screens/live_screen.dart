@@ -163,12 +163,12 @@ class _LiveScreenState extends State<LiveScreen> {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width: entertainmentList[index]['isFocused']
-                    ? screenwdt * 0.2
-                    : screenwdt * 0.15,
-                height: entertainmentList[index]['isFocused']
-                    ? screenhgt * 0.25
-                    : screenhgt * 0.2,
+                width: 
+                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
+                    screenwdt * 0.15,
+                height: 
+                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
+                     screenhgt * 0.2,
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                     border: Border.all(
@@ -183,12 +183,12 @@ class _LiveScreenState extends State<LiveScreen> {
                   child: CachedNetworkImage(
                     imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
-                    width: entertainmentList[index]['isFocused']
-                        ? screenwdt * 0.2
-                        : screenwdt * 0.15,
-                    height: entertainmentList[index]['isFocused']
-                        ? screenhgt * 0.23
-                        : screenhgt * 0.2,
+                    width: 
+                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
+                     screenwdt * 0.15,
+                    height: 
+                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
+                         screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),

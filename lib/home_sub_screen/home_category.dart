@@ -277,8 +277,12 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                   margin: EdgeInsets.all(10),
                   child: AnimatedContainer(
                     // padding: EdgeInsets.all(10),
-                    width: isFocused ? screenwdt * 0.17 : screenwdt * 0.14,
-                    height: isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
+                    width:
+                    //  isFocused ? screenwdt * 0.17 : 
+                    screenwdt * 0.14,
+                    height: 
+                    // isFocused ? screenhgt * 0.22 : 
+                    screenhgt * 0.18,
                     duration: const Duration(milliseconds: 300),
                     decoration: BoxDecoration(
                       border: Border.all(
@@ -298,9 +302,11 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                           fit: BoxFit.contain,
                           placeholder: (context, url) => localImage,
                           width:
-                              isFocused ? screenwdt * 0.17 : screenwdt * 0.14,
+                              // isFocused ? screenwdt * 0.17 : 
+                              screenwdt * 0.14,
                           height:
-                              isFocused ? screenhgt * 0.22 : screenhgt * 0.18,
+                              // isFocused ? screenhgt * 0.22 :
+                               screenhgt * 0.18,
                         ),
                       ),
                     ),

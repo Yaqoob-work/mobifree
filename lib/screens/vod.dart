@@ -184,8 +184,12 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             AnimatedContainer(
-              width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.27,
-              height: _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+              width: 
+              // _focusNode.hasFocus ? screenwdt * 0.35 : 
+              screenwdt * 0.27,
+              height: 
+              // _focusNode.hasFocus ? screenhgt * 0.23 : 
+              screenhgt * 0.2,
               duration: const Duration(milliseconds: 300),
               decoration: BoxDecoration(
                 border: Border.all(
@@ -201,14 +205,18 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                   placeholder: (context, url) => localImage,
                   fit: BoxFit.cover,
                   width:
-                      _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
+                      // _focusNode.hasFocus ? screenwdt * 0.35 : 
+                      screenwdt * 0.3,
                   height:
-                      _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                      // _focusNode.hasFocus ? screenhgt * 0.23 : 
+                      screenhgt * 0.2,
                 ),
               ),
             ),
                       Container(
-                width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
+                width:
+                //  _focusNode.hasFocus ? screenwdt * 0.33 : 
+                screenwdt * 0.3,
                 child: Text(
                   widget.network.name,
                   style: TextStyle(
@@ -277,9 +285,12 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AnimatedContainer(
-                width: _focusNode.hasFocus ? screenwdt * 0.35 : screenwdt * 0.3,
+                width:
+                //  _focusNode.hasFocus ? screenwdt * 0.35 : 
+                screenwdt * 0.3,
                 height:
-                    _focusNode.hasFocus ? screenhgt * 0.23 : screenhgt * 0.2,
+                    // _focusNode.hasFocus ? screenhgt * 0.23 : 
+                    screenhgt * 0.2,
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                   border: Border.all(
@@ -294,17 +305,19 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                     imageUrl: widget.content.banner,
                     placeholder: (context, url) => localImage,
                     fit: BoxFit.cover,
-                    width: _focusNode.hasFocus
-                        ? screenwdt * 0.35
-                        : screenwdt * 0.3,
-                    height: _focusNode.hasFocus
-                        ? screenhgt * 0.23
-                        : screenhgt * 0.2,
+                    width: 
+                    // _focusNode.hasFocus? screenwdt * 0.35:
+                        screenwdt * 0.3,
+                    height: 
+                    // _focusNode.hasFocus? screenhgt * 0.23:
+                        screenhgt * 0.2,
                   ),
                 ),
               ),
                Container(
-                width: _focusNode.hasFocus ? screenwdt * 0.33 : screenwdt * 0.3,
+                width: 
+                // _focusNode.hasFocus ? screenwdt * 0.33 : 
+                screenwdt * 0.3,
                 child: Text(
                   widget.content.name,
                   style: TextStyle(

@@ -184,12 +184,12 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
             children: [
               AnimatedContainer(
                 // curve: Curves.ease,
-                width: entertainmentList[index]['isFocused']
-                    ? screenwdt * 0.35
-                    : screenwdt * 0.3,
-                height: entertainmentList[index]['isFocused']
-                    ? screenhgt * 0.25
-                    : screenhgt * 0.2,
+                width: 
+                entertainmentList[index]['isFocused']? screenwdt * 0.35:
+                     screenwdt * 0.3,
+                height: 
+                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
+                    screenhgt * 0.2,
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                     color: hintColor,
@@ -206,12 +206,12 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
                   child: CachedNetworkImage(
                     imageUrl: entertainmentList[index]['banner'],
                     placeholder: (context, url) => localImage,
-                    width: entertainmentList[index]['isFocused']
-                        ? screenwdt * 0.3
-                        : screenwdt * 0.27,
-                    height: entertainmentList[index]['isFocused']
-                        ? screenhgt * 0.23
-                        : screenhgt * 0.2,
+                    width: 
+                    // entertainmentList[index]['isFocused']? screenwdt * 0.3:
+                        screenwdt * 0.27,
+                    height: 
+                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
+                       screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -238,9 +238,9 @@ class _LiveSubScreenState extends State<LiveSubScreen> {
           ),
         ),
         Container(
-          width: entertainmentList[index]['isFocused']
-              ? screenwdt * 0.3
-              : screenwdt * 0.25,
+          width:
+          //  entertainmentList[index]['isFocused'] ? screenwdt * 0.3:
+           screenwdt * 0.25,
           child: Text(
             (entertainmentList[index]['name'] ?? 'Unknown')
                 .toString()

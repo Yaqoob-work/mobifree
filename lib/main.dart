@@ -1,16 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
 import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 import 'package:mobi_tv_entertainment/screens/vod.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
-// import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
-import 'dart:io';
-import 'package:http/http.dart' as https;
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -26,7 +25,6 @@ void main() {
   runApp(MyApp());
 }
 
-// Variables for colors, dimensions, and images
 var highlightColor;
 var cardColor;
 var hintColor;
@@ -36,7 +34,6 @@ var screenwdt;
 var screensz;
 var localImage;
 
-// Fetch the `tvenableAll` setting from the API
 Future<int> fetchtvenableAll() async {
   final response = await https.get(
     Uri.parse('https://api.ekomflix.com/android/getSettings'),
@@ -53,7 +50,6 @@ Future<int> fetchtvenableAll() async {
   }
 }
 
-// Main application widget
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -70,49 +66,49 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/home': (context) => MyHomePage(enableVOD: false), // Placeholder route
-        '/': (context) => SplashScreen(), // Placeholder route
-        '/search': (context) => SearchScreen(),
-        '/live': (context) => LiveScreen(),
-        '/vod': (context) => VOD(),
-        '/category': (context) => HomeCategory(),
+        '/': (context) => SplashScreen(),
+        '/home': (context) => FutureBuilder<int>(
+          future: fetchtvenableAll(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(body: Center(child: CircularProgressIndicator()));
+            } else if (snapshot.hasError) {
+              return Scaffold(body: Center(child: Text('Error: ${snapshot.error}')));
+            } else if (snapshot.hasData) {
+              final tvenableAll = snapshot.data ?? 0;
+              return MyHomePage(
+                enableVOD: tvenableAll == 1,
+                enableSearch: true,
+              );
+            } else {
+              return Scaffold(body: Center(child: Text('No Data')));
+            }
+          },
+        ),
       },
       onGenerateRoute: (settings) {
-        // Generate route based on settings
-        if (settings.name == '/home') {
-          return PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) {
-              return FutureBuilder<int>(
-                future: fetchtvenableAll(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Scaffold(
-                        body: Center(child: CircularProgressIndicator()));
-                  } else if (snapshot.hasError) {
-                    return Scaffold(
-                        body: Center(child: Text('Error: ${snapshot.error}')));
-                  } else if (snapshot.hasData) {
-                    final tvenableAll = snapshot.data ?? 0;
-                    return MyHomePage(enableVOD: tvenableAll == 1);
-                  } else {
-                    return Scaffold(body: Center(child: Text('No Data')));
-                  }
-                },
-              );
-            },
-          );
+        switch (settings.name) {
+          case '/search':
+            return MaterialPageRoute(builder: (_) => SearchScreen());
+          case '/live':
+            return MaterialPageRoute(builder: (_) => LiveScreen());
+          case '/vod':
+            return MaterialPageRoute(builder: (_) => VOD());
+          case '/category':
+            return MaterialPageRoute(builder: (_) => HomeCategory());
+          default:
+            return null;
         }
-        return null;
       },
     );
   }
 }
 
-// Home Page Widget
 class MyHomePage extends StatefulWidget {
   final bool enableVOD;
+  final bool enableSearch;
 
-  MyHomePage({required this.enableVOD});
+  MyHomePage({required this.enableVOD, required this.enableSearch});
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -150,6 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
             selectedPage: _selectedPage,
             onPageSelected: _onPageSelected,
             enableVOD: widget.enableVOD,
+            enableSearch: widget.enableSearch,
           ),
           Expanded(
             child: PageView(
@@ -161,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               children: <Widget>[
                 HomeScreen(),
-                SearchScreen(),
+                if (widget.enableSearch) SearchScreen(),
                 LiveScreen(),
                 if (widget.enableVOD) VOD(),
                 HomeCategory(),
@@ -174,16 +171,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-// Navigation Sidebar Widget
 class NavigationSidebar extends StatefulWidget {
   final int selectedPage;
   final ValueChanged<int> onPageSelected;
   final bool enableVOD;
+  final bool enableSearch;
 
   const NavigationSidebar({
     required this.selectedPage,
     required this.onPageSelected,
     required this.enableVOD,
+    required this.enableSearch,
   });
 
   @override
@@ -196,8 +194,12 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes =
-        List.generate(widget.enableVOD ? 5 : 4, (index) => FocusNode());
+    _focusNodes = List.generate(
+      widget.enableVOD
+          ? (widget.enableSearch ? 5 : 4)
+          : (widget.enableSearch ? 4 : 3),
+      (index) => FocusNode(),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNodes[0]);
     });
@@ -247,33 +249,38 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                         _focusNodes[0],
                         isCompact,
                       ),
-                      _buildNavigationItem(
-                        Icons.search,
-                        'SEARCH',
-                        1,
-                        _focusNodes[1],
-                        isCompact,
-                      ),
+                      if (widget.enableSearch)
+                        _buildNavigationItem(
+                          Icons.search,
+                          'SEARCH',
+                          1,
+                          _focusNodes[1],
+                          isCompact,
+                        ),
                       _buildNavigationItem(
                         Icons.tv,
                         'LIVE TV',
-                        2,
-                        _focusNodes[2],
+                        widget.enableSearch ? 2 : 1,
+                        _focusNodes[widget.enableSearch ? 2 : 1],
                         isCompact,
                       ),
                       if (widget.enableVOD)
                         _buildNavigationItem(
                           Icons.video_camera_front,
                           'VOD',
-                          3,
-                          _focusNodes[3],
+                          widget.enableSearch ? 3 : 2,
+                          _focusNodes[widget.enableSearch ? 3 : 2],
                           isCompact,
                         ),
                       _buildNavigationItem(
                         Icons.category,
                         'CATEGORY',
-                        widget.enableVOD ? 4 : 3,
-                        widget.enableVOD ? _focusNodes[4] : _focusNodes[3],
+                        widget.enableVOD
+                            ? (widget.enableSearch ? 4 : 3)
+                            : (widget.enableSearch ? 3 : 2),
+                        _focusNodes[widget.enableVOD
+                            ? (widget.enableSearch ? 4 : 3)
+                            : (widget.enableSearch ? 3 : 2)],
                         isCompact,
                       ),
                     ],
@@ -287,6 +294,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     );
   }
 
+  
   Widget _buildNavigationItem(IconData iconData, String title, int index,
       FocusNode focusNode, bool isCompact) {
     bool isSelected = widget.selectedPage == index;
