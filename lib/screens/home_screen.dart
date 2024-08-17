@@ -89,15 +89,14 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 0,
-              child: Text(''),
-            ),
+            // Container(
+            //   height: screenhgt*0.01,
+            //   child: Text('.'),
+            // ),
             if (_tvenableAll) // Conditionally display SubVod
-
             Container(
               color: cardColor,
-              height: screenhgt,
+              height: screenhgt*0.7,
               child: BannerSlider(),
             ),
             if (_tvenableAll) // Conditionally display SubVod

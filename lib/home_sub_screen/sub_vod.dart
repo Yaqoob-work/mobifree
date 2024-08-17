@@ -163,7 +163,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
     _focusNode.dispose();
     super.dispose();
   }
-
+// first page************************************
   @override
   Widget build(BuildContext context) {
     return Focus(
@@ -518,15 +518,16 @@ class DetailsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    height: screenhgt * 0.5,
-                    width: screenwdt,
+                    width: screenwdt*0.8,
+                      height: screenhgt * 0.6,
+                      
                     alignment: Alignment.center,
                     child: CachedNetworkImage(
                       imageUrl: movieDetails.poster,
                       placeholder: (context, url) => localImage,
                       fit: BoxFit.cover,
-                      height: screenhgt * 0.5,
-                      width: screenwdt,
+                      width: screenwdt*0.8,
+                      height: screenhgt * 0.6,
                     ),
                   ),
                   Center(

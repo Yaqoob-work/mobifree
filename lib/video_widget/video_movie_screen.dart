@@ -27,12 +27,14 @@ class VideoMovieScreen extends StatefulWidget {
   _VideoMovieScreenState createState() => _VideoMovieScreenState();
 }
 
+
 class _VideoMovieScreenState extends State<VideoMovieScreen> {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
   Duration _totalDuration = Duration.zero;
   Duration _currentPosition = Duration.zero;
+  bool _isBuffering = false; // Track buffering state
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -52,8 +54,19 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
         _startPositionUpdater();
         // Wakelock.enable(); // Keep the screen on for this page
       });
-    KeepScreenOn.turnOn();
+    
+    _controller.addListener(() {
+      if (_controller.value.isBuffering != _isBuffering) {
+        setState(() {
+          _isBuffering = _controller.value.isBuffering;
+        });
+        if (!_isBuffering && _controller.value.isInitialized) {
+          _controller.play(); // Resume playback when buffering is complete
+        }
+      }
+    });
 
+    KeepScreenOn.turnOn();
     _startHideControlsTimer();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
@@ -71,7 +84,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
     backFocusNode.dispose();
     // Wakelock.disable(); // Disable screen wake when leaving this page
     KeepScreenOn.turnOff();
-
     super.dispose();
   }
 
@@ -93,9 +105,11 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
 
   void _startPositionUpdater() {
     Timer.periodic(Duration(seconds: 1), (_) {
-      setState(() {
-        _currentPosition = _controller.value.position;
-      });
+      if (_controller.value.isInitialized) {
+        setState(() {
+          _currentPosition = _controller.value.position;
+        });
+      }
     });
   }
 

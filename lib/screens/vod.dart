@@ -163,7 +163,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
     _focusNode.dispose();
     super.dispose();
   }
-
+// for first page
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -179,57 +179,60 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           }
           return KeyEventResult.ignored;
         },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              width: 
-              // _focusNode.hasFocus ? screenwdt * 0.35 : 
-              screenwdt * 0.27,
-              height: 
-              // _focusNode.hasFocus ? screenhgt * 0.23 : 
-              screenhgt * 0.2,
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: _focusNode.hasFocus ? borderColor : hintColor,
-                  width: 5.0,
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: CachedNetworkImage(
-                  imageUrl: widget.network.logo,
-                  placeholder: (context, url) => localImage,
-                  fit: BoxFit.cover,
-                  width:
-                      // _focusNode.hasFocus ? screenwdt * 0.35 : 
-                      screenwdt * 0.3,
-                  height:
-                      // _focusNode.hasFocus ? screenhgt * 0.23 : 
-                      screenhgt * 0.2,
-                ),
-              ),
-            ),
-                      Container(
-                width:
-                //  _focusNode.hasFocus ? screenwdt * 0.33 : 
-                screenwdt * 0.3,
-                child: Text(
-                  widget.network.name,
-                  style: TextStyle(
-                    color: _focusNode.hasFocus ? highlightColor : Colors.white,
-                    fontSize: 15,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                width: 
+                // _focusNode.hasFocus ? screenwdt * 0.35 : 
+                screenwdt * 0.15,
+                height: 
+                // _focusNode.hasFocus ? screenhgt * 0.23 : 
+                screenhgt * 0.2,
+                duration: const Duration(milliseconds: 3),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _focusNode.hasFocus ? borderColor : hintColor,
+                    width: 5.0,
                   ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: CachedNetworkImage(
+                    imageUrl: widget.network.logo,
+                    placeholder: (context, url) => localImage,
+                    fit: BoxFit.cover,
+                    width:
+                        // _focusNode.hasFocus ? screenwdt * 0.35 : 
+                        screenwdt * 0.15,
+                    height:
+                        // _focusNode.hasFocus ? screenhgt * 0.23 : 
+                        screenhgt * 0.2,
+                  ),
                 ),
               ),
-           
-          ],
+                        Container(
+                  width:
+                  //  _focusNode.hasFocus ? screenwdt * 0.33 : 
+                  screenwdt * 0.15,
+                  child: Text(
+                    widget.network.name,
+                    style: TextStyle(
+                      color: _focusNode.hasFocus ? highlightColor : Colors.white,
+                      fontSize: 15,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+             
+            ],
+          ),
         ),
       ),
     );
@@ -287,7 +290,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
               AnimatedContainer(
                 width:
                 //  _focusNode.hasFocus ? screenwdt * 0.35 : 
-                screenwdt * 0.3,
+                screenwdt * 0.15,
                 height:
                     // _focusNode.hasFocus ? screenhgt * 0.23 : 
                     screenhgt * 0.2,
@@ -307,7 +310,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                     fit: BoxFit.cover,
                     width: 
                     // _focusNode.hasFocus? screenwdt * 0.35:
-                        screenwdt * 0.3,
+                        screenwdt * 0.15,
                     height: 
                     // _focusNode.hasFocus? screenhgt * 0.23:
                         screenhgt * 0.2,
@@ -482,15 +485,15 @@ class DetailsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    height: screenhgt * 0.5,
-                    width: screenwdt,
+                    width: screenwdt*0.8,
+                    height: screenhgt * 0.6,
                     alignment: Alignment.center,
                     child: CachedNetworkImage(
                       imageUrl: movieDetails.poster,
                       placeholder: (context, url) => localImage,
                       fit: BoxFit.cover,
-                      height: screenhgt * 0.5,
-                      width: screenwdt,
+                    width: screenwdt*0.8,
+                      height: screenhgt * 0.6,
                     ),
                   ),
                   Center(

@@ -19,12 +19,8 @@ class _BannerSliderState extends State<BannerSlider> {
   late PageController _pageController;
   late Timer _timer;
   String? selectedContentId;
-  // FocusNode _fabFocusNode = FocusNode();
-  FocusNode _emptytextFocusNode = FocusNode();
-  bool _isemptytextFocusNode = false;
-  List<FocusNode> _smallBannerFocusNodes = [];
-  bool _isSmallBannerFocused = false;
-  int _focusedSmallBannerIndex = 0;
+  FocusNode _bannerFocusNode = FocusNode();
+  bool _isBannerFocused = false;
   bool _isPageViewBuilt = false;
   bool _isNavigating = false;
 
@@ -37,23 +33,20 @@ class _BannerSliderState extends State<BannerSlider> {
       _isPageViewBuilt = true;
     });
     _startAutoSlide();
-    _emptytextFocusNode.addListener(_onemptytextFocusNode);
-    _smallBannerFocusNodes = List.generate(bannerList.length, (_) => FocusNode());
+    _bannerFocusNode.addListener(_onBannerFocusNode);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _timer.cancel();
-    // _fabFocusNode.dispose();
-    _emptytextFocusNode.dispose();
-    _smallBannerFocusNodes.forEach((node) => node.dispose());
+    _bannerFocusNode.dispose();
     super.dispose();
   }
 
-  void _onemptytextFocusNode() {
+  void _onBannerFocusNode() {
     setState(() {
-      _isemptytextFocusNode = _emptytextFocusNode.hasFocus;
+      _isBannerFocused = _bannerFocusNode.hasFocus;
     });
   }
 
@@ -97,9 +90,6 @@ class _BannerSliderState extends State<BannerSlider> {
             };
           }).toList();
 
-          _smallBannerFocusNodes =
-              List.generate(bannerList.length, (_) => FocusNode());
-
           selectedContentId = bannerList.isNotEmpty
               ? bannerList[0]['content_id'].toString()
               : null;
@@ -133,8 +123,7 @@ class _BannerSliderState extends State<BannerSlider> {
         );
 
         if (filteredData != null) {
-          if (_isNavigating)
-            return; // Check if navigation is already in progress
+          if (_isNavigating) return; // Check if navigation is already in progress
           _isNavigating = true; // Set the flag to true
 
           final videoUrl = filteredData['url'] ?? '';
@@ -158,12 +147,13 @@ class _BannerSliderState extends State<BannerSlider> {
               builder: (context) => VideoMovieScreen(
                 videoUrl: videoUrl,
                 videoTitle: filteredData['title'] ?? 'No Title',
-                channelList: [], videoType: '',
-                videoBanner: '', onFabFocusChanged: (bool focused) {},
-                genres: '', url: '', type: '',
-                // onFabFocusChanged: (bool focused) {},
-                // genres: '',
-                // videoBanner: '',
+                channelList: [],
+                videoType: '',
+                videoBanner: '',
+                onFabFocusChanged: (bool focused) {},
+                genres: '',
+                url: '',
+                type: '',
               ),
             ),
           ).then((_) {
@@ -183,7 +173,7 @@ class _BannerSliderState extends State<BannerSlider> {
     }
   }
 
-  void _scrollToSmallBanner(int index) {
+  void _scrollToBanner(int index) {
     _pageController.animateToPage(
       index,
       duration: Duration(milliseconds: 300),
@@ -202,12 +192,12 @@ class _BannerSliderState extends State<BannerSlider> {
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-              Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
-            // ElevatedButton(onPressed: (){Navigator.of(context, rootNavigator: true).pop();}, child: Text('Go Back',style: TextStyle(fontSize: 25,color: borderColor),))
-             ],)
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+                  ],
+                )
               : bannerList.isEmpty
                   ? const Center(child: Text('No banners found'))
                   : Stack(
@@ -227,51 +217,51 @@ class _BannerSliderState extends State<BannerSlider> {
                               alignment: AlignmentDirectional.topCenter,
                               children: [
                                 Container(
-                                  margin: EdgeInsets.symmetric( vertical: screenhgt * 0.1,horizontal: screenwdt*0.05),
-                                  width: MediaQuery.of(context).size.width * 0.7 ,
-                                  // height: screenhgt * 0.7,
+                                  margin: EdgeInsets.symmetric(
+                                      vertical: screenhgt * 0.1,
+                                      horizontal: screenwdt * 0.05),
+                                  width: MediaQuery.of(context).size.width * 0.7,
                                   child: GestureDetector(
                                     onTap: () {
                                       if (selectedContentId != null) {
                                         fetchAndPlayVideo(selectedContentId!);
                                       }
                                     },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: _isSmallBannerFocused
-                                              // &&
-                                              // _focusedSmallBannerIndex ==index
-                                              ? borderColor
-                                              : Colors.transparent,
-                                          width: 3.0,
+                                    child: Focus(
+                                      focusNode: _bannerFocusNode,
+                                      onFocusChange: (hasFocus) {
+                                        setState(() {
+                                          _isBannerFocused = hasFocus;
+                                        });
+                                      },
+                                      onKeyEvent: (node, event) {
+                                        if (event is KeyDownEvent &&
+                                            event.logicalKey ==
+                                                LogicalKeyboardKey.select) {
+                                          if (selectedContentId != null) {
+                                            fetchAndPlayVideo(selectedContentId!);
+                                          }
+                                          return KeyEventResult.handled;
+                                        }
+                                        return KeyEventResult.ignored;
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: _isBannerFocused
+                                                ? borderColor
+                                                : Colors.transparent,
+                                            width: 3.0,
+                                          ),
+                                        ),
+                                        child: CachedNetworkImage(
+                                          imageUrl: banner['banner'] ?? localImage,
+                                          fit: BoxFit.cover,
+                                          width: screenwdt,
+                                          placeholder: (context, url) =>
+                                              localImage,
                                         ),
                                       ),
-                                      child: CachedNetworkImage(
-                                        imageUrl:
-                                            banner['banner'] ?? Container(
-                                              width: screenwdt*0.8,
-                                              height: screenhgt*0.6,
-                                              child: localImage,) ,
-                                        fit: BoxFit.contain,
-                                        width: screenwdt,
-                                        placeholder: (context, url) =>
-                                            localImage,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 0,
-                                  child: Focus(
-                                    focusNode: _emptytextFocusNode,
-                                    onFocusChange: (hasFocus) {
-                                      setState(() {
-                                        _isemptytextFocusNode = hasFocus;
-                                      });
-                                    },
-                                    child: Container(
-                                      child: Text(''),
                                     ),
                                   ),
                                 ),
@@ -284,7 +274,7 @@ class _BannerSliderState extends State<BannerSlider> {
                                     child: Text(
                                       (banner['title'] ?? '')
                                           .toString()
-                                          .toUpperCase(), // Handle null title here
+                                          .toUpperCase(),
                                       style: TextStyle(
                                         color: hintColor,
                                         fontSize: 30.0,
@@ -296,79 +286,6 @@ class _BannerSliderState extends State<BannerSlider> {
                               ],
                             );
                           },
-                        ),
-                        Positioned(
-                          top: screenhgt * 0.85,
-                          left: screenwdt * 0.053,
-                          right: screenwdt * 0.053,
-                          child: Container(
-                            color: cardColor,
-                            height: screenhgt * 0.15,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: bannerList.length,
-                              itemBuilder: (context, index) {
-                                final smallBanner = bannerList[index] ?? '';
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      fetchAndPlayVideo(
-                                          smallBanner['content_id'] ?? '');
-                                    },
-                                    child: Focus(
-                                      focusNode: _smallBannerFocusNodes[index],
-                                      onFocusChange: (hasFocus) {
-                                        if (hasFocus) {
-                                          setState(() {
-                                            _isSmallBannerFocused = true;
-                                            _focusedSmallBannerIndex = index;
-                                            _scrollToSmallBanner(index);
-                                          });
-                                        } else {
-                                          setState(() {
-                                            _isSmallBannerFocused = false;
-                                          });
-                                        }
-                                      },
-                                      onKeyEvent: (node, event) {
-                                        if (event is KeyDownEvent &&
-                                            event.logicalKey ==
-                                                LogicalKeyboardKey.select) {
-                                          fetchAndPlayVideo(
-                                              smallBanner['content_id'] ?? '');
-                                          return KeyEventResult.handled;
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
-                                      child: Container(
-                                        // width: screenhgt * 0.25, // Adjust the width as needed
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: _isSmallBannerFocused &&
-                                                    _focusedSmallBannerIndex ==
-                                                        index
-                                                ? borderColor
-                                                : hintColor,
-                                            width: 3.0,
-                                          ),
-                                        ),
-                                        child: CachedNetworkImage(
-                                          imageUrl: smallBanner['banner'] ??
-                                              localImage,
-                                              width: screenwdt *
-                                            0.11,
-                                          fit: BoxFit.fill,
-                                          placeholder: (context, url) =>
-                                              localImage,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
                         ),
                       ],
                     ),

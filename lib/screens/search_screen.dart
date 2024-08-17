@@ -271,16 +271,16 @@ class _SearchScreenState extends State<SearchScreen> {
           AnimatedContainer(
             width: 
             // selectedIndex == index? MediaQuery.of(context).size.width * 0.35:
-             MediaQuery.of(context).size.width * 0.3,
+             screenwdt * 0.15,
             height: 
             // selectedIndex == index ? MediaQuery.of(context).size.height * 0.25:
-                 MediaQuery.of(context).size.height * 0.2,
+                 screenhgt * 0.2,
             duration: const Duration(milliseconds: 3),
             decoration: BoxDecoration(
                 border: Border.all(
                   color: selectedIndex == index
-                      ? Colors.yellow
-                      : Colors.grey, // Replace with your borderColor
+                      ? borderColor
+                      : hintColor, // Replace with your borderColor
                   width: 5.0,
                 ),
                 borderRadius: BorderRadius.circular(10)),
@@ -291,16 +291,16 @@ class _SearchScreenState extends State<SearchScreen> {
                 placeholder: (context, url) => localImage,
                 width: 
                 // selectedIndex == index? MediaQuery.of(context).size.width * 0.35:
-                     MediaQuery.of(context).size.width * 0.28,
+                     screenwdt * 0.15,
                 height: 
-                selectedIndex == index? MediaQuery.of(context).size.height * 0.23:
-                     MediaQuery.of(context).size.height * 0.2,
+                // selectedIndex == index? MediaQuery.of(context).size.height * 0.23:
+                     screenhgt * 0.2,
                 fit: BoxFit.cover,
               ),
             ),
           ),
           Container(
-            width: MediaQuery.of(context).size.width * 0.25,
+            width: MediaQuery.of(context).size.width * 0.15,
             child: Text(
               (searchResults[index]['name'] ?? '').toString().toUpperCase(),
               style: TextStyle(

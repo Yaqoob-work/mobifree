@@ -6,7 +6,6 @@ import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-// import 'package:wakelock/wakelock.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
@@ -44,15 +43,13 @@ class _VideoScreenState extends State<VideoScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..addListener(_videoPlayerListener); // Add listener for buffering events
     _initializeVideoPlayerFuture = _controller.initialize();
     _controller.setLooping(true);
     _controller.play();
-    // Wakelock.enable(); // Keep the screen on for this page
-    // Initialize focus nodes for each channel item
     KeepScreenOn.turnOn();
-    focusNodes =
-        List.generate(widget.channelList.length, (index) => FocusNode());
+    focusNodes = List.generate(widget.channelList.length, (index) => FocusNode());
 
     // Initialize isFocused to false for each channel
     widget.channelList.forEach((channel) {
@@ -64,16 +61,34 @@ class _VideoScreenState extends State<VideoScreen> {
 
   @override
   void dispose() {
+    _controller.removeListener(_videoPlayerListener); // Remove listener
     _controller.dispose();
     _inactivityTimer?.cancel(); // Cancel the inactivity timer
     for (var node in focusNodes) {
       node.dispose();
     }
     KeepScreenOn.turnOff();
-    // Wakelock.disable(); // Disable screen wake when leaving this page
-    // fabFocusNode.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _videoPlayerListener() {
+    if (_controller.value.hasError) {
+      // Handle the error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${_controller.value.errorDescription}')),
+      );
+    } else if (_controller.value.isBuffering) {
+      // Optionally handle buffering state
+      setState(() {
+        // Show loading indicator if buffering
+      });
+    } else if (_controller.value.isPlaying && _controller.value.position == _controller.value.duration) {
+      // Optionally handle video completion
+    } else if (!_controller.value.isBuffering && !_controller.value.isPlaying) {
+      // Resume playback if not buffering and video is paused
+      _controller.play();
+    }
   }
 
   void toggleGridVisibility() {
@@ -110,12 +125,13 @@ class _VideoScreenState extends State<VideoScreen> {
 
     String selectedUrl = widget.channelList[index]['url'] ?? '';
     _controller.pause();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(selectedUrl));
-    _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-      setState(() {});
-      _controller.play();
-      _controller.setVolume(volume);
-    });
+    _controller = VideoPlayerController.networkUrl(Uri.parse(selectedUrl))
+      ..addListener(_videoPlayerListener) // Add listener for buffering events
+      ..initialize().then((_) {
+        setState(() {});
+        _controller.play();
+        _controller.setVolume(volume);
+      });
   }
 
   void _resetInactivityTimer() {
@@ -194,6 +210,7 @@ class _VideoScreenState extends State<VideoScreen> {
               }
             },
           ),
+          // Optional grid view or other widgets can be uncommented here
           // AnimatedPositioned(
           //   duration: const Duration(milliseconds: 300),
           //   bottom: isGridVisible ? 210 : 20,
@@ -280,6 +297,10 @@ class _VideoScreenState extends State<VideoScreen> {
           //                         ),
           //                       ),
           //                     ),
+          //                     Text(
+          //                       widget.channelList[index]['name'] ?? '',
+          //                       style: TextStyle(color: Colors.white),
+          //                     ),
           //                   ],
           //                 ),
           //               ),
@@ -289,6 +310,20 @@ class _VideoScreenState extends State<VideoScreen> {
           //       ),
           //     ),
           //   ),
+          // Positioned(
+          //   bottom: 20,
+          //   right: 20,
+          //   child: Focus(
+          //     focusNode: fabFocusNode,
+          //     onFocusChange: (hasFocus) {
+          //       widget.onFabFocusChanged(hasFocus);
+          //     },
+          //     child: FloatingActionButton(
+          //       onPressed: toggleFullScreen,
+          //       child: Icon(isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );
