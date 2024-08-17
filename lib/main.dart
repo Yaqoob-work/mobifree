@@ -4,15 +4,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
+
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
+// import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart';
+// import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
-import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 import 'package:mobi_tv_entertainment/screens/vod.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
+import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 
 class MyHttpOverrides extends HttpOverrides {
-  @override
+  @override 
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
       ..badCertificateCallback =
@@ -29,26 +32,12 @@ var highlightColor;
 var cardColor;
 var hintColor;
 var borderColor;
+
 var screenhgt;
 var screenwdt;
 var screensz;
+
 var localImage;
-
-Future<int> fetchtvenableAll() async {
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getSettings'),
-    headers: {
-      'x-api-key': 'vLQTuPZUxktl5mVW',
-    },
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return data['tvenableAll'];
-  } else {
-    throw Exception('Failed to load settings');
-  }
-}
 
 class MyApp extends StatelessWidget {
   @override
@@ -67,49 +56,17 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),
-        '/home': (context) => FutureBuilder<int>(
-          future: fetchtvenableAll(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Scaffold(body: Center(child: CircularProgressIndicator()));
-            } else if (snapshot.hasError) {
-              return Scaffold(body: Center(child: Text('Error: ${snapshot.error}')));
-            } else if (snapshot.hasData) {
-              final tvenableAll = snapshot.data ?? 0;
-              return MyHomePage(
-                enableVOD: tvenableAll == 1,
-                enableSearch: true,
-              );
-            } else {
-              return Scaffold(body: Center(child: Text('No Data')));
-            }
-          },
-        ),
-      },
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/search':
-            return MaterialPageRoute(builder: (_) => SearchScreen());
-          case '/live':
-            return MaterialPageRoute(builder: (_) => LiveScreen());
-          case '/vod':
-            return MaterialPageRoute(builder: (_) => VOD());
-          case '/category':
-            return MaterialPageRoute(builder: (_) => HomeCategory());
-          default:
-            return null;
-        }
+        '/myhome': (context) => MyHomePage(),
+        '/category': (context) => HomeCategory(),
+        '/search': (context) => SearchScreen(),
+        '/vod': (context) => VOD(),
+        '/live': (context) => LiveScreen(),
       },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  final bool enableVOD;
-  final bool enableSearch;
-
-  MyHomePage({required this.enableVOD, required this.enableSearch});
-
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -117,11 +74,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedPage = 0;
   late PageController _pageController;
+  bool _tvenableAll = false; // Track tvenableAll status
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedPage);
+    _fetchTvenableAllStatus(); // Fetch tvenableAll status
   }
 
   @override
@@ -137,16 +96,45 @@ class _MyHomePageState extends State<MyHomePage> {
     _pageController.jumpToPage(index);
   }
 
+  Future<void> _fetchTvenableAllStatus() async {
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getSettings'),
+        headers: {
+          'x-api-key': 'vLQTuPZUxktl5mVW',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _tvenableAll = data['tvenableAll'] == 1;
+        });
+      } else {
+        print('Failed to load settings');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<Widget> pages = [
+      HomeScreen(),
+      if (_tvenableAll) SearchScreen(), // Conditionally include SearchScreen
+      LiveScreen(),
+      if (_tvenableAll) VOD(), // Conditionally include VOD
+      HomeCategory(),
+    ];
+
     return Scaffold(
       body: Row(
         children: <Widget>[
           NavigationSidebar(
             selectedPage: _selectedPage,
             onPageSelected: _onPageSelected,
-            enableVOD: widget.enableVOD,
-            enableSearch: widget.enableSearch,
+            tvenableAll: _tvenableAll, // Pass _tvenableAll
           ),
           Expanded(
             child: PageView(
@@ -156,13 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   _selectedPage = index;
                 });
               },
-              children: <Widget>[
-                HomeScreen(),
-                if (widget.enableSearch) SearchScreen(),
-                LiveScreen(),
-                if (widget.enableVOD) VOD(),
-                HomeCategory(),
-              ],
+              children: pages,
             ),
           ),
         ],
@@ -174,14 +156,12 @@ class _MyHomePageState extends State<MyHomePage> {
 class NavigationSidebar extends StatefulWidget {
   final int selectedPage;
   final ValueChanged<int> onPageSelected;
-  final bool enableVOD;
-  final bool enableSearch;
+  final bool tvenableAll; // Add this line to accept the parameter
 
   const NavigationSidebar({
     required this.selectedPage,
     required this.onPageSelected,
-    required this.enableVOD,
-    required this.enableSearch,
+    required this.tvenableAll, // Add this line
   });
 
   @override
@@ -194,12 +174,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(
-      widget.enableVOD
-          ? (widget.enableSearch ? 5 : 4)
-          : (widget.enableSearch ? 4 : 3),
-      (index) => FocusNode(),
-    );
+    _focusNodes = List.generate(5, (index) => FocusNode());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNodes[0]);
     });
@@ -215,88 +190,73 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        bool isCompact = constraints.maxWidth < 500;
-
-        return Container(
-          width: isCompact ? 80 : MediaQuery.of(context).size.width * 0.24,
-          decoration: BoxDecoration(
-            color: hintColor,
-          ),
-          child: Column(
-            children: <Widget>[
-              Container(
-                width:
-                    isCompact ? 80 : MediaQuery.of(context).size.width * 0.24,
-                padding: const EdgeInsets.all(20.0),
-                child: ClipRRect(
-                  child: Image.asset(
-                    'assets/logo.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.24, // Adjust percentage as needed
+      decoration: BoxDecoration(
+        color: hintColor,
+      ),
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: screenwdt,
+            decoration: BoxDecoration(
+              color: hintColor,
+            ),
+            padding: const EdgeInsets.all(20.0),
+            child: ClipRRect(
+              child: Image.asset('assets/logo.png',
+                fit: BoxFit.cover,
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: ListView(
-                    children: <Widget>[
-                      _buildNavigationItem(
-                        Icons.home,
-                        'HOME',
-                        0,
-                        _focusNodes[0],
-                        isCompact,
-                      ),
-                      if (widget.enableSearch)
-                        _buildNavigationItem(
-                          Icons.search,
-                          'SEARCH',
-                          1,
-                          _focusNodes[1],
-                          isCompact,
-                        ),
-                      _buildNavigationItem(
-                        Icons.tv,
-                        'LIVE TV',
-                        widget.enableSearch ? 2 : 1,
-                        _focusNodes[widget.enableSearch ? 2 : 1],
-                        isCompact,
-                      ),
-                      if (widget.enableVOD)
-                        _buildNavigationItem(
-                          Icons.video_camera_front,
-                          'VOD',
-                          widget.enableSearch ? 3 : 2,
-                          _focusNodes[widget.enableSearch ? 3 : 2],
-                          isCompact,
-                        ),
-                      _buildNavigationItem(
-                        Icons.category,
-                        'CATEGORY',
-                        widget.enableVOD
-                            ? (widget.enableSearch ? 4 : 3)
-                            : (widget.enableSearch ? 3 : 2),
-                        _focusNodes[widget.enableVOD
-                            ? (widget.enableSearch ? 4 : 3)
-                            : (widget.enableSearch ? 3 : 2)],
-                        isCompact,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        );
-      },
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left:8.0),
+              child: ListView(
+                children: <Widget>[
+                  _buildNavigationItem(
+                    Icons.home,
+                    'HOME',
+                    0,
+                    _focusNodes[0],
+                  ),
+                  if (widget.tvenableAll) // Conditionally show Search option
+                    _buildNavigationItem(
+                      Icons.search,
+                      'SEARCH',
+                      1,
+                      _focusNodes[1],
+                    ),
+                  _buildNavigationItem(
+                    Icons.tv,
+                    'LIVE TV',
+                    2,
+                    _focusNodes[2],
+                  ),
+                  if (widget.tvenableAll) // Conditionally show VOD option
+                    _buildNavigationItem(
+                      Icons.video_camera_front,
+                      'VOD',
+                      3,
+                      _focusNodes[3],
+                    ),
+                  _buildNavigationItem(
+                    Icons.category,
+                    'CATEGORY',
+                    4,
+                    _focusNodes[4],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  
-  Widget _buildNavigationItem(IconData iconData, String title, int index,
-      FocusNode focusNode, bool isCompact) {
+  Widget _buildNavigationItem(
+      IconData iconData, String title, int index, FocusNode focusNode) {
     bool isSelected = widget.selectedPage == index;
     return Focus(
       focusNode: focusNode,
@@ -330,20 +290,18 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                 color: focusNode.hasFocus
                     ? Color.fromARGB(255, 247, 6, 118)
                     : Color.fromARGB(255, 20, 27, 122),
-                size: isSelected ? 30 : 20,
+                size: isSelected ? 23 : 20,
               ),
-              title: isCompact
-                  ? null
-                  : Text(
-                      title,
-                      style: TextStyle(
-                        color: focusNode.hasFocus
-                            ? Color.fromARGB(255, 247, 6, 118)
-                            : Color.fromARGB(255, 20, 27, 122),
-                        fontSize: isSelected ? 18 : 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+              title: Text(
+                title,
+                style: TextStyle(
+                  color: focusNode.hasFocus
+                      ? Color.fromARGB(255, 247, 6, 118)
+                      : Color.fromARGB(255, 20, 27, 122),
+                  fontSize: isSelected ? 25 : 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ),

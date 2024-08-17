@@ -275,7 +275,7 @@ class _SearchScreenState extends State<SearchScreen> {
             height: 
             // selectedIndex == index ? MediaQuery.of(context).size.height * 0.25:
                  MediaQuery.of(context).size.height * 0.2,
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 3),
             decoration: BoxDecoration(
                 border: Border.all(
                   color: selectedIndex == index

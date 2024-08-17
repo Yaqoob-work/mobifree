@@ -283,7 +283,7 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                     height: 
                     // isFocused ? screenhgt * 0.22 : 
                     screenhgt * 0.18,
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 3),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: isFocused ? borderColor : hintColor,
@@ -547,121 +547,121 @@ class _VideoScreenState extends State<VideoScreen> {
                           child: VideoPlayer(_controller),
                         ),
                       ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Visibility(
-                          visible: showChannels,
-                          child: Container(
-                            height: 210,
-                            color: Colors.black.withOpacity(0.5),
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: widget.channels.length,
-                              itemBuilder: (context, index) {
-                                final channel = widget.channels[index];
-                                return GestureDetector(
-                                  onTap: () => _changeChannel(index),
-                                  child: ChannelWidget(
-                                    channel: channel,
-                                    onTap: () async {
-                                      if (_isNavigating)
-                                        return; // Check if navigation is already in progress
-                                      _isNavigating =
-                                          true; // Set the flag to true
-                                      _showLoadingIndicator(context);
+                      // Positioned(
+                      //   left: 0,
+                      //   right: 0,
+                      //   bottom: 0,
+                      //   child: Visibility(
+                      //     visible: showChannels,
+                      //     child: Container(
+                      //       height: 210,
+                      //       color: Colors.black.withOpacity(0.5),
+                      //       child: ListView.builder(
+                      //         scrollDirection: Axis.horizontal,
+                      //         itemCount: widget.channels.length,
+                      //         itemBuilder: (context, index) {
+                      //           final channel = widget.channels[index];
+                      //           return GestureDetector(
+                      //             onTap: () => _changeChannel(index),
+                      //             child: ChannelWidget(
+                      //               channel: channel,
+                      //               onTap: () async {
+                      //                 if (_isNavigating)
+                      //                   return; // Check if navigation is already in progress
+                      //                 _isNavigating =
+                      //                     true; // Set the flag to true
+                      //                 _showLoadingIndicator(context);
 
-                                      try {
-                                        if (channel.streamType ==
-                                                'YoutubeLive' ||
-                                            channel.Type == 'Youtube') {
-                                          final response = await https.get(
-                                            Uri.parse(
-                                                'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                                    channel.url),
-                                            headers: {
-                                              'x-api-key': 'vLQTuPZUxktl5mVW'
-                                            },
-                                          );
+                      //                 try {
+                      //                   if (channel.streamType ==
+                      //                           'YoutubeLive' ||
+                      //                       channel.Type == 'Youtube') {
+                      //                     final response = await https.get(
+                      //                       Uri.parse(
+                      //                           'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                      //                               channel.url),
+                      //                       headers: {
+                      //                         'x-api-key': 'vLQTuPZUxktl5mVW'
+                      //                       },
+                      //                     );
 
-                                          if (response.statusCode == 200 &&
-                                              json.decode(
-                                                      response.body)['url'] !=
-                                                  '') {
-                                            channel.url = json
-                                                .decode(response.body)['url'];
-                                            channel.streamType = "M3u8";
-                                          } else {
-                                            throw Exception(
-                                                'Failed to load networks');
-                                          }
-                                        }
-                                        Navigator.of(context,
-                                                rootNavigator: true)
-                                            .pop();
+                      //                     if (response.statusCode == 200 &&
+                      //                         json.decode(
+                      //                                 response.body)['url'] !=
+                      //                             '') {
+                      //                       channel.url = json
+                      //                           .decode(response.body)['url'];
+                      //                       channel.streamType = "M3u8";
+                      //                     } else {
+                      //                       throw Exception(
+                      //                           'Failed to load networks');
+                      //                     }
+                      //                   }
+                      //                   Navigator.of(context,
+                      //                           rootNavigator: true)
+                      //                       .pop();
 
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => VideoScreen(
-                                              channels: widget.channels,
-                                              initialIndex: index,
-                                              videoUrl: null,
-                                              videoTitle: null,
-                                            ),
-                                          ),
-                                        ).then((_) {
-                                          // Reset the flag after the navigation is completed
-                                          _isNavigating = false;
-                                        });
-                                      } catch (e) {
-                                        // Reset navigation flag
-                                        _isNavigating = false;
+                      //                   Navigator.pushReplacement(
+                      //                     context,
+                      //                     MaterialPageRoute(
+                      //                       builder: (context) => VideoScreen(
+                      //                         channels: widget.channels,
+                      //                         initialIndex: index,
+                      //                         videoUrl: null,
+                      //                         videoTitle: null,
+                      //                       ),
+                      //                     ),
+                      //                   ).then((_) {
+                      //                     // Reset the flag after the navigation is completed
+                      //                     _isNavigating = false;
+                      //                   });
+                      //                 } catch (e) {
+                      //                   // Reset navigation flag
+                      //                   _isNavigating = false;
 
-                                        // Hide the loading indicator in case of an error
-                                        Navigator.of(context,
-                                                rootNavigator: true)
-                                            .pop();
-                                        // Show error message
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(content: Text('Link Error')),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 16,
-                        bottom: showChannels ? 220 : 16,
-                        child: Focus(
-                          focusNode: _fabFocusNode,
-                          child: IconButton(
-                            color: _isFabFocused ? borderColor : Colors.white,
-                            // focusColor: _isFabFocused?hintColor:Colors.blue,
-                            onPressed: () {
-                              setState(() {
-                                showChannels = !showChannels;
-                              });
-                            },
-                            icon: Container(
-                                padding: EdgeInsets.all(3),
-                                color: _isFabFocused
-                                    ? const Color.fromARGB(195, 0, 0, 0)
-                                    : Colors.transparent,
-                                child: Icon(
-                                  showChannels ? Icons.close : Icons.grid_view,
-                                  size: _isFabFocused ? 30 : 20,
-                                )),
-                          ),
-                        ),
-                      ),
+                      //                   // Hide the loading indicator in case of an error
+                      //                   Navigator.of(context,
+                      //                           rootNavigator: true)
+                      //                       .pop();
+                      //                   // Show error message
+                      //                   ScaffoldMessenger.of(context)
+                      //                       .showSnackBar(
+                      //                     SnackBar(content: Text('Link Error')),
+                      //                   );
+                      //                 }
+                      //               },
+                      //             ),
+                      //           );
+                      //         },
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      // Positioned(
+                      //   right: 16,
+                      //   bottom: showChannels ? 220 : 16,
+                      //   child: Focus(
+                      //     focusNode: _fabFocusNode,
+                      //     child: IconButton(
+                      //       color: _isFabFocused ? borderColor : Colors.white,
+                      //       // focusColor: _isFabFocused?hintColor:Colors.blue,
+                      //       onPressed: () {
+                      //         setState(() {
+                      //           showChannels = !showChannels;
+                      //         });
+                      //       },
+                      //       icon: Container(
+                      //           padding: EdgeInsets.all(3),
+                      //           color: _isFabFocused
+                      //               ? const Color.fromARGB(195, 0, 0, 0)
+                      //               : Colors.transparent,
+                      //           child: Icon(
+                      //             showChannels ? Icons.close : Icons.grid_view,
+                      //             size: _isFabFocused ? 30 : 20,
+                      //           )),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   )
                 : const CircularProgressIndicator(),

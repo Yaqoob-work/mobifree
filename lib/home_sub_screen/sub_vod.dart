@@ -188,11 +188,11 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
               child: AnimatedContainer(
                 width:
                     // _focusNode.hasFocus ? screenwdt * 0.35 : 
-                    screenwdt * 0.27,
+                    screenwdt * 0.15,
                 height:
                     // _focusNode.hasFocus ? screenhgt * 0.23 : 
                     screenhgt * 0.2,
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _focusNode.hasFocus ? borderColor : hintColor,
@@ -208,7 +208,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     fit: BoxFit.cover,
                     width:
                     //  _focusNode.hasFocus? screenwdt * 0.35:
-                        screenwdt * 0.3,
+                        screenwdt * 0.15,
                     height: 
                     // _focusNode.hasFocus? screenhgt * 0.23:
                         screenhgt * 0.2,
@@ -221,7 +221,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
              Container(
                 width:
                 //  _focusNode.hasFocus ? screenwdt * 0.33 : 
-                screenwdt * 0.3,
+                screenwdt * 0.15,
                 child: Text(
                   widget.network.name,
                   style: TextStyle(
@@ -292,7 +292,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
               AnimatedContainer(
                 width: 
                 // _focusNode.hasFocus ? screenwdt * 0.35 :
-                 screenwdt * 0.3,
+                 screenwdt * 0.15,
                 height:
                     // _focusNode.hasFocus ? screenhgt * 0.23 : 
                     screenhgt * 0.2,
@@ -312,7 +312,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                     fit: BoxFit.cover,
                     width:
                     //  _focusNode.hasFocus? screenwdt * 0.35:
-                         screenwdt * 0.3,
+                         screenwdt * 0.15,
                     height: 
                     // _focusNode.hasFocus? screenhgt * 0.23:
                          screenhgt * 0.2,
@@ -323,12 +323,12 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
               Container(
                 width: 
                 // _focusNode.hasFocus ? screenwdt * 0.33 : 
-                screenwdt * 0.3,
+                screenwdt * 0.15,
                 child: Text(
                   widget.content.name,
                   style: TextStyle(
                     color: _focusNode.hasFocus ? Colors.yellow : Colors.white,
-                    fontSize: _focusNode.hasFocus ? 20 : 16,
+                    fontSize:  16,
                   ),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,

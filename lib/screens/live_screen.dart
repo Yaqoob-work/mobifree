@@ -169,7 +169,7 @@ class _LiveScreenState extends State<LiveScreen> {
                 height: 
                 // entertainmentList[index]['isFocused']? screenhgt * 0.25:
                      screenhgt * 0.2,
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
                     border: Border.all(
                       color: entertainmentList[index]['isFocused']
