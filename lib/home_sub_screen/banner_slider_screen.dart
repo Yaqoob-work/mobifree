@@ -50,24 +50,28 @@ class _BannerSliderState extends State<BannerSlider> {
     });
   }
 
-  void _startAutoSlide() {
-    if (_isPageViewBuilt) {
-      _timer = Timer.periodic(Duration(seconds: 4), (Timer timer) {
-        if (_pageController.page == bannerList.length - 1) {
-          _pageController.animateToPage(
-            0,
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeIn,
-          );
-        } else {
-          _pageController.nextPage(
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeIn,
-          );
-        }
-      });
-    }
+
+
+
+void _startAutoSlide() {
+  if (_isPageViewBuilt) {
+    _timer = Timer.periodic(Duration(seconds: 4), (Timer timer) {
+      // Check if we're at the last page
+      if (_pageController.page == bannerList.length - 1) {
+        
+          _pageController.jumpToPage(0); // Directly jump to the first page
+      } else {
+        _pageController.nextPage(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeIn,
+        );
+      }
+    });
   }
+}
+
+
+
 
   Future<void> fetchBanners() async {
     try {
@@ -218,7 +222,7 @@ class _BannerSliderState extends State<BannerSlider> {
                               children: [
                                 Container(
                                   margin: EdgeInsets.symmetric(
-                                      vertical: screenhgt * 0.01,
+                                      vertical: screenhgt * 0.02,
                                       horizontal: screenwdt * 0.05),
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: GestureDetector(
@@ -265,24 +269,24 @@ class _BannerSliderState extends State<BannerSlider> {
                                     ),
                                   ),
                                 ),
-                                Positioned(
-                                  top: screenhgt * 0.11,
-                                  left: screenwdt * 0.1,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10.0, vertical: 5.0),
-                                    child: Text(
-                                      (banner['title'] ?? '')
-                                          .toString()
-                                          .toUpperCase(),
-                                      style: TextStyle(
-                                        color: hintColor,
-                                        fontSize: 30.0,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                // Positioned(
+                                //   top: screenhgt * 0.11,
+                                //   left: screenwdt * 0.1,
+                                //   child: Container(
+                                //     padding: const EdgeInsets.symmetric(
+                                //         horizontal: 10.0, vertical: 5.0),
+                                //     child: Text(
+                                //       (banner['title'] ?? '')
+                                //           .toString()
+                                //           .toUpperCase(),
+                                //       style: TextStyle(
+                                //         color: hintColor,
+                                //         fontSize: 30.0,
+                                //         fontWeight: FontWeight.bold,
+                                //       ),
+                                //     ),
+                                //   ),
+                                // ),
                               ],
                             );
                           },

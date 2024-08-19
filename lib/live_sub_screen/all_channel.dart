@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:mobi_tv_entertainment/video_widget/custom_appbar.dart';
 import '../video_widget/video_screen.dart';
 
 void main() {
@@ -79,9 +78,9 @@ class _AllChannelState extends State<AllChannel> {
           entertainmentList = responseData.where((channel) {
             // Ensure 'id' is parsed as an int and check 'status' properly
             int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-            String channelStatus = channel['genres'].toString();
+            String channelStatus = channel['status'].toString();
 
-            return channelStatus.contains('Music') &&
+            return channelStatus.contains('1') &&
                 (tvenableAll || allowedChannelIds.contains(channelId));
           }).map((channel) {
             channel['isFocused'] = false;
@@ -111,7 +110,6 @@ class _AllChannelState extends State<AllChannel> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
       backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())

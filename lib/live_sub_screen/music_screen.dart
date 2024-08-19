@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:mobi_tv_entertainment/video_widget/custom_appbar.dart';
 import '../video_widget/video_screen.dart';
 
 void main() {
@@ -111,7 +110,6 @@ class MusicScreenState extends State<MusicScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
       backgroundColor: cardColor,
       body: isLoading
           ? Center(child: CircularProgressIndicator())

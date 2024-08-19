@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_tvenableAll) // Conditionally display SubVod
             Container(
               color: cardColor,
-              height: screenhgt*0.7,
+              height: screenhgt*0.65,
               child: BannerSlider(),
             ),
             if (_tvenableAll) // Conditionally display SubVod
