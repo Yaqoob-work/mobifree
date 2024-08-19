@@ -218,7 +218,7 @@ class _BannerSliderState extends State<BannerSlider> {
                               children: [
                                 Container(
                                   margin: EdgeInsets.symmetric(
-                                      vertical: screenhgt * 0.1,
+                                      vertical: screenhgt * 0.01,
                                       horizontal: screenwdt * 0.05),
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: GestureDetector(
@@ -257,7 +257,7 @@ class _BannerSliderState extends State<BannerSlider> {
                                         child: CachedNetworkImage(
                                           imageUrl: banner['banner'] ?? localImage,
                                           fit: BoxFit.cover,
-                                          width: screenwdt,
+                                          // width: screenwdt,
                                           placeholder: (context, url) =>
                                               localImage,
                                         ),

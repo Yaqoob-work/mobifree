@@ -313,24 +313,24 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                     // ),
                   ),
                 ),
-                Positioned(
-                    left: screenwdt * 0.03,
-                    top: screenhgt * 0.02,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'LIVE',
-                          style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18),
-                        ),
-                        // SizedBox(width: 2,),
-                        // Icon(Icons.live_tv_rounded ,color: Colors.red,)
-                      ],
-                    ))
+                // Positioned(
+                //     left: screenwdt * 0.03,
+                //     top: screenhgt * 0.02,
+                //     child: Row(
+                //       mainAxisAlignment: MainAxisAlignment.center,
+                //       crossAxisAlignment: CrossAxisAlignment.center,
+                //       children: [
+                //         Text(
+                //           'LIVE',
+                //           style: TextStyle(
+                //               color: Colors.red,
+                //               fontWeight: FontWeight.bold,
+                //               fontSize: 18),
+                //         ),
+                //         // SizedBox(width: 2,),
+                //         // Icon(Icons.live_tv_rounded ,color: Colors.red,)
+                //       ],
+                //     ))
               ],
             ),
             Container(

@@ -184,7 +184,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.only(left: 30),
               child: AnimatedContainer(
                 width:
                     // _focusNode.hasFocus ? screenwdt * 0.35 : 

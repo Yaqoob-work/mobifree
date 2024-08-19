@@ -6,12 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
 
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
+import 'package:mobi_tv_entertainment/live_sub_screen/all_channel.dart';
 // import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart';
 // import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
 import 'package:mobi_tv_entertainment/screens/vod.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
-import 'package:mobi_tv_entertainment/screens/live_screen.dart';
+// import 'package:mobi_tv_entertainment/screens/custom_appbar.dart';
 import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 
 class MyHttpOverrides extends HttpOverrides {
@@ -60,7 +61,8 @@ class MyApp extends StatelessWidget {
         '/category': (context) => HomeCategory(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
-        '/live': (context) => LiveScreen(),
+        // '/live': (context) => LiveScreen(),
+        '/live': (context) => AllChannel(),
       },
     );
   }
@@ -123,7 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Widget> pages = [
       HomeScreen(),
       if (_tvenableAll) SearchScreen(), // Conditionally include SearchScreen
-      LiveScreen(),
+      // LiveScreen(),
+      AllChannel(),
       if (_tvenableAll) VOD(), // Conditionally include VOD
       HomeCategory(),
     ];

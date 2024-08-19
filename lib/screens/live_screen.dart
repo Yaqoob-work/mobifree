@@ -1,298 +1,319 @@
-import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as https;
-import 'package:mobi_tv_entertainment/main.dart';
-import '../video_widget/video_screen.dart';
+// import 'dart:convert';
+// import 'dart:io';
 
-void main() {
-  runApp(LiveScreen());
-}
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:http/http.dart' as https;
 
-class LiveScreen extends StatefulWidget {
-  @override
-  _LiveScreenState createState() => _LiveScreenState();
-}
+// import 'package:mobi_tv_entertainment/live_sub_screen/all_channel.dart';
+// import 'package:mobi_tv_entertainment/live_sub_screen/entertainment_screen.dart';
+// import 'package:mobi_tv_entertainment/live_sub_screen/news_screen.dart';
+// import 'package:mobi_tv_entertainment/live_sub_screen/religious_screen.dart';
+// import 'package:mobi_tv_entertainment/live_sub_screen/sports_screen.dart';
+// import 'package:mobi_tv_entertainment/main.dart';
 
-class _LiveScreenState extends State<LiveScreen> {
-  List<dynamic> entertainmentList = [];
-  List<int> allowedChannelIds = [];
-  bool isLoading = true;
-  String errorMessage = '';
-  bool _isNavigating = false;
-  bool tvenableAll = false;
 
-  @override
-  void initState() {
-    super.initState();
-    fetchSettings();
-  }
+// // class MyHttpOverrides extends HttpOverrides {
+// //   @override 
+// //   HttpClient createHttpClient(SecurityContext? context) {
+// //     return super.createHttpClient(context)
+// //       ..badCertificateCallback =
+// //           (X509Certificate cert, String host, int port) => true;
+// //   }
+// // }
 
-  Future<void> fetchSettings() async {
-    try {
-      final response = await https.get(
-        Uri.parse('https://api.ekomflix.com/android/getSettings'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
+// void main() {
+//   // HttpOverrides.global = MyHttpOverrides();
+//   runApp(LiveScreen());
+// }
 
-      if (response.statusCode == 200) {
-        final settingsData = json.decode(response.body);
-        setState(() {
-          allowedChannelIds = List<int>.from(settingsData['channels']);
-          tvenableAll = settingsData['tvenableAll'] == 1;
-        });
+// // var highlightColor;
+// // var cardColor;
+// // var hintColor;
+// // var borderColor;
 
-        print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $tvenableAll');
+// // var screenhgt;
+// // var screenwdt;
+// // var screensz;
 
-        fetchEntertainment();
-      } else {
-        throw Exception(
-            'Failed to load settings, status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Error in fetchSettings: $e';
-        isLoading = false;
-      });
-      print('Error in fetchSettings: $e');
-    }
-  }
+// // var localImage;
 
-  Future<void> fetchEntertainment() async {
-    try {
-      final response = await https.get(
-        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
+// class LiveScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+// //     screenhgt = MediaQuery.of(context).size.height;
+// //     screenwdt = MediaQuery.of(context).size.width;
+// //     screensz = MediaQuery.of(context).size;
+// //     highlightColor = Colors.blue;
+// //     cardColor = Color.fromARGB(255, 8, 1, 34);
+// //     hintColor = Colors.white;
+// //     borderColor = Color.fromARGB(255, 247, 6, 118);
+// //     localImage = Image.asset('assets/logo.png');
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       // initialRoute: '/',
+//       // routes: {
+//       //   '/': (context) => AllCannel(),
+//       //   '/news': (context) => NewsScreen(),
+//       //   '/entertainment': (context) => EntertainmentScreen(),
+//       //   '/sports': (context) => SportsScreen(),
+//       //   '/religious': (context) => ReligiousScreen(),
+//       // },
+//       home: MyHomePage(),
+//     );
+//   }
+// }
 
-        setState(() {
-          entertainmentList = responseData.where((channel) {
-            // Ensure 'id' is parsed as an int and check 'status' properly
-            int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-            String channelStatus = channel['status'].toString();
+// class MyHomePage extends StatefulWidget {
+//   @override
+//   _MyHomePageState createState() => _MyHomePageState();
+// }
 
-            return channelStatus.contains('1') &&
-                (tvenableAll || allowedChannelIds.contains(channelId));
-          }).map((channel) {
-            channel['isFocused'] = false;
-            return channel;
-          }).toList();
+// class _MyHomePageState extends State<MyHomePage> {
+//   int _selectedPage = 0;
+//   late PageController _pageController;
+//   bool _tvenableAll = false; // Track tvenableAll status
 
-          print(
-              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print(
-              'Filtered Entertainment List Length: ${entertainmentList.length}');
+//   @override
+//   void initState() {
+//     super.initState();
+//     _pageController = PageController(initialPage: _selectedPage);
+//     _fetchTvenableAllStatus(); // Fetch tvenableAll status
+//   }
 
-          isLoading = false;
-        });
-      } else {
-        throw Exception(
-            'Failed to load entertainment data, status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Error in fetchEntertainment: $e';
-        isLoading = false;
-      });
-      print('Error in fetchEntertainment: $e');
-    }
-  }
+//   @override
+//   void dispose() {
+//     _pageController.dispose();
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: cardColor,
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-              ? Center(
-                  child: Text(
-                  errorMessage,
-                  style: TextStyle(fontSize: 20),
-                ))
-              : entertainmentList.isEmpty
-                  ? Center(child: Text('No Channels Available'))
-                  : Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                        ),
-                        itemCount: entertainmentList.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () => _navigateToVideoScreen(
-                                context, entertainmentList[index]),
-                            child: _buildGridViewItem(index),
-                          );
-                        },
-                      ),
-                    ),
-    );
-  }
+//   void _onPageSelected(int index) {
+//     setState(() {
+//       _selectedPage = index;
+//     });
+//     _pageController.jumpToPage(index);
+//   }
 
-  Widget _buildGridViewItem(int index) {
-    return Focus(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.select) {
-          _navigateToVideoScreen(context, entertainmentList[index]);
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      onFocusChange: (hasFocus) {
-        setState(() {
-          entertainmentList[index]['isFocused'] = hasFocus;
-        });
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
-            children: [
-              AnimatedContainer(
-                curve: Curves.ease,
-                width: 
-                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
-                    screenwdt * 0.15,
-                height: 
-                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                     screenhgt * 0.2,
-                duration: const Duration(milliseconds: 3),
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: entertainmentList[index]['isFocused']
-                          ? borderColor
-                          : hintColor,
-                      width: 5.0,
-                    ),
-                    borderRadius: BorderRadius.circular(10)),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: CachedNetworkImage(
-                    imageUrl: entertainmentList[index]['banner'] ?? localImage,
-                    placeholder: (context, url) => localImage,
-                    width: 
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                     screenwdt * 0.15,
-                    height: 
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                         screenhgt * 0.2,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Positioned(
-                  left: screenwdt * 0.03,
-                  top: screenhgt * 0.02,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'LIVE',
-                        style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18),
-                      ),
-                    ],
-                  ))
-            ],
-          ),
-          Container(
-            width: screenwdt * 0.15,
-            child: Text(
-              (entertainmentList[index]['name'] ?? 'Unknown')
-                  .toString()
-                  .toUpperCase(),
-              style: TextStyle(
-                fontSize: 15,
-                color: entertainmentList[index]['isFocused']
-                    ? highlightColor
-                    : Colors.white,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+//   Future<void> _fetchTvenableAllStatus() async {
+//     try {
+//       final response = await https.get(
+//         Uri.parse('https://api.ekomflix.com/android/getSettings'),
+//         headers: {
+//           'x-api-key': 'vLQTuPZUxktl5mVW',
+//         },
+//       );
 
-  void _navigateToVideoScreen(
-      BuildContext context, dynamic entertainmentItem) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
+//       if (response.statusCode == 200) {
+//         final data = jsonDecode(response.body);
+//         setState(() {
+//           _tvenableAll = data['tvenableAll'] == 1;
+//         });
+//       } else {
+//         print('Failed to load settings');
+//       }
+//     } catch (e) {
+//       print('Error: $e');
+//     }
+//   }
 
-    _showLoadingIndicator(context);
+//   @override
+//   Widget build(BuildContext context) {
+//     List<Widget> pages = [
+//       AllCannel(),
+//       // if (_tvenableAll)
+//        NewsScreen(), // Conditionally include SearchScreen
+//       EntertainmentScreen(),
+//       // if (_tvenableAll)
+//        SportsScreen(), // Conditionally include VOD
+//       ReligiousScreen(),
+//     ];
 
-    try {
-      if (entertainmentItem['stream_type'] == 'YoutubeLive') {
-        final response = await https.get(
-          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-              entertainmentItem['url']!),
-          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-        );
+//     return Scaffold(
+//       body: Row(
+//         children: <Widget>[
+//           NavigationSidebar(
+//             selectedPage: _selectedPage,
+//             onPageSelected: _onPageSelected,
+//             tvenableAll: _tvenableAll, // Pass _tvenableAll
+//           ),
+//           Expanded(
+//             child: PageView(
+//               controller: _pageController,
+//               onPageChanged: (index) {
+//                 setState(() {
+//                   _selectedPage = index;
+//                 });
+//               },
+//               children: pages,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
-        if (response.statusCode == 200) {
-          entertainmentItem['url'] = json.decode(response.body)['url']!;
-          entertainmentItem['stream_type'] = "M3u8";
-        } else {
-          throw Exception(
-              'Failed to load networks, status code: ${response.statusCode}');
-        }
-      }
+// class NavigationSidebar extends StatefulWidget {
+//   final int selectedPage;
+//   final ValueChanged<int> onPageSelected;
+//   final bool tvenableAll; // Add this line to accept the parameter
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoScreen(
-            videoUrl: entertainmentItem['url'],
-            videoTitle: entertainmentItem['name'],
-            channelList: entertainmentList,
-            onFabFocusChanged: (bool) {},
-            genres: '',
-            channels: [],
-            initialIndex: 1,
-          ),
-        ),
-      ).then((_) {
-        _isNavigating = false;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
-    } catch (e) {
-      _isNavigating = false;
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Link Error: $e')),
-      );
-      print('Error in _navigateToVideoScreen: $e');
-    }
-  }
+//   const NavigationSidebar({
+//     required this.selectedPage,
+//     required this.onPageSelected,
+//     required this.tvenableAll, // Add this line
+//   });
 
-  void _showLoadingIndicator(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-  }
-}
+//   @override
+//   _NavigationSidebarState createState() => _NavigationSidebarState();
+// }
+
+// class _NavigationSidebarState extends State<NavigationSidebar> {
+//   late List<FocusNode> _focusNodes;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _focusNodes = List.generate(5, (index) => FocusNode());
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       FocusScope.of(context).requestFocus(_focusNodes[0]);
+//     });
+//   }
+
+//   @override
+//   void dispose() {
+//     for (var node in _focusNodes) {
+//       node.dispose();
+//     }
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return 
+//     Container(
+//       // width: MediaQuery.of(context).size.width * 0.24, // Adjust percentage as needed
+//       height: MediaQuery.of(context).size.height *0.2,
+//       decoration: BoxDecoration(
+//         color: hintColor,
+//       ),
+//       child: Row(
+//         children: <Widget>[
+//           Container(
+//             width: screenwdt,
+//             decoration: BoxDecoration(
+//               color: hintColor,
+//             ),
+//             padding: const EdgeInsets.all(20.0),
+//             child: ClipRRect(
+//               child: Image.asset('assets/logo.png',
+//                 fit: BoxFit.cover,
+//                 width: 50,
+//               ),
+//             ),
+//           ),
+//           Expanded(
+//             child: Padding(
+//               padding: const EdgeInsets.only(left:8.0),
+//               child: ListView(
+//                 scrollDirection: Axis.horizontal,
+//                 children: <Widget>[
+//                   _buildNavigationItem(
+//                     Icons.home,
+//                     'HOME',
+//                     0,
+//                     _focusNodes[0],
+//                   ),
+//                   if (widget.tvenableAll) // Conditionally show Search option
+//                     _buildNavigationItem(
+//                       Icons.search,
+//                       'SEARCH',
+//                       1,
+//                       _focusNodes[1],
+//                     ),
+//                   _buildNavigationItem(
+//                     Icons.tv,
+//                     'LIVE TV',
+//                     2,
+//                     _focusNodes[2],
+//                   ),
+//                   if (widget.tvenableAll) // Conditionally show VOD option
+//                     _buildNavigationItem(
+//                       Icons.video_camera_front,
+//                       'VOD',
+//                       3,
+//                       _focusNodes[3],
+//                     ),
+//                   _buildNavigationItem(
+//                     Icons.category,
+//                     'CATEGORY',
+//                     4,
+//                     _focusNodes[4],
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildNavigationItem(
+//       IconData iconData, String title, int index, FocusNode focusNode) {
+//     bool isSelected = widget.selectedPage == index;
+//     return Focus(
+//       focusNode: focusNode,
+//       onFocusChange: (hasFocus) {
+//         if (hasFocus) {
+//           setState(() {}); // Trigger rebuild to update UI when focused
+//         }
+//       },
+//       onKeyEvent: (node, event) {
+//         if (HardwareKeyboard.instance
+//                 .isLogicalKeyPressed(LogicalKeyboardKey.select) ||
+//             HardwareKeyboard.instance
+//                 .isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
+//           widget.onPageSelected(index);
+//           return KeyEventResult.handled;
+//         }
+//         return KeyEventResult.ignored;
+//       },
+//       child: GestureDetector(
+//         onTap: () {
+//           widget.onPageSelected(index);
+//           focusNode.requestFocus();
+//         },
+//         child: Center(
+//           child: AnimatedContainer(
+//             duration: const Duration(milliseconds: 250),
+//             color: hintColor,
+//             child: ListTile(
+//               leading: Icon(
+//                 iconData,
+//                 color: focusNode.hasFocus
+//                     ? Color.fromARGB(255, 247, 6, 118)
+//                     : Color.fromARGB(255, 20, 27, 122),
+//                 size: isSelected ? 23 : 20,
+//               ),
+//               title: Text(
+//                 title,
+//                 style: TextStyle(
+//                   color: focusNode.hasFocus
+//                       ? Color.fromARGB(255, 247, 6, 118)
+//                       : Color.fromARGB(255, 20, 27, 122),
+//                   fontSize: isSelected ? 25 : 20,
+//                   fontWeight: FontWeight.bold,
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+
+
