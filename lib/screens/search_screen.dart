@@ -249,6 +249,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildGridViewItem(BuildContext context, int index) {
+    final result = searchResults[index];
+    final status = result['status'] ?? '';
+
     return Focus(
       focusNode: _itemFocusNodes[index],
       onKeyEvent: (FocusNode node, KeyEvent event) {
@@ -269,13 +272,9 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: 
-            // selectedIndex == index? MediaQuery.of(context).size.width * 0.35:
-             screenwdt * 0.15,
-            height: 
-            // selectedIndex == index ? MediaQuery.of(context).size.height * 0.25:
-                 screenhgt * 0.2,
-            duration: const Duration(milliseconds: 3),
+            width: screenwdt * 0.15,
+            height: screenhgt * 0.2,
+            duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
                 border: Border.all(
                   color: selectedIndex == index
@@ -284,25 +283,23 @@ class _SearchScreenState extends State<SearchScreen> {
                   width: 5.0,
                 ),
                 borderRadius: BorderRadius.circular(10)),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: CachedNetworkImage(
-                imageUrl: searchResults[index]['banner'] ?? 'localImage',
-                placeholder: (context, url) => localImage,
-                width: 
-                // selectedIndex == index? MediaQuery.of(context).size.width * 0.35:
-                     screenwdt * 0.15,
-                height: 
-                // selectedIndex == index? MediaQuery.of(context).size.height * 0.23:
-                     screenhgt * 0.2,
-                fit: BoxFit.cover,
-              ),
-            ),
+            child: status == '1'
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: CachedNetworkImage(
+                      imageUrl: result['banner'] ?? localImage,
+                      placeholder: (context, url) => localImage,
+                      width: screenwdt * 0.15,
+                      height: screenhgt * 0.2,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : null
           ),
           Container(
             width: MediaQuery.of(context).size.width * 0.15,
             child: Text(
-              (searchResults[index]['name'] ?? '').toString().toUpperCase(),
+              (result['name'] ?? '').toString().toUpperCase(),
               style: TextStyle(
                 fontSize: 15,
                 color: selectedIndex == index

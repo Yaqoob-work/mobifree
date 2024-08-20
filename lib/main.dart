@@ -129,29 +129,31 @@ class _MyHomePageState extends State<MyHomePage> {
       LiveScreen(),
       // AllChannel(),
       if (_tvenableAll) VOD(), // Conditionally include VOD
-      HomeCategory(),
+      // HomeCategory(),
     ];
 
-    return Scaffold(
-      body: Row(
-        children: <Widget>[
-          NavigationSidebar(
-            selectedPage: _selectedPage,
-            onPageSelected: _onPageSelected,
-            tvenableAll: _tvenableAll, // Pass _tvenableAll
-          ),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _selectedPage = index;
-                });
-              },
-              children: pages,
+    return SafeArea(
+      child: Scaffold(
+        body: Row(
+          children: <Widget>[
+            NavigationSidebar(
+              selectedPage: _selectedPage,
+              onPageSelected: _onPageSelected,
+              tvenableAll: _tvenableAll, // Pass _tvenableAll
             ),
-          ),
-        ],
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _selectedPage = index;
+                  });
+                },
+                children: pages,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -178,7 +180,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(5, (index) => FocusNode());
+    _focusNodes = List.generate(4, (index) => FocusNode());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNodes[0]);
     });
@@ -195,7 +197,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.24, // Adjust percentage as needed
+      width: screenwdt * 0.2, // Adjust percentage as needed
       decoration: BoxDecoration(
         color: hintColor,
       ),
@@ -244,12 +246,12 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                       3,
                       _focusNodes[3],
                     ),
-                  _buildNavigationItem(
-                    Icons.category,
-                    'CATEGORY',
-                    4,
-                    _focusNodes[4],
-                  ),
+                  // _buildNavigationItem(
+                  //   Icons.category,
+                  //   'CATEGORY',
+                  //   4,
+                  //   _focusNodes[4],
+                  // ),
                 ],
               ),
             ),
@@ -302,7 +304,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                   color: focusNode.hasFocus
                       ? Color.fromARGB(255, 247, 6, 118)
                       : Color.fromARGB(255, 20, 27, 122),
-                  fontSize: isSelected ? 25 : 20,
+                  fontSize: isSelected ? screenwdt*0.024 : screenwdt*0.02,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -313,3 +315,5 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     );
   }
 }
+
+

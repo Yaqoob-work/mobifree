@@ -3,6 +3,7 @@ import 'package:http/http.dart' as https;
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/all_channel.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/entertainment_screen.dart';
+import 'package:mobi_tv_entertainment/live_sub_screen/movie_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/music_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/news_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/religious_screen.dart';
@@ -68,10 +69,11 @@ class _LiveScreenState extends State<LiveScreen> {
       // Your LiveScreen content pages
       AllChannel(),
       NewsScreen(),
-      EntertainmentScreen(),
+      MovieScreen(),
       MusicScreen(),
-SportsScreen(),
-ReligiousScreen()
+      SportsScreen(),
+      ReligiousScreen(),
+      EntertainmentScreen(),
     ];
 
     return Scaffold(

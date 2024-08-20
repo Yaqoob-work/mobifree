@@ -62,50 +62,51 @@ class MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  Future<void> fetchEntertainment() async {
-    try {
-      final response = await https.get(
-        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
+Future<void> fetchEntertainment() async {
+  try {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+      headers: {
+        'x-api-key': 'vLQTuPZUxktl5mVW',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
 
-        setState(() {
-          entertainmentList = responseData.where((channel) {
-            // Ensure 'id' is parsed as an int and check 'status' properly
-            int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-            String channelStatus = channel['genres'].toString();
-
-            return channelStatus.contains('Music') &&
-                (tvenableAll || allowedChannelIds.contains(channelId));
-          }).map((channel) {
-            channel['isFocused'] = false;
-            return channel;
-          }).toList();
-
-          print(
-              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print(
-              'Filtered Entertainment List Length: ${entertainmentList.length}');
-
-          isLoading = false;
-        });
-      } else {
-        throw Exception(
-            'Failed to load entertainment data, status code: ${response.statusCode}');
-      }
-    } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchEntertainment: $e';
+        entertainmentList = responseData.where((channel) {
+          int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+          String channelStatus = channel['genres'].toString();
+
+          // Check if the status is "1" and apply the existing filters
+          return channel['status'] == "1" &&
+              channelStatus.contains('Music') &&
+              (tvenableAll || allowedChannelIds.contains(channelId));
+        }).map((channel) {
+          channel['isFocused'] = false;
+          return channel;
+        }).toList();
+
+        print(
+            'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+        print(
+            'Filtered Entertainment List Length: ${entertainmentList.length}');
+
         isLoading = false;
       });
-      print('Error in fetchEntertainment: $e');
+    } else {
+      throw Exception(
+          'Failed to load entertainment data, status code: ${response.statusCode}');
     }
+  } catch (e) {
+    setState(() {
+      errorMessage = 'Error in fetchEntertainment: $e';
+      isLoading = false;
+    });
+    print('Error in fetchEntertainment: $e');
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -131,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       color: cardColor,
                       child: SizedBox(
-                        height: screenhgt * 0.3,
+                        height: screenhgt * 0.35,
                         child: SubVod(),
                       ),
                     ),
@@ -149,14 +149,16 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 0,
               child: Text(''),
             ),
-            if (_isLoading) ...[
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(
+            if (_isLoading) 
+            // ...[
+              // const Padding(
+                // padding: EdgeInsets.symmetric(vertical: 20),
+                // child:
+                 Center(
                   child: CircularProgressIndicator(),
                 ),
-              ),
-            ],
+              // ),
+            // ],
           ],
         ),
       ),

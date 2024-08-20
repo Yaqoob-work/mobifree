@@ -7,15 +7,15 @@ import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
 
 void main() {
-  runApp(EntertainmentScreen());
+  runApp(MovieScreen());
 }
 
-class EntertainmentScreen extends StatefulWidget {
+class MovieScreen extends StatefulWidget {
   @override
-  EntertainmentScreenState createState() => EntertainmentScreenState();
+  MovieScreenState createState() => MovieScreenState();
 }
 
-class EntertainmentScreenState extends State<EntertainmentScreen> {
+class MovieScreenState extends State<MovieScreen> {
   List<dynamic> entertainmentList = [];
   List<int> allowedChannelIds = [];
   bool isLoading = true;
@@ -81,7 +81,7 @@ Future<void> fetchEntertainment() async {
 
           // Check if the status is "1" and apply the existing filters
           return channel['status'] == "1" &&
-              channelStatus.contains('Entertainment') &&
+              channelStatus.contains('Movies') &&
               (tvenableAll || allowedChannelIds.contains(channelId));
         }).map((channel) {
           channel['isFocused'] = false;

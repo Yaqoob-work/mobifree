@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 
 class TopNavigationBar extends StatefulWidget {
   final int selectedPage;
@@ -22,7 +23,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(6, (index) => FocusNode());
+    _focusNodes = List.generate(7, (index) => FocusNode());
   }
 
   @override
@@ -37,20 +38,22 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.blueGrey[800],
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          _buildNavigationItem('All', 0, _focusNodes[0]),
-          // if (widget.tvenableAll)
-          _buildNavigationItem('News', 1, _focusNodes[1]),
-          _buildNavigationItem('Entertainment', 2, _focusNodes[2]),
-          // if (widget.tvenableAll)
-          _buildNavigationItem('Music', 3, _focusNodes[3]),
-          _buildNavigationItem('Sports', 4, _focusNodes[4]),
-          _buildNavigationItem('Religious', 5, _focusNodes[5]),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 15),
+   
+       child: Row(
+         mainAxisAlignment: MainAxisAlignment.spaceAround   ,
+         children: <Widget>[
+           Flexible(flex: 1,child: _buildNavigationItem('All', 0, _focusNodes[0])),
+           Flexible(flex: 1,child: _buildNavigationItem('News', 1, _focusNodes[1])),
+           Flexible(flex: 1,child: _buildNavigationItem('Movies', 2, _focusNodes[2])),
+           Flexible(flex: 1,child: _buildNavigationItem('Music', 3, _focusNodes[3])),
+           Flexible(flex: 1,child: _buildNavigationItem('Sports', 4, _focusNodes[4])),
+           Flexible(flex: 1,child: _buildNavigationItem('Religious', 5, _focusNodes[5])),
+           Flexible(flex: 1,child: _buildNavigationItem('Entertainment', 6, _focusNodes[6])),
+       
+         ],
+       ),
+    //  )
     );
   }
 
@@ -81,16 +84,19 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              title,
-              style: TextStyle(
-                color: focusNode.hasFocus
-                    ? Color.fromARGB(255, 247, 6, 118)
-                    : Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            // FittedBox(
+              // child:
+               Text(
+                title,
+                style: TextStyle(
+                  color: focusNode.hasFocus
+                      ? Color.fromARGB(255, 247, 6, 118)
+                      : Colors.white,
+                  fontSize: screenwdt*0.015,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
+            // ),
           ],
         ),
       ),

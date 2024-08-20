@@ -4,7 +4,7 @@ buildscript {
         mavenCentral() // Ensure Maven Central is included
     }
     dependencies {
-        ext.kotlin_version = '2.0.0'
+        ext.kotlin_version = '1.7.10'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         // Other classpath dependencies
     }

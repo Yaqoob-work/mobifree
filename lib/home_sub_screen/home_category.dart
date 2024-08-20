@@ -87,7 +87,7 @@ class _HomeCategoryState extends State<HomeCategory> {
           }
 
           return Container(
-              color: cardColor,
+              color: Colors.black,
               child: const Center(child: CircularProgressIndicator()));
         },
       ),
@@ -95,12 +95,10 @@ class _HomeCategoryState extends State<HomeCategory> {
   }
 }
 
-// Your existing Category, Channel, and CategoryWidget classes go here
-
 class Category {
   final String id;
   final String text;
-  List<Channel> channels; // Changed to List for mutability
+  List<Channel> channels;
 
   Category({
     required this.id,
@@ -120,23 +118,53 @@ class Category {
   }
 }
 
-// Channel class remains the same
+class Channel {
+  final String id;
+  final String name;
+  final String banner;
+  final String genres;
+  String url;
+  String streamType;
+  String type;
+  String status;
+
+  Channel({
+    required this.id,
+    required this.name,
+    required this.banner,
+    required this.genres,
+    required this.url,
+    required this.streamType,
+    required this.type,
+    required this.status,
+  });
+
+  factory Channel.fromJson(Map<String, dynamic> json) {
+    return Channel(
+      id: json['id'],
+      name: json['name'],
+      banner: json['banner'],
+      genres: json['genres'],
+      url: json['url'] ?? '',
+      streamType: json['stream_type'] ?? '',
+      type: json['Type'] ?? '',
+      status: json['status'] ?? '',
+    );
+  }
+}
 
 class CategoryWidget extends StatelessWidget {
   bool _isNavigating = false;
   final Category category;
 
   CategoryWidget({required this.category});
+
   void _showLoadingIndicator(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Prevents dismissing the dialog by tapping outside
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(),
-          //  Container(color: cardColor,child: Center(child: CircularProgressIndicator()));
-        );
+        return Center(child: CircularProgressIndicator());
       },
     );
   }
@@ -164,7 +192,7 @@ class CategoryWidget extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: screenhgt * 0.3,
+                  height: MediaQuery.of(context).size.height * 0.3,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: filteredChannels.length,
@@ -172,9 +200,8 @@ class CategoryWidget extends StatelessWidget {
                       return ChannelWidget(
                         channel: filteredChannels[index],
                         onTap: () async {
-                          if (_isNavigating)
-                            return; // Check if navigation is already in progress
-                          _isNavigating = true; // Set the flag to true
+                          if (_isNavigating) return;
+                          _isNavigating = true;
                           _showLoadingIndicator(context);
 
                           try {
@@ -209,16 +236,11 @@ class CategoryWidget extends StatelessWidget {
                                 ),
                               ),
                             ).then((_) {
-                              // Reset the flag after the navigation is completed
                               _isNavigating = false;
                             });
                           } catch (e) {
-                            // Reset navigation flag
                             _isNavigating = false;
-
-                            // Hide the loading indicator in case of an error
                             Navigator.of(context, rootNavigator: true).pop();
-                            // Show error message
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Link Error')),
                             );
@@ -250,40 +272,36 @@ class _ChannelWidgetState extends State<ChannelWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          setState(() {
-            isFocused = hasFocus;
-          });
-        },
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.select) {
-            widget.onTap();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
+    bool showBanner = widget.channel.status == '1';
+
+    return IntrinsicHeight(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            setState(() {
+              isFocused = hasFocus;
+            });
+          },
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.select) {
+              widget.onTap();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (showBanner)
                 Container(
-                  // padding: EdgeInsets.all(10),
                   margin: EdgeInsets.all(10),
                   child: AnimatedContainer(
-                    // padding: EdgeInsets.all(10),
-                    width:
-                    //  isFocused ? screenwdt * 0.17 : 
-                    screenwdt * 0.14,
-                    height: 
-                    // isFocused ? screenhgt * 0.22 : 
-                    screenhgt * 0.18,
-                    duration: const Duration(milliseconds: 3),
+                    width: screenwdt * 0.145,
+                    height: screenhgt * 0.18,
+                    duration: const Duration(milliseconds: 300),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: isFocused ? borderColor : hintColor,
@@ -291,120 +309,36 @@ class _ChannelWidgetState extends State<ChannelWidget> {
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    // child: Opacity(
-                    //   opacity: isFocused ? 1 : 0.7,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(5),
-                      child: Material(
-                        elevation: 0,
-                        child: CachedNetworkImage(
-                          imageUrl: widget.channel.banner,
-                          fit: BoxFit.contain,
-                          placeholder: (context, url) => localImage,
-                          width:
-                              // isFocused ? screenwdt * 0.17 : 
-                              screenwdt * 0.14,
-                          height:
-                              // isFocused ? screenhgt * 0.22 :
-                               screenhgt * 0.18,
-                        ),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.channel.banner,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Container(color: Colors.grey),
+                        width: screenwdt * 0.145,
+                        height: screenhgt * 0.18,
                       ),
                     ),
-                    // ),
                   ),
                 ),
-                // Positioned(
-                //     left: screenwdt * 0.03,
-                //     top: screenhgt * 0.02,
-                //     child: Row(
-                //       mainAxisAlignment: MainAxisAlignment.center,
-                //       crossAxisAlignment: CrossAxisAlignment.center,
-                //       children: [
-                //         Text(
-                //           'LIVE',
-                //           style: TextStyle(
-                //               color: Colors.red,
-                //               fontWeight: FontWeight.bold,
-                //               fontSize: 18),
-                //         ),
-                //         // SizedBox(width: 2,),
-                //         // Icon(Icons.live_tv_rounded ,color: Colors.red,)
-                //       ],
-                //     ))
-              ],
-            ),
-            Container(
-              width: screenwdt * 0.2,
-              child: Text(
-                widget.channel.name,
-                style: TextStyle(
-                  color: isFocused ? highlightColor : hintColor,
-                  // fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              Container(
+                width: screenwdt * 0.2,
+                child: Text(
+                  widget.channel.name,
+                  style: TextStyle(
+                    color: isFocused ? Colors.blue : Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    );
-  }
-}
-
-// class Category {
-//   final String id;
-//   final String text;
-//   final List<Channel> channels;
-
-//   Category({
-//     required this.id,
-//     required this.text,
-//     required this.channels,
-//   });
-
-//   factory Category.fromJson(Map<String, dynamic> json) {
-//     var list = json['channels'] as List;
-//     List<Channel> channelsList = list.map((i) => Channel.fromJson(i)).toList();
-
-//     return Category(
-//       id: json['id'],
-//       text: json['text'],
-//       channels: channelsList,
-//     );
-//   }
-// }
-
-class Channel {
-  final String id;
-  final String name;
-  final String banner;
-  final String genres;
-  String url;
-  String streamType; // Add this line
-  String Type; // Add this line
-  Channel({
-    required this.id,
-    required this.name,
-    required this.banner,
-    required this.genres,
-    required this.url,
-    required this.streamType, // Add this line
-    required this.Type, // Add this line
-  });
-
-  factory Channel.fromJson(Map<String, dynamic> json) {
-    return Channel(
-      id: json['id'],
-      name: json['name'],
-      banner: json['banner'],
-      genres: json['genres'],
-      url: json['url'] ?? '', // Default empty string if 'url' is null
-      streamType:
-          json['stream_type'] ?? '', // Add this line to handle stream_type
-      Type: json['Type'] ?? '', // Add this line to handle stream_type
     );
   }
 }

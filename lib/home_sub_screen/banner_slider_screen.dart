@@ -72,43 +72,44 @@ void _startAutoSlide() {
 
 
 
+Future<void> fetchBanners() async {
+  try {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
+      headers: {
+        'x-api-key': 'vLQTuPZUxktl5mVW',
+      },
+    );
 
-  Future<void> fetchBanners() async {
-    try {
-      final response = await https.get(
-        Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-
-        setState(() {
-          bannerList = responseData.map((banner) {
-            return {
-              'content_id': banner['content_id'] ?? '',
-              'banner': banner['banner'] ?? localImage,
-              'title': banner['title'] ?? 'No Title',
-            };
-          }).toList();
-
-          selectedContentId = bannerList.isNotEmpty
-              ? bannerList[0]['content_id'].toString()
-              : null;
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load banners');
-      }
-    } catch (e) {
       setState(() {
-        errorMessage = e.toString();
+        // Filter banners based on the "status" field
+        bannerList = responseData.where((banner) => banner['status'] == "1").map((banner) {
+          return {
+            'content_id': banner['content_id'] ?? '',
+            'banner': banner['banner'] ?? localImage,
+            'title': banner['title'] ?? 'No Title',
+          };
+        }).toList();
+
+        selectedContentId = bannerList.isNotEmpty
+            ? bannerList[0]['content_id'].toString()
+            : null;
         isLoading = false;
       });
+    } else {
+      throw Exception('Failed to load banners');
     }
+  } catch (e) {
+    setState(() {
+      errorMessage = e.toString();
+      isLoading = false;
+    });
   }
+}
+
 
   Future<void> fetchAndPlayVideo(String contentId) async {
     try {
@@ -221,9 +222,7 @@ void _startAutoSlide() {
                               alignment: AlignmentDirectional.topCenter,
                               children: [
                                 Container(
-                                  margin: EdgeInsets.symmetric(
-                                      vertical: screenhgt * 0.02,
-                                      horizontal: screenwdt * 0.05),
+                                  margin: EdgeInsets.only(top: 10),
                                   width: MediaQuery.of(context).size.width * 0.7,
                                   child: GestureDetector(
                                     onTap: () {
