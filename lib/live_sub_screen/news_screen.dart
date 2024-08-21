@@ -45,20 +45,20 @@ class NewsScreenState extends State<NewsScreen> {
           tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
-        print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $tvenableAll');
+        // print('Allowed Channel IDs: $allowedChannelIds');
+        // print('Enable All: $tvenableAll');
 
         fetchEntertainment();
       } else {
         throw Exception(
-            'Failed to load settings, status code: ${response.statusCode}');
+            'Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchSettings: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
-      print('Error in fetchSettings: $e');
+      // print('Error in fetchSettings: $e');
     }
   }
 
@@ -88,10 +88,10 @@ Future<void> fetchEntertainment() async {
           return channel;
         }).toList();
 
-        print(
-            'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-        print(
-            'Filtered Entertainment List Length: ${entertainmentList.length}');
+        // print(
+        //     'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+        // print(
+        //     'Filtered Entertainment List Length: ${entertainmentList.length}');
 
         isLoading = false;
       });
@@ -101,10 +101,10 @@ Future<void> fetchEntertainment() async {
     }
   } catch (e) {
     setState(() {
-      errorMessage = 'Error in fetchEntertainment: $e';
+      errorMessage = 'Something Went Wrong';
       isLoading = false;
     });
-    print('Error in fetchEntertainment: $e');
+    // print('Error in fetchEntertainment: $e');
   }
 }
 
@@ -122,7 +122,7 @@ Future<void> fetchEntertainment() async {
                   style: TextStyle(fontSize: 20),
                 ))
               : entertainmentList.isEmpty
-                  ? Center(child: Text('No Channels Available'))
+                  ? Center(child: Text('Something Went Wrong'))
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: GridView.builder(
@@ -255,7 +255,7 @@ Future<void> fetchEntertainment() async {
           entertainmentItem['stream_type'] = "M3u8";
         } else {
           throw Exception(
-              'Failed to load networks, status code: ${response.statusCode}');
+              'Something Went Wrong');
         }
       }
 
@@ -280,9 +280,9 @@ Future<void> fetchEntertainment() async {
       _isNavigating = false;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Link Error: $e')),
+        SnackBar(content: Text('Something Went Wrong')),
       );
-      print('Error in _navigateToVideoScreen: $e');
+      // print('Error in _navigateToVideoScreen: $e');
     }
   }
 

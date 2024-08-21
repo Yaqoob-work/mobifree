@@ -45,20 +45,20 @@ class _AllChannelState extends State<AllChannel> {
           tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
-        print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $tvenableAll');
+        // print('Allowed Channel IDs: $allowedChannelIds');
+        // print('Enable All: $tvenableAll');
 
         fetchEntertainment();
       } else {
         throw Exception(
-            'Failed to load settings, status code: ${response.statusCode}');
+            'Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchSettings: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
-      print('Error in fetchSettings: $e');
+      print('Something Went Wrong');
     }
   }
 
@@ -87,23 +87,23 @@ class _AllChannelState extends State<AllChannel> {
             return channel;
           }).toList();
 
-          print(
-              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print(
-              'Filtered Entertainment List Length: ${entertainmentList.length}');
+          // print(
+          //     'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          // print(
+          //     'Filtered Entertainment List Length: ${entertainmentList.length}');
 
           isLoading = false;
         });
       } else {
         throw Exception(
-            'Failed to load entertainment data, status code: ${response.statusCode}');
+            'Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchEntertainment: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
-      print('Error in fetchEntertainment: $e');
+      print('Something Went Wrong');
     }
   }
 
@@ -253,7 +253,7 @@ class _AllChannelState extends State<AllChannel> {
           entertainmentItem['stream_type'] = "M3u8";
         } else {
           throw Exception(
-              'Failed to load networks, status code: ${response.statusCode}');
+              'Something Went Wrong');
         }
       }
 
@@ -278,9 +278,9 @@ class _AllChannelState extends State<AllChannel> {
       _isNavigating = false;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Link Error: $e')),
+        SnackBar(content: Text('Something Went Wrong')),
       );
-      print('Error in _navigateToVideoScreen: $e');
+      // print('Error in _navigateToVideoScreen: $e');
     }
   }
 

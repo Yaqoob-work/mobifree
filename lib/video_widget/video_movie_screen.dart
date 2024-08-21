@@ -28,7 +28,7 @@ class VideoMovieScreen extends StatefulWidget {
 }
 
 
-class _VideoMovieScreenState extends State<VideoMovieScreen> {
+class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBindingObserver{
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
@@ -45,6 +45,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
         setState(() {
@@ -66,15 +67,11 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
       }
     });
 
-    KeepScreenOn.turnOn();
-    _startHideControlsTimer();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(screenFocusNode);
-    });
-  }
+ 
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
@@ -85,6 +82,24 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
     // Wakelock.disable(); // Disable screen wake when leaving this page
     KeepScreenOn.turnOff();
     super.dispose();
+  }
+
+    @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Stop video and sound when app goes into background
+      _controller.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      // Optionally resume video playback when app comes back into foreground
+      _controller.play();
+    }
+  }
+
+     KeepScreenOn.turnOn();
+    _startHideControlsTimer();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(screenFocusNode);
+    });
   }
 
   void _startHideControlsTimer() {
@@ -229,8 +244,8 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> {
                                   allowScrubbing: true,
                                   colors: VideoProgressColors(
                                       playedColor: borderColor,
-                                      bufferedColor: Colors.grey,
-                                      backgroundColor: highlightColor),
+                                      bufferedColor: Colors.green,
+                                      backgroundColor: Colors.yellow),
                                 ),
                               ),
                             ),
