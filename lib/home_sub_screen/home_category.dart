@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
@@ -357,13 +358,14 @@ class VideoScreen extends StatefulWidget {
   _VideoScreenState createState() => _VideoScreenState();
 }
 
-
 class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _isError = false;
   bool showControls = true; // Controls visibility flag
   Timer? _controlsTimer;
   final FocusNode _focusNode = FocusNode();
+  late Connectivity _connectivity;
+  late ConnectivityResult _connectivityResult;
 
   @override
   void initState() {
@@ -375,6 +377,16 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     RawKeyboard.instance.addListener(_handleKeyEvent);
     _focusNode.requestFocus();
     _resetControlsTimer();
+
+    _connectivity = Connectivity();
+    _connectivity.checkConnectivity().then((result) {
+      _connectivityResult = result;
+      _handleConnectivityChange(result);
+    });
+
+    _connectivity.onConnectivityChanged.listen((result) {
+      _handleConnectivityChange(result);
+    });
   }
 
   @override
@@ -447,6 +459,20 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       });
   }
 
+  void _handleConnectivityChange(ConnectivityResult result) {
+    if (result == ConnectivityResult.none) {
+      // Pause the video when there is no connectivity
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      }
+    } else if (_controller.value.isInitialized) {
+      // Resume the video when connectivity is restored
+      if (!_controller.value.isPlaying) {
+        _controller.play();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -478,12 +504,11 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                             child: VideoPlayer(_controller),
                           ),
                         ),
-                        if (showControls) 
+                        if (showControls)
                           Positioned(
                             left: 0,
                             right: 0,
-                  bottom: screenhgt*0.05,
-
+                            bottom: screenhgt * 0.05,
                             child: Focus(
                               focusNode: _focusNode,
                               child: Container(
@@ -512,43 +537,42 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                                         },
                                       ),
                                     ),
-                                   Expanded(
-                              flex: 15,
-                              child: Center(
-                                child: VideoProgressIndicator(
-                                  _controller,
-                                  allowScrubbing: true,
-                                  colors: VideoProgressColors(
-                                      playedColor: borderColor,
-                                      bufferedColor: Colors.green,
-                                      backgroundColor: Colors.yellow),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 20,),
-                            Expanded(
-                              flex: 2,
-                                child: Center(
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.circle,color: borderColor,size: 15,),
-                                      SizedBox(width: 5,),
-                                      Text(
-                                        'Live',
-                                        style: TextStyle(
-                                            color: borderColor, fontSize: 20,fontWeight: FontWeight.bold),
+                                    Expanded(
+                                      flex: 15,
+                                      child: Center(
+                                        child: VideoProgressIndicator(
+                                          _controller,
+                                          allowScrubbing: true,
+                                          colors: VideoProgressColors(
+                                              playedColor: borderColor,
+                                              bufferedColor: Colors.green,
+                                              backgroundColor: Colors.yellow),
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                            ),
-                            SizedBox(width: 20,),
+                                    ),
+                                    SizedBox(width: 20,),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Center(
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.circle, color: Colors.red, size: 15,),
+                                            SizedBox(width: 5,),
+                                            Text(
+                                              'Live',
+                                              style: TextStyle(
+                                                  color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 20,),
                                   ],
                                 ),
                               ),
                             ),
                           ),
-                         
                       ],
                     )
                   : const CircularProgressIndicator(),

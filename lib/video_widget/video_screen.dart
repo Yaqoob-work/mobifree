@@ -1,9 +1,8 @@
 import 'dart:async';
-
+import 'package:connectivity/connectivity.dart'; // Use this package if `connectivity_plus` causes issues
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoScreen extends StatefulWidget {
@@ -29,7 +28,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   late Timer _hideControlsTimer;
   Duration _totalDuration = Duration.zero;
   Duration _currentPosition = Duration.zero;
-  bool _isBuffering = false; // Track buffering state
+  bool _isBuffering = false;
+  bool _isConnected = true;
+
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -41,14 +43,14 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+    _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
         setState(() {
           _totalDuration = _controller.value.duration;
         });
         _controller.play();
         _startPositionUpdater();
-        KeepScreenOn.turnOn(); // Keep the screen on for this page
+        KeepScreenOn.turnOn();
       });
 
     _controller.addListener(() {
@@ -56,8 +58,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         setState(() {
           _isBuffering = _controller.value.isBuffering;
         });
-        if (!_isBuffering && _controller.value.isInitialized) {
-          _controller.play(); // Resume playback when buffering is complete
+        if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
+          _controller.play();
         }
       }
     });
@@ -66,6 +68,26 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
     });
+
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      print("Connectivity changed: $result");
+      _updateConnectionStatus(result);
+    });
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    bool wasConnected = _isConnected;
+    _isConnected = result != ConnectivityResult.none;
+
+    if (!wasConnected && _isConnected) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
+        _controller.play();
+      }
+    } else if (wasConnected && !_isConnected) {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      }
+    }
   }
 
   @override
@@ -78,16 +100,19 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
-    KeepScreenOn.turnOff(); // Disable screen wake when leaving this page
+    _connectivitySubscription?.cancel();
+    KeepScreenOn.turnOff();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _controller.pause(); // Pause video when app goes into background
-    } else if (state == AppLifecycleState.resumed) {
-      _controller.play(); // Resume video playback when app comes back into foreground
+    if (state == AppLifecycleState.resumed) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
+        _controller.play();
+      }
+    } else if (state == AppLifecycleState.paused) {
+      _controller.pause();
     }
   }
 
@@ -117,16 +142,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
-  // void _onRewind() {
-  //   _controller.seekTo(_controller.value.position - Duration(minutes: 1));
-  //   _resetHideControlsTimer();
-  // }
-
-  // void _onForward() {
-  //   _controller.seekTo(_controller.value.position + Duration(minutes: 1));
-  //   _resetHideControlsTimer();
-  // }
-
   void _togglePlayPause() {
     if (_controller.value.isPlaying) {
       _controller.pause();
@@ -135,17 +150,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
     _resetHideControlsTimer();
   }
-
-  // void _navigateBack() {
-  //   Navigator.pop(context);
-  // }
-
-  // String _formatDuration(Duration duration) {
-  //   String twoDigits(int n) => n.toString().padLeft(2, '0');
-  //   String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-  //   String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-  //   return '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds';
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -161,18 +165,17 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               _togglePlayPause();
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              // _onRewind();
+              // Handle rewind if needed
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              // _onForward();
+              // Handle forward if needed
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
                 event.logicalKey == LogicalKeyboardKey.arrowDown) {
               _resetHideControlsTimer();
               return KeyEventResult.handled;
-            } 
-            else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              // _navigateBack(); // Use 'escape' key for back navigation
+            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+              // Handle back navigation if needed
               return KeyEventResult.handled;
             }
           }
@@ -192,7 +195,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               ),
               if (_controlsVisible)
                 Positioned(
-                  bottom: screenhgt*0.05,
+                  bottom: 20,
                   left: 0,
                   right: 0,
                   child: Column(
@@ -224,7 +227,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                             ),
-                           
                             Expanded(
                               flex: 15,
                               child: Center(
@@ -232,34 +234,39 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                                   _controller,
                                   allowScrubbing: true,
                                   colors: VideoProgressColors(
-                                      playedColor: borderColor,
+                                      playedColor: Colors.red,
                                       bufferedColor: Colors.green,
-                                      backgroundColor: Colors.yellow),
+                                      backgroundColor: Colors.grey),
                                 ),
                               ),
                             ),
-                           SizedBox(width: 20,),
+                            SizedBox(width: 20),
                             Expanded(
                               flex: 2,
-                                child: Center(
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.circle,color: borderColor,size: 15,),
-                                      SizedBox(width: 5,),
-                                      Text(
-                                        'Live',
-                                        style: TextStyle(
-                                            color: borderColor, fontSize: 20,fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
+                              child: Center(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.circle,
+                                      color: Colors.red,
+                                      size: 15,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Live',
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
+                              ),
                             ),
-                            SizedBox(width: 20,),
+                            SizedBox(width: 20),
                           ],
                         ),
                       ),
-                      
                     ],
                   ),
                 ),

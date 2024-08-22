@@ -41,6 +41,10 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_launcher_icons: ^0.13.1
   keep_screen_on: ^3.0.0
+  connectivity_plus: ^6.0.5
+  internet_connection_checker: ^2.0.0
+  shared_preferences: ^2.3.2
+  connectivity: ^3.0.6
   # better_player: ^0.0.84
   # chewie: ^1.8.1
 

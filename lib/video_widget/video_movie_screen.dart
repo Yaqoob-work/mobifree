@@ -1,11 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-// import 'package:wakelock/wakelock.dart';
 
 class VideoMovieScreen extends StatefulWidget {
   final String videoUrl;
@@ -27,14 +25,16 @@ class VideoMovieScreen extends StatefulWidget {
   _VideoMovieScreenState createState() => _VideoMovieScreenState();
 }
 
-
-class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBindingObserver{
+class _VideoMovieScreenState extends State<VideoMovieScreen>
+    with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
   Duration _totalDuration = Duration.zero;
   Duration _currentPosition = Duration.zero;
-  bool _isBuffering = false; // Track buffering state
+  bool _isBuffering = false;
+  Duration _lastKnownPosition = Duration.zero;
+  bool _wasPlayingBeforeDisconnection = false;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -46,32 +46,70 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-      ..initialize().then((_) {
-        setState(() {
-          _totalDuration = _controller.value.duration;
-        });
-        _controller.play();
-        _startPositionUpdater();
-        // Wakelock.enable(); // Keep the screen on for this page
+    _initializeVideo();
+    KeepScreenOn.turnOn();
+    _startHideControlsTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(screenFocusNode);
+    });
+  }
+
+  Future<void> _initializeVideo() async {
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    try {
+      await _controller.initialize();
+      setState(() {
+        _totalDuration = _controller.value.duration;
       });
-    
-    _controller.addListener(() {
-      if (_controller.value.isBuffering != _isBuffering) {
-        setState(() {
-          _isBuffering = _controller.value.isBuffering;
-        });
-        if (!_isBuffering && _controller.value.isInitialized) {
-          _controller.play(); // Resume playback when buffering is complete
-        }
+      _controller.play();
+      _startPositionUpdater();
+      _controller.addListener(_videoListener);
+    } catch (error) {
+      print('Net error: $error');
+      _handleNetworkError();
+    }
+  }
+
+  void _handleNetworkError() {
+    _wasPlayingBeforeDisconnection = _controller.value.isPlaying;
+    _lastKnownPosition = _controller.value.position;
+    _controller.pause();
+    Future.delayed(Duration(seconds: 5), () {
+      if (!_controller.value.isPlaying) {
+        _reinitializeVideo();
       }
     });
+  }
 
- 
+  Future<void> _reinitializeVideo() async {
+    final currentPosition = _lastKnownPosition;
+    await _controller.dispose();
+    
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    try {
+      await _controller.initialize();
+      await _controller.seekTo(currentPosition);
+      setState(() {
+        _totalDuration = _controller.value.duration;
+        _currentPosition = currentPosition;
+      });
+      if (_wasPlayingBeforeDisconnection) {
+        _controller.play();
+      }
+      _controller.addListener(_videoListener);
+    } catch (error) {
+      print('Error reinitializing video: $error');
+      _handleNetworkError();
+    }
+  }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    }
+    _controller.removeListener(_videoListener);
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
@@ -79,27 +117,41 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
-    // Wakelock.disable(); // Disable screen wake when leaving this page
     KeepScreenOn.turnOff();
     super.dispose();
   }
 
-    @override
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // Stop video and sound when app goes into background
+      _lastKnownPosition = _controller.value.position;
       _controller.pause();
     } else if (state == AppLifecycleState.resumed) {
-      // Optionally resume video playback when app comes back into foreground
+      _controller.seekTo(_lastKnownPosition);
       _controller.play();
     }
   }
 
-     KeepScreenOn.turnOn();
-    _startHideControlsTimer();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(screenFocusNode);
+  void _videoListener() {
+    setState(() {
+      _isBuffering = _controller.value.isBuffering;
+      if (!_isBuffering) {
+        _lastKnownPosition = _controller.value.position;
+      }
     });
+
+    if (!_isBuffering && _controller.value.isInitialized && !_controller.value.isPlaying) {
+      Future.delayed(Duration(seconds: 2), () {
+        if (!_controller.value.isPlaying) {
+          _controller.play();
+        }
+      });
+    }
+
+    if (_controller.value.hasError) {
+      print('Video error: ${_controller.value.errorDescription}');
+      _handleNetworkError();
+    }
   }
 
   void _startHideControlsTimer() {
@@ -182,7 +234,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
               _resetHideControlsTimer();
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              _navigateBack(); // Use 'escape' key for back navigation
+              _navigateBack();
               return KeyEventResult.handled;
             }
           }
