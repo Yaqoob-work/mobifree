@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'package:connectivity/connectivity.dart'; // Use this package if `connectivity_plus` causes issues
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
@@ -15,7 +16,10 @@ class VideoScreen extends StatefulWidget {
     required this.videoUrl,
     required this.videoTitle,
     required this.channelList,
-    required this.onFabFocusChanged, required String genres, required List channels, required int initialIndex,
+    required this.onFabFocusChanged,
+    required String genres,
+    required List channels,
+    required int initialIndex,
   });
 
   @override
@@ -30,8 +34,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   Duration _currentPosition = Duration.zero;
   bool _isBuffering = false;
   bool _isConnected = true;
-
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -69,6 +72,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       FocusScope.of(context).requestFocus(screenFocusNode);
     });
 
+    // Listen for connectivity changes
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
       print("Connectivity changed: $result");
       _updateConnectionStatus(result);
@@ -100,7 +104,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
-    _connectivitySubscription?.cancel();
+    _connectivitySubscription.cancel();
     KeepScreenOn.turnOff();
     super.dispose();
   }
@@ -198,77 +202,80 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                   bottom: 20,
                   left: 0,
                   right: 0,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Focus(
-                                  focusNode: playPauseFocusNode,
-                                  onFocusChange: (hasFocus) {
-                                    setState(() {
-                                      // Change button color on focus
-                                    });
-                                  },
-                                  child: IconButton(
-                                    icon: Icon(
-                                      _controller.value.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
+                  // child: Column(
+                  //   children: [
+                  //     Padding(
+                  //       padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Container(
+                                color: Colors.black.withOpacity(0.5),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: Focus(
+                                    focusNode: playPauseFocusNode,
+                                    onFocusChange: (hasFocus) {
+                                      setState(() {
+                                        // Change button color on focus
+                                      });
+                                    },
+                                    child: IconButton(
+                                      icon: Icon(
+                                        _controller.value.isPlaying
+                                            ? Icons.pause
+                                            : Icons.play_arrow,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: _togglePlayPause,
                                     ),
-                                    onPressed: _togglePlayPause,
                                   ),
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              flex: 15,
-                              child: Center(
-                                child: VideoProgressIndicator(
-                                  _controller,
-                                  allowScrubbing: true,
-                                  colors: VideoProgressColors(
-                                      playedColor: Colors.red,
-                                      bufferedColor: Colors.green,
-                                      backgroundColor: Colors.grey),
+                              Expanded(
+                                flex: 15,
+                                child: Center(
+                                  child: VideoProgressIndicator(
+                                    _controller,
+                                    allowScrubbing: true,
+                                    colors: VideoProgressColors(
+                                        playedColor: borderColor,
+                                        bufferedColor: Colors.green,
+                                        backgroundColor: Colors.grey),
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: 20),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.circle,
-                                      color: Colors.red,
-                                      size: 15,
-                                    ),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Live',
-                                      style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
+                              SizedBox(width: 20),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.circle,
+                                        color: Colors.red,
+                                        size: 15,
+                                      ),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        'Live',
+                                        style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: 20),
-                          ],
+                              SizedBox(width: 20),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                  //     ),
+                  //   ],
+                  // ),
                 ),
             ],
           ),

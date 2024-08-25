@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class VideoMovieScreen extends StatefulWidget {
   final String videoUrl;
@@ -35,6 +36,8 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   bool _isBuffering = false;
   Duration _lastKnownPosition = Duration.zero;
   bool _wasPlayingBeforeDisconnection = false;
+  bool _isConnected = true;
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -51,6 +54,12 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     _startHideControlsTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
+    });
+
+    // Listen for connectivity changes
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      print("Connectivity changed: $result");
+      _updateConnectionStatus(result);
     });
   }
 
@@ -103,6 +112,21 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     }
   }
 
+  void _updateConnectionStatus(ConnectivityResult result) {
+    bool wasConnected = _isConnected;
+    _isConnected = result != ConnectivityResult.none;
+
+    if (!wasConnected && _isConnected) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
+        _controller.play();
+      }
+    } else if (wasConnected && !_isConnected) {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      }
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -117,6 +141,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
+    _connectivitySubscription.cancel();
     KeepScreenOn.turnOff();
     super.dispose();
   }
@@ -261,57 +286,60 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: Center(
-                                child: IconButton(
-                                  icon: Icon(
-                                    _controller.value.isPlaying
-                                        ? Icons.pause
-                                        : Icons.play_arrow,
-                                    color: highlightColor,
+                        child: Container(
+                                color: Colors.black.withOpacity(0.5),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: Center(
+                                  child: IconButton(
+                                    icon: Icon(
+                                      _controller.value.isPlaying
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                      color: highlightColor,
+                                    ),
+                                    onPressed: _togglePlayPause,
                                   ),
-                                  onPressed: _togglePlayPause,
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Text(
-                                  _formatDuration(_currentPosition),
-                                  style: TextStyle(
-                                      color: highlightColor, fontSize: 20),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: Text(
+                                    _formatDuration(_currentPosition),
+                                    style: TextStyle(
+                                        color: highlightColor, fontSize: 20),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              flex: 6,
-                              child: Center(
-                                child: VideoProgressIndicator(
-                                  _controller,
-                                  allowScrubbing: true,
-                                  colors: VideoProgressColors(
-                                      playedColor: borderColor,
-                                      bufferedColor: Colors.green,
-                                      backgroundColor: Colors.yellow),
+                              Expanded(
+                                flex: 6,
+                                child: Center(
+                                  child: VideoProgressIndicator(
+                                    _controller,
+                                    allowScrubbing: true,
+                                    colors: VideoProgressColors(
+                                        playedColor: borderColor,
+                                        bufferedColor: Colors.green,
+                                        backgroundColor: Colors.yellow),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Text(
-                                  _formatDuration(_totalDuration),
-                                  style: TextStyle(
-                                      color: highlightColor, fontSize: 20),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: Text(
+                                    _formatDuration(_totalDuration),
+                                    style: TextStyle(
+                                        color: highlightColor, fontSize: 20),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],

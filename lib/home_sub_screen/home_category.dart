@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:connectivity/connectivity.dart';
+// import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 
 // Add a global variable for settings
 Map<String, dynamic> settings = {};
@@ -41,7 +43,7 @@ Future<List<Category>> fetchCategories() async {
     List<Category> categories =
         jsonResponse.map((category) => Category.fromJson(category)).toList();
 
-    if (settings['tvenableAll'] == 0) {
+    if (settings['ekomenableAll'] == 0) {
       // Filter categories based on the settings
       for (var category in categories) {
         category.channels.retainWhere(
@@ -345,18 +347,24 @@ class _ChannelWidgetState extends State<ChannelWidget> {
 }
 
 
+
+
 class VideoScreen extends StatefulWidget {
   final List<Channel> channels;
   final int initialIndex;
 
   VideoScreen({
     required this.channels,
-    required this.initialIndex, required videoUrl, required videoTitle,
+    required this.initialIndex,
+    required videoUrl,
+    required videoTitle,
   });
 
   @override
   _VideoScreenState createState() => _VideoScreenState();
 }
+
+
 
 class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
@@ -364,8 +372,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool showControls = true; // Controls visibility flag
   Timer? _controlsTimer;
   final FocusNode _focusNode = FocusNode();
-  late Connectivity _connectivity;
-  late ConnectivityResult _connectivityResult;
+  // late Connectivity _connectivity;
+  // late ConnectivityResult _connectivityResult;
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  bool _isConnected = true;
 
   @override
   void initState() {
@@ -378,15 +388,26 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _focusNode.requestFocus();
     _resetControlsTimer();
 
-    _connectivity = Connectivity();
-    _connectivity.checkConnectivity().then((result) {
-      _connectivityResult = result;
-      _handleConnectivityChange(result);
+     // Listen for connectivity changes
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      // print("Connectivity changed: $result");
+      _updateConnectionStatus(result);
     });
+  }
 
-    _connectivity.onConnectivityChanged.listen((result) {
-      _handleConnectivityChange(result);
-    });
+    void _updateConnectionStatus(ConnectivityResult result) {
+    bool wasConnected = _isConnected;
+    _isConnected = result != ConnectivityResult.none;
+
+    if (!wasConnected && _isConnected) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
+        _controller.play();
+      }
+    } else if (wasConnected && !_isConnected) {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      }
+    }
   }
 
   @override
@@ -395,6 +416,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _controller.dispose();
     KeepScreenOn.turnOff();
     RawKeyboard.instance.removeListener(_handleKeyEvent);
+    _connectivitySubscription.cancel();
     _controlsTimer?.cancel();
     _focusNode.dispose();
     super.dispose();
@@ -431,9 +453,9 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         });
         _showControls();
       } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                 event.logicalKey == LogicalKeyboardKey.arrowDown ||
-                 event.logicalKey == LogicalKeyboardKey.arrowLeft ||
-                 event.logicalKey == LogicalKeyboardKey.arrowRight) {
+          event.logicalKey == LogicalKeyboardKey.arrowDown ||
+          event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+          event.logicalKey == LogicalKeyboardKey.arrowRight) {
         // Show controls when navigating with arrow keys
         _showControls();
       }
@@ -459,19 +481,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       });
   }
 
-  void _handleConnectivityChange(ConnectivityResult result) {
-    if (result == ConnectivityResult.none) {
-      // Pause the video when there is no connectivity
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-      }
-    } else if (_controller.value.isInitialized) {
-      // Resume the video when connectivity is restored
-      if (!_controller.value.isPlaying) {
-        _controller.play();
-      }
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -484,7 +494,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+                    Text('Something Went Wrong',
+                        style: TextStyle(fontSize: 20)),
                     ElevatedButton(
                         onPressed: () {
                           Navigator.of(context, rootNavigator: true).pop();
@@ -514,7 +525,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                               child: Container(
                                 color: Colors.black.withOpacity(0.5),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
                                   children: [
                                     Expanded(
                                       flex: 2,
@@ -550,24 +562,37 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 20,),
+                                    SizedBox(
+                                      width: 20,
+                                    ),
                                     Expanded(
                                       flex: 2,
                                       child: Center(
                                         child: Row(
                                           children: [
-                                            Icon(Icons.circle, color: Colors.red, size: 15,),
-                                            SizedBox(width: 5,),
+                                            Icon(
+                                              Icons.circle,
+                                              color: Colors.red,
+                                              size: 15,
+                                            ),
+                                            SizedBox(
+                                              width: 5,
+                                            ),
                                             Text(
                                               'Live',
                                               style: TextStyle(
-                                                  color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+                                                  color: Colors.red,
+                                                  fontSize: 20,
+                                                  fontWeight:
+                                                      FontWeight.bold),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 20,),
+                                    SizedBox(
+                                      width: 20,
+                                    ),
                                   ],
                                 ),
                               ),

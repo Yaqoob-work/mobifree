@@ -22,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  bool _tvenableAll = false; // Add a variable to track tvenableAll status
+  bool _ekomenableAll = false; // Add a variable to track ekomenableAll status
 
   @override
   void initState() {
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _tvenableAll = data['tvenableAll'] == 1;
+          _ekomenableAll = data['ekomenableAll'] == 1;
         });
       } else {
         // Handle errors or non-200 responses
@@ -93,13 +93,13 @@ class _HomeScreenState extends State<HomeScreen> {
             //   height: screenhgt*0.01,
             //   child: Text('.'),
             // ),
-            if (_tvenableAll) // Conditionally display SubVod
-            Container(
-              color: cardColor,
-              height: screenhgt*0.65,
-              child: BannerSlider(),
-            ),
-            if (_tvenableAll) // Conditionally display SubVod
+            if (_ekomenableAll) // Conditionally display SubVod
+              Container(
+                color: cardColor,
+                height: screenhgt * 0.65,
+                child: BannerSlider(),
+              ),
+            if (_ekomenableAll) // Conditionally display SubVod
 
               Container(
                 color: cardColor,
@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               color: cardColor,
               child: SizedBox(
-                height: screenhgt *4 ,
+                height: screenhgt * 4,
                 child: HomeCategory(),
               ),
             ),
@@ -149,15 +149,15 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 0,
               child: Text(''),
             ),
-            if (_isLoading) 
-            // ...[
+            if (_isLoading)
+              // ...[
               // const Padding(
-                // padding: EdgeInsets.symmetric(vertical: 20),
-                // child:
-                 Center(
-                  child: CircularProgressIndicator(),
-                ),
-              // ),
+              // padding: EdgeInsets.symmetric(vertical: 20),
+              // child:
+              Center(
+                child: CircularProgressIndicator(),
+              ),
+            // ),
             // ],
           ],
         ),

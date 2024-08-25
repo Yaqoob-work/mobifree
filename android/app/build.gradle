@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.android' version '2.0.10'
+    id 'org.jetbrains.kotlin.android' version '1.7.10'
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
-    flutterVersionCode = "12"
+    flutterVersionCode = "5"
 }
 
 def flutterVersionName = localProperties.getProperty("flutter.versionName")
@@ -35,25 +35,39 @@ android {
 
     signingConfigs {
         release {
-            keyAlias 'mobiltv'
-            keyPassword 'mobiltv'
-            storeFile file('mobiltv.jks')
-            storePassword 'mobiltv'
+            keyAlias 'ekamflix'
+            keyPassword 'ekamflix'
+            storeFile file('ekamflix-keystore.jks')
+            storePassword 'ekamflix'
         }
     }
 
     defaultConfig {
-        applicationId "com.ecomflixandroidtv.cti"
+        applicationId "com.ekamflixandroidtv.cti"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
-    buildTypes {
+     buildTypes {
         release {
             signingConfig signingConfigs.release
-            // Additional release configuration options can be added here
+            // Enables code shrinking, obfuscation, and optimization for only
+            // your project's release build type. Make sure to use a build
+            // variant with `debuggable false`.
+            // minifyEnabled true
+
+            // // Enables resource shrinking, which is performed by the
+            // // Android Gradle plugin.
+            // shrinkResources true
+
+            // // Includes the default ProGuard rules files that are packaged with
+            // // the Android Gradle plugin. To learn more, go to the section about
+            // // R8 configuration files.
+            // proguardFiles getDefaultProguardFile(
+            //         'proguard-android-optimize.txt'),
+            //         'proguard-rules.pro'
         }
     }
 }

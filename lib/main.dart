@@ -17,7 +17,7 @@ import 'package:mobi_tv_entertainment/screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 
 class MyHttpOverrides extends HttpOverrides {
-  @override 
+  @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
       ..badCertificateCallback =
@@ -77,13 +77,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedPage = 0;
   late PageController _pageController;
-  bool _tvenableAll = false; // Track tvenableAll status
+  bool _ekomenableAll = false; // Track ekomenableAll status
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedPage);
-    _fetchTvenableAllStatus(); // Fetch tvenableAll status
+    _fetchekomenableAllStatus(); // Fetch ekomenableAll status
   }
 
   @override
@@ -99,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _pageController.jumpToPage(index);
   }
 
-  Future<void> _fetchTvenableAllStatus() async {
+  Future<void> _fetchekomenableAllStatus() async {
     try {
       final response = await https.get(
         Uri.parse('https://api.ekomflix.com/android/getSettings'),
@@ -111,7 +111,8 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _tvenableAll = data['tvenableAll'] == 1;
+          _ekomenableAll = data['ekomenableAll'] == 1;
+          print("ekomenableAll: $_ekomenableAll");
         });
       } else {
         print('Failed to load settings');
@@ -125,10 +126,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     List<Widget> pages = [
       HomeScreen(),
-      if (_tvenableAll) SearchScreen(), // Conditionally include SearchScreen
+      if (_ekomenableAll) SearchScreen(), // Conditionally include SearchScreen
       LiveScreen(),
       // AllChannel(),
-      if (_tvenableAll) VOD(), // Conditionally include VOD
+      if (_ekomenableAll) VOD(), // Conditionally include VOD
       // HomeCategory(),
     ];
 
@@ -139,7 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
             NavigationSidebar(
               selectedPage: _selectedPage,
               onPageSelected: _onPageSelected,
-              tvenableAll: _tvenableAll, // Pass _tvenableAll
+              ekomenableAll: _ekomenableAll, // Pass _ekomenableAll
             ),
             Expanded(
               child: PageView(
@@ -162,12 +163,12 @@ class _MyHomePageState extends State<MyHomePage> {
 class NavigationSidebar extends StatefulWidget {
   final int selectedPage;
   final ValueChanged<int> onPageSelected;
-  final bool tvenableAll; // Add this line to accept the parameter
+  final bool ekomenableAll; // Add this line to accept the parameter
 
   const NavigationSidebar({
     required this.selectedPage,
     required this.onPageSelected,
-    required this.tvenableAll, // Add this line
+    required this.ekomenableAll, // Add this line
   });
 
   @override
@@ -210,14 +211,15 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
-              child: Image.asset('assets/logo.png',
+              child: Image.asset(
+                'assets/logo.png',
                 fit: BoxFit.cover,
               ),
             ),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left:8.0),
+              padding: const EdgeInsets.only(left: 8.0),
               child: ListView(
                 children: <Widget>[
                   _buildNavigationItem(
@@ -226,7 +228,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                     0,
                     _focusNodes[0],
                   ),
-                  if (widget.tvenableAll) // Conditionally show Search option
+                  if (widget.ekomenableAll) // Conditionally show Search option
                     _buildNavigationItem(
                       Icons.search,
                       'SEARCH',
@@ -239,7 +241,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                     2,
                     _focusNodes[2],
                   ),
-                  if (widget.tvenableAll) // Conditionally show VOD option
+                  if (widget.ekomenableAll) // Conditionally show VOD option
                     _buildNavigationItem(
                       Icons.video_camera_front,
                       'VOD',
@@ -304,7 +306,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                   color: focusNode.hasFocus
                       ? Color.fromARGB(255, 247, 6, 118)
                       : Color.fromARGB(255, 20, 27, 122),
-                  fontSize: isSelected ? screenwdt*0.024 : screenwdt*0.02,
+                  fontSize: isSelected ? screenwdt * 0.024 : screenwdt * 0.02,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -315,5 +317,3 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     );
   }
 }
-
-

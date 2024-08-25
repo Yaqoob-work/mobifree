@@ -21,7 +21,7 @@ class _AllChannelState extends State<AllChannel> {
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
-  bool tvenableAll = false;
+  bool ekomenableAll = false;
 
   @override
   void initState() {
@@ -42,16 +42,15 @@ class _AllChannelState extends State<AllChannel> {
         final settingsData = json.decode(response.body);
         setState(() {
           allowedChannelIds = List<int>.from(settingsData['channels']);
-          tvenableAll = settingsData['tvenableAll'] == 1;
+          ekomenableAll = settingsData['ekomenableAll'] == 1;
         });
 
         // print('Allowed Channel IDs: $allowedChannelIds');
-        // print('Enable All: $tvenableAll');
+        // print('Enable All: $ekomenableAll');
 
         fetchEntertainment();
       } else {
-        throw Exception(
-            'Something Went Wrong');
+        throw Exception('Something Went Wrong');
       }
     } catch (e) {
       setState(() {
@@ -81,7 +80,7 @@ class _AllChannelState extends State<AllChannel> {
             String channelStatus = channel['status'].toString();
 
             return channelStatus.contains('1') &&
-                (tvenableAll || allowedChannelIds.contains(channelId));
+                (ekomenableAll || allowedChannelIds.contains(channelId));
           }).map((channel) {
             channel['isFocused'] = false;
             return channel;
@@ -95,8 +94,7 @@ class _AllChannelState extends State<AllChannel> {
           isLoading = false;
         });
       } else {
-        throw Exception(
-            'Something Went Wrong');
+        throw Exception('Something Went Wrong');
       }
     } catch (e) {
       setState(() {
@@ -163,12 +161,12 @@ class _AllChannelState extends State<AllChannel> {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width: 
-                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
+                width:
+                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
                     screenwdt * 0.15,
-                height: 
-                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                     screenhgt * 0.2,
+                height:
+                    // entertainmentList[index]['isFocused']? screenhgt * 0.25:
+                    screenhgt * 0.2,
                 duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
                     border: Border.all(
@@ -183,12 +181,12 @@ class _AllChannelState extends State<AllChannel> {
                   child: CachedNetworkImage(
                     imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
-                    width: 
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                     screenwdt * 0.15,
-                    height: 
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                         screenhgt * 0.2,
+                    width:
+                        // entertainmentList[index]['isFocused']? screenwdt * 0.2:
+                        screenwdt * 0.15,
+                    height:
+                        // entertainmentList[index]['isFocused']? screenhgt * 0.23:
+                        screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -252,8 +250,7 @@ class _AllChannelState extends State<AllChannel> {
           entertainmentItem['url'] = json.decode(response.body)['url']!;
           entertainmentItem['stream_type'] = "M3u8";
         } else {
-          throw Exception(
-              'Something Went Wrong');
+          throw Exception('Something Went Wrong');
         }
       }
 
@@ -296,7 +293,3 @@ class _AllChannelState extends State<AllChannel> {
     );
   }
 }
-
-
-
-

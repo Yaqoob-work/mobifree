@@ -21,7 +21,7 @@ class ReligiousScreenState extends State<ReligiousScreen> {
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
-  bool tvenableAll = false;
+  bool ekomenableAll = false;
 
   @override
   void initState() {
@@ -42,16 +42,15 @@ class ReligiousScreenState extends State<ReligiousScreen> {
         final settingsData = json.decode(response.body);
         setState(() {
           allowedChannelIds = List<int>.from(settingsData['channels']);
-          tvenableAll = settingsData['tvenableAll'] == 1;
+          ekomenableAll = settingsData['ekomenableAll'] == 1;
         });
 
         // print('Allowed Channel IDs: $allowedChannelIds');
-        // print('Enable All: $tvenableAll');
+        // print('Enable All: $ekomenableAll');
 
         fetchEntertainment();
       } else {
-        throw Exception(
-            'Something Went Wrong');
+        throw Exception('Something Went Wrong');
       }
     } catch (e) {
       setState(() {
@@ -62,51 +61,51 @@ class ReligiousScreenState extends State<ReligiousScreen> {
     }
   }
 
-Future<void> fetchEntertainment() async {
-  try {
-    final response = await https.get(
-      Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-      headers: {
-        'x-api-key': 'vLQTuPZUxktl5mVW',
-      },
-    );
+  Future<void> fetchEntertainment() async {
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+        headers: {
+          'x-api-key': 'vLQTuPZUxktl5mVW',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
 
+        setState(() {
+          entertainmentList = responseData.where((channel) {
+            int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+            String channelStatus = channel['genres'].toString();
+
+            // Check if the status is "1" and apply the existing filters
+            return channel['status'] == "1" &&
+                channelStatus.contains('Religious') &&
+                (ekomenableAll || allowedChannelIds.contains(channelId));
+          }).map((channel) {
+            channel['isFocused'] = false;
+            return channel;
+          }).toList();
+
+          // print(
+          //     'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          // print(
+          //     'Filtered Entertainment List Length: ${entertainmentList.length}');
+
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Something Went Wrong');
+      }
+    } catch (e) {
       setState(() {
-        entertainmentList = responseData.where((channel) {
-          int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-          String channelStatus = channel['genres'].toString();
-
-          // Check if the status is "1" and apply the existing filters
-          return channel['status'] == "1" &&
-              channelStatus.contains('Religious') &&
-              (tvenableAll || allowedChannelIds.contains(channelId));
-        }).map((channel) {
-          channel['isFocused'] = false;
-          return channel;
-        }).toList();
-
-        // print(
-        //     'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-        // print(
-        //     'Filtered Entertainment List Length: ${entertainmentList.length}');
-
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
-    } else {
-      throw Exception(
-          'Something Went Wrong');
+      // print('Error in fetchEntertainment: $e');
     }
-  } catch (e) {
-    setState(() {
-      errorMessage = 'Something Went Wrong';
-      isLoading = false;
-    });
-    // print('Error in fetchEntertainment: $e');
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,12 +162,12 @@ Future<void> fetchEntertainment() async {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width: 
-                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
+                width:
+                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
                     screenwdt * 0.15,
-                height: 
-                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                     screenhgt * 0.2,
+                height:
+                    // entertainmentList[index]['isFocused']? screenhgt * 0.25:
+                    screenhgt * 0.2,
                 duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
                     border: Border.all(
@@ -183,12 +182,12 @@ Future<void> fetchEntertainment() async {
                   child: CachedNetworkImage(
                     imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
-                    width: 
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                     screenwdt * 0.15,
-                    height: 
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                         screenhgt * 0.2,
+                    width:
+                        // entertainmentList[index]['isFocused']? screenwdt * 0.2:
+                        screenwdt * 0.15,
+                    height:
+                        // entertainmentList[index]['isFocused']? screenhgt * 0.23:
+                        screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -252,8 +251,7 @@ Future<void> fetchEntertainment() async {
           entertainmentItem['url'] = json.decode(response.body)['url']!;
           entertainmentItem['stream_type'] = "M3u8";
         } else {
-          throw Exception(
-              'Something Went Wrong');
+          throw Exception('Something Went Wrong');
         }
       }
 
@@ -296,7 +294,3 @@ Future<void> fetchEntertainment() async {
     );
   }
 }
-
-
-
-
