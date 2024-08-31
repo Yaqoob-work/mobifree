@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:mobi_tv_entertainment/main.dart';
-import 'package:video_player/video_player.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class VideoScreen extends StatefulWidget {
@@ -27,7 +26,7 @@ class VideoScreen extends StatefulWidget {
 }
 
 class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
-  late VideoPlayerController _controller;
+  late VlcPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
   Duration _totalDuration = Duration.zero;
@@ -46,26 +45,21 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = VideoPlayerController.network(widget.videoUrl)
-      ..initialize().then((_) {
-        setState(() {
-          _totalDuration = _controller.value.duration;
-        });
-        _controller.play();
-        _startPositionUpdater();
-        KeepScreenOn.turnOn();
-      });
-
-    _controller.addListener(() {
-      if (_controller.value.isBuffering != _isBuffering) {
+    _controller = VlcPlayerController.network(
+      widget.videoUrl,
+      hwAcc: HwAcc.full,
+      autoPlay: true,
+      options: VlcPlayerOptions(),
+    )..addListener(() {
         setState(() {
           _isBuffering = _controller.value.isBuffering;
+          _currentPosition = _controller.value.position;
+          _totalDuration = _controller.value.duration;
         });
-        if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
+        if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
           _controller.play();
         }
-      }
-    });
+      });
 
     _startHideControlsTimer();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
@@ -73,7 +67,9 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
 
     // Listen for connectivity changes
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+    _connectivitySubscription = Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) {
       print("Connectivity changed: $result");
       _updateConnectionStatus(result);
     });
@@ -84,7 +80,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _isConnected = result != ConnectivityResult.none;
 
     if (!wasConnected && _isConnected) {
-      if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
         _controller.play();
       }
     } else if (wasConnected && !_isConnected) {
@@ -95,7 +91,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   }
 
   @override
-  void dispose() {
+  void dispose() async{
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _hideControlsTimer.cancel();
@@ -106,6 +102,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     backFocusNode.dispose();
     _connectivitySubscription.cancel();
     KeepScreenOn.turnOff();
+    await _controller.stopRendererScanning();
+    await _controller.dispose();
     super.dispose();
   }
 
@@ -136,16 +134,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _startHideControlsTimer();
   }
 
-  void _startPositionUpdater() {
-    Timer.periodic(Duration(seconds: 1), (_) {
-      if (_controller.value.isInitialized) {
-        setState(() {
-          _currentPosition = _controller.value.position;
-        });
-      }
-    });
-  }
-
   void _togglePlayPause() {
     if (_controller.value.isPlaying) {
       _controller.pause();
@@ -157,6 +145,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    double progress = _totalDuration.inSeconds > 0
+        ? _currentPosition.inSeconds / _totalDuration.inSeconds
+        : 0;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Focus(
@@ -189,93 +181,98 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           onTap: _resetHideControlsTimer,
           child: Stack(
             children: [
-              Center(
-                child: _controller.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: VideoPlayer(_controller),
-                      )
-                    : CircularProgressIndicator(),
+              Positioned.fill(
+                child: VlcPlayer(
+                  
+                  controller: _controller,
+                  aspectRatio: 16 / 9,
+                  placeholder: Center(child: CircularProgressIndicator()),
+                  // Using AspectRatio to maintain video aspect ratio
+                  // child: AspectRatio(
+                  //   aspectRatio: 16 / 9,
+                  //   child: VlcPlayer(
+                  //     controller: _controller,
+                  //     aspectRatio: 16 / 9,
+                  //     placeholder: Center(child: CircularProgressIndicator()),
+                  //   ),
+                  // ),
+                ),
               ),
               if (_controlsVisible)
                 Positioned(
                   bottom: 20,
                   left: 0,
                   right: 0,
-                  // child: Column(
-                  //   children: [
-                  //     Padding(
-                  //       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Container(
-                                color: Colors.black.withOpacity(0.5),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Focus(
-                                    focusNode: playPauseFocusNode,
-                                    onFocusChange: (hasFocus) {
-                                      setState(() {
-                                        // Change button color on focus
-                                      });
-                                    },
-                                    child: IconButton(
-                                      icon: Icon(
-                                        _controller.value.isPlaying
-                                            ? Icons.pause
-                                            : Icons.play_arrow,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: _togglePlayPause,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 15,
-                                child: Center(
-                                  child: VideoProgressIndicator(
-                                    _controller,
-                                    allowScrubbing: true,
-                                    colors: VideoProgressColors(
-                                        playedColor: borderColor,
-                                        bufferedColor: Colors.green,
-                                        backgroundColor: Colors.grey),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 20),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.circle,
-                                        color: Colors.red,
-                                        size: 15,
-                                      ),
-                                      SizedBox(width: 5),
-                                      Text(
-                                        'Live',
-                                        style: TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 20),
-                            ],
-                          ),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.5),
+                    child: Column(
+                      children: [
+                        LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.grey,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.yellow),
                         ),
-                  //     ),
-                  //   ],
-                  // ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Center(
+                                child: Focus(
+                                  focusNode: playPauseFocusNode,
+                                  onFocusChange: (hasFocus) {
+                                    setState(() {
+                                      // Change button color on focus
+                                    });
+                                  },
+                                  child: IconButton(
+                                    icon: Icon(
+                                      _controller.value.isPlaying
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: _togglePlayPause,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 15,
+                              child:
+                                  Container(), // Empty container as we use LinearProgressIndicator
+                            ),
+                            SizedBox(width: 20),
+                            Expanded(
+                              flex: 2,
+                              child: Center(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.circle,
+                                      color: Colors.red,
+                                      size: 15,
+                                    ),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Live',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),

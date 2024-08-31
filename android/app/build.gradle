@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
-    flutterVersionCode = "5"
+    flutterVersionCode = "7"
 }
 
 def flutterVersionName = localProperties.getProperty("flutter.versionName")
@@ -50,7 +50,13 @@ android {
         versionName flutterVersionName
     }
 
-     buildTypes {
+    packagingOptions {
+       // Fixes duplicate libraries build issue, 
+       // when your project uses more than one plugin that depend on C++ libs.
+        pickFirst 'lib/**/libc++_shared.so'
+    }
+
+    buildTypes {
         release {
             signingConfig signingConfigs.release
             // Enables code shrinking, obfuscation, and optimization for only
