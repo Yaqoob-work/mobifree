@@ -82,7 +82,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
-        if (settings['ekomenableAll'] == 0) {
+        if (settings['tvenableAll'] == 0) {
           // Filter based on enabled channel IDs
           final enabledChannels =
               settings['channels']?.map((id) => id.toString()).toSet() ?? {};
@@ -272,29 +272,30 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-              width: screenwdt * 0.15,
-              height: screenhgt * 0.2,
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                  border: Border.all(
-                    color: selectedIndex == index
-                        ? borderColor
-                        : hintColor, // Replace with your borderColor
-                    width: 5.0,
-                  ),
-                  borderRadius: BorderRadius.circular(10)),
-              child: status == '1'
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: CachedNetworkImage(
-                        imageUrl: result['banner'] ?? localImage,
-                        placeholder: (context, url) => localImage,
-                        width: screenwdt * 0.15,
-                        height: screenhgt * 0.2,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : null),
+            width: screenwdt * 0.15,
+            height: screenhgt * 0.2,
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+                border: Border.all(
+                  color: selectedIndex == index
+                      ? borderColor
+                      : hintColor, // Replace with your borderColor
+                  width: 5.0,
+                ),
+                borderRadius: BorderRadius.circular(10)),
+            child: status == '1'
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: CachedNetworkImage(
+                      imageUrl: result['banner'] ?? localImage,
+                      placeholder: (context, url) => localImage,
+                      width: screenwdt * 0.15,
+                      height: screenhgt * 0.2,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : null
+          ),
           Container(
             width: MediaQuery.of(context).size.width * 0.15,
             child: Text(

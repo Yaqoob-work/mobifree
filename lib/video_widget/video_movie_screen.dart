@@ -1,10 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+// import 'package:wakelock/wakelock.dart';
 
 class VideoMovieScreen extends StatefulWidget {
   final String videoUrl;
@@ -26,18 +27,14 @@ class VideoMovieScreen extends StatefulWidget {
   _VideoMovieScreenState createState() => _VideoMovieScreenState();
 }
 
-class _VideoMovieScreenState extends State<VideoMovieScreen>
-    with WidgetsBindingObserver {
+
+class _VideoMovieScreenState extends State<VideoMovieScreen> {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
   Duration _totalDuration = Duration.zero;
   Duration _currentPosition = Duration.zero;
-  bool _isBuffering = false;
-  Duration _lastKnownPosition = Duration.zero;
-  bool _wasPlayingBeforeDisconnection = false;
-  bool _isConnected = true;
-  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  bool _isBuffering = false; // Track buffering state
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -48,92 +45,36 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initializeVideo();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        setState(() {
+          _totalDuration = _controller.value.duration;
+        });
+        _controller.play();
+        _startPositionUpdater();
+        // Wakelock.enable(); // Keep the screen on for this page
+      });
+    
+    _controller.addListener(() {
+      if (_controller.value.isBuffering != _isBuffering) {
+        setState(() {
+          _isBuffering = _controller.value.isBuffering;
+        });
+        if (!_isBuffering && _controller.value.isInitialized) {
+          _controller.play(); // Resume playback when buffering is complete
+        }
+      }
+    });
+
     KeepScreenOn.turnOn();
     _startHideControlsTimer();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
     });
-
-    // Listen for connectivity changes
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
-      print("Connectivity changed: $result");
-      _updateConnectionStatus(result);
-    });
-  }
-
-  Future<void> _initializeVideo() async {
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
-    try {
-      await _controller.initialize();
-      setState(() {
-        _totalDuration = _controller.value.duration;
-      });
-      _controller.play();
-      _startPositionUpdater();
-      _controller.addListener(_videoListener);
-    } catch (error) {
-      print('Net error: $error');
-      _handleNetworkError();
-    }
-  }
-
-  void _handleNetworkError() {
-    _wasPlayingBeforeDisconnection = _controller.value.isPlaying;
-    _lastKnownPosition = _controller.value.position;
-    _controller.pause();
-    Future.delayed(Duration(seconds: 5), () {
-      if (!_controller.value.isPlaying) {
-        _reinitializeVideo();
-      }
-    });
-  }
-
-  Future<void> _reinitializeVideo() async {
-    final currentPosition = _lastKnownPosition;
-    await _controller.dispose();
-    
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
-    try {
-      await _controller.initialize();
-      await _controller.seekTo(currentPosition);
-      setState(() {
-        _totalDuration = _controller.value.duration;
-        _currentPosition = currentPosition;
-      });
-      if (_wasPlayingBeforeDisconnection) {
-        _controller.play();
-      }
-      _controller.addListener(_videoListener);
-    } catch (error) {
-      print('Error reinitializing video: $error');
-      _handleNetworkError();
-    }
-  }
-
-  void _updateConnectionStatus(ConnectivityResult result) {
-    bool wasConnected = _isConnected;
-    _isConnected = result != ConnectivityResult.none;
-
-    if (!wasConnected && _isConnected) {
-      if (!_controller.value.isPlaying && !_controller.value.isBuffering && _controller.value.isInitialized) {
-        _controller.play();
-      }
-    } else if (wasConnected && !_isConnected) {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-      }
-    }
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    if (_controller.value.isPlaying) {
-      _controller.pause();
-    }
-    _controller.removeListener(_videoListener);
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
@@ -141,42 +82,9 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
-    _connectivitySubscription.cancel();
+    // Wakelock.disable(); // Disable screen wake when leaving this page
     KeepScreenOn.turnOff();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _lastKnownPosition = _controller.value.position;
-      _controller.pause();
-    } else if (state == AppLifecycleState.resumed) {
-      _controller.seekTo(_lastKnownPosition);
-      _controller.play();
-    }
-  }
-
-  void _videoListener() {
-    setState(() {
-      _isBuffering = _controller.value.isBuffering;
-      if (!_isBuffering) {
-        _lastKnownPosition = _controller.value.position;
-      }
-    });
-
-    if (!_isBuffering && _controller.value.isInitialized && !_controller.value.isPlaying) {
-      Future.delayed(Duration(seconds: 2), () {
-        if (!_controller.value.isPlaying) {
-          _controller.play();
-        }
-      });
-    }
-
-    if (_controller.value.hasError) {
-      print('Video error: ${_controller.value.errorDescription}');
-      _handleNetworkError();
-    }
   }
 
   void _startHideControlsTimer() {
@@ -259,7 +167,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
               _resetHideControlsTimer();
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              _navigateBack();
+              _navigateBack(); // Use 'escape' key for back navigation
               return KeyEventResult.handled;
             }
           }
@@ -286,60 +194,57 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Container(
-                                color: Colors.black.withOpacity(0.5),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: Center(
-                                  child: IconButton(
-                                    icon: Icon(
-                                      _controller.value.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: highlightColor,
-                                    ),
-                                    onPressed: _togglePlayPause,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 1,
+                              child: Center(
+                                child: IconButton(
+                                  icon: Icon(
+                                    _controller.value.isPlaying
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                    color: highlightColor,
                                   ),
+                                  onPressed: _togglePlayPause,
                                 ),
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Text(
-                                    _formatDuration(_currentPosition),
-                                    style: TextStyle(
-                                        color: highlightColor, fontSize: 20),
-                                  ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Center(
+                                child: Text(
+                                  _formatDuration(_currentPosition),
+                                  style: TextStyle(
+                                      color: highlightColor, fontSize: 20),
                                 ),
                               ),
-                              Expanded(
-                                flex: 6,
-                                child: Center(
-                                  child: VideoProgressIndicator(
-                                    _controller,
-                                    allowScrubbing: true,
-                                    colors: VideoProgressColors(
-                                        playedColor: borderColor,
-                                        bufferedColor: Colors.green,
-                                        backgroundColor: Colors.yellow),
-                                  ),
+                            ),
+                            Expanded(
+                              flex: 6,
+                              child: Center(
+                                child: VideoProgressIndicator(
+                                  _controller,
+                                  allowScrubbing: true,
+                                  colors: VideoProgressColors(
+                                      playedColor: borderColor,
+                                      bufferedColor: Colors.grey,
+                                      backgroundColor: highlightColor),
                                 ),
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Text(
-                                    _formatDuration(_totalDuration),
-                                    style: TextStyle(
-                                        color: highlightColor, fontSize: 20),
-                                  ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Center(
+                                child: Text(
+                                  _formatDuration(_totalDuration),
+                                  style: TextStyle(
+                                      color: highlightColor, fontSize: 20),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

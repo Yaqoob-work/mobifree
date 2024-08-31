@@ -21,7 +21,7 @@ class _AllChannelState extends State<AllChannel> {
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
-  bool ekomenableAll = false;
+  bool tvenableAll = false;
 
   @override
   void initState() {
@@ -42,22 +42,23 @@ class _AllChannelState extends State<AllChannel> {
         final settingsData = json.decode(response.body);
         setState(() {
           allowedChannelIds = List<int>.from(settingsData['channels']);
-          ekomenableAll = settingsData['ekomenableAll'] == 1;
+          tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
-        // print('Allowed Channel IDs: $allowedChannelIds');
-        // print('Enable All: $ekomenableAll');
+        print('Allowed Channel IDs: $allowedChannelIds');
+        print('Enable All: $tvenableAll');
 
         fetchEntertainment();
       } else {
-        throw Exception('Something Went Wrong');
+        throw Exception(
+            'Failed to load settings, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Something Went Wrong';
+        errorMessage = 'Error in fetchSettings: $e';
         isLoading = false;
       });
-      print('Something Went Wrong');
+      print('Error in fetchSettings: $e');
     }
   }
 
@@ -80,28 +81,29 @@ class _AllChannelState extends State<AllChannel> {
             String channelStatus = channel['status'].toString();
 
             return channelStatus.contains('1') &&
-                (ekomenableAll || allowedChannelIds.contains(channelId));
+                (tvenableAll || allowedChannelIds.contains(channelId));
           }).map((channel) {
             channel['isFocused'] = false;
             return channel;
           }).toList();
 
-          // print(
-          //     'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          // print(
-          //     'Filtered Entertainment List Length: ${entertainmentList.length}');
+          print(
+              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          print(
+              'Filtered Entertainment List Length: ${entertainmentList.length}');
 
           isLoading = false;
         });
       } else {
-        throw Exception('Something Went Wrong');
+        throw Exception(
+            'Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Something Went Wrong';
+        errorMessage = 'Error in fetchEntertainment: $e';
         isLoading = false;
       });
-      print('Something Went Wrong');
+      print('Error in fetchEntertainment: $e');
     }
   }
 
@@ -161,12 +163,12 @@ class _AllChannelState extends State<AllChannel> {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width:
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
+                width: 
+                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
                     screenwdt * 0.15,
-                height:
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                    screenhgt * 0.2,
+                height: 
+                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
+                     screenhgt * 0.2,
                 duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
                     border: Border.all(
@@ -181,12 +183,12 @@ class _AllChannelState extends State<AllChannel> {
                   child: CachedNetworkImage(
                     imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
-                    width:
-                        // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                        screenwdt * 0.15,
-                    height:
-                        // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                        screenhgt * 0.2,
+                    width: 
+                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
+                     screenwdt * 0.15,
+                    height: 
+                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
+                         screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -250,7 +252,8 @@ class _AllChannelState extends State<AllChannel> {
           entertainmentItem['url'] = json.decode(response.body)['url']!;
           entertainmentItem['stream_type'] = "M3u8";
         } else {
-          throw Exception('Something Went Wrong');
+          throw Exception(
+              'Failed to load networks, status code: ${response.statusCode}');
         }
       }
 
@@ -275,9 +278,9 @@ class _AllChannelState extends State<AllChannel> {
       _isNavigating = false;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Something Went Wrong')),
+        SnackBar(content: Text('Link Error: $e')),
       );
-      // print('Error in _navigateToVideoScreen: $e');
+      print('Error in _navigateToVideoScreen: $e');
     }
   }
 
@@ -293,3 +296,7 @@ class _AllChannelState extends State<AllChannel> {
     );
   }
 }
+
+
+
+

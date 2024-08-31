@@ -1,15 +1,17 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
+import 'package:mobi_tv_entertainment/main.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
   final List<dynamic> channelList;
-  final Function(bool) onFabFocusChanged;
+  final Function(bool) onFabFocusChanged; // Callback to notify FAB focus change
 
   VideoScreen({
     required this.videoUrl,
@@ -17,7 +19,7 @@ class VideoScreen extends StatefulWidget {
     required this.channelList,
     required this.onFabFocusChanged,
     required String genres,
-    required List channels,
+    required List<Channel> channels,
     required int initialIndex,
   });
 
@@ -25,258 +27,304 @@ class VideoScreen extends StatefulWidget {
   _VideoScreenState createState() => _VideoScreenState();
 }
 
-class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
-  late VlcPlayerController _controller;
-  bool _controlsVisible = true;
-  late Timer _hideControlsTimer;
-  Duration _totalDuration = Duration.zero;
-  Duration _currentPosition = Duration.zero;
-  bool _isBuffering = false;
-  bool _isConnected = true;
-  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
-
-  final FocusNode screenFocusNode = FocusNode();
-  final FocusNode playPauseFocusNode = FocusNode();
-  final FocusNode rewindFocusNode = FocusNode();
-  final FocusNode forwardFocusNode = FocusNode();
-  final FocusNode backFocusNode = FocusNode();
+class _VideoScreenState extends State<VideoScreen> {
+  late VideoPlayerController _controller;
+  late Future<void> _initializeVideoPlayerFuture;
+  bool isGridVisible = false;
+  int selectedIndex = -1;
+  bool isFullScreen = false;
+  double volume = 0.5;
+  bool isVolumeControlVisible = false;
+  Timer? _inactivityTimer; // Timer to track inactivity
+  List<FocusNode> focusNodes = [];
+  FocusNode fabFocusNode = FocusNode();
+  FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _controller = VlcPlayerController.network(
-      widget.videoUrl,
-      hwAcc: HwAcc.full,
-      autoPlay: true,
-      options: VlcPlayerOptions(),
-    )..addListener(() {
-        setState(() {
-          _isBuffering = _controller.value.isBuffering;
-          _currentPosition = _controller.value.position;
-          _totalDuration = _controller.value.duration;
-        });
-        if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
-          _controller.play();
-        }
-      });
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..addListener(_videoPlayerListener); // Add listener for buffering events
+    _initializeVideoPlayerFuture = _controller.initialize();
+    _controller.setLooping(true);
+    _controller.play();
+    KeepScreenOn.turnOn();
+    focusNodes = List.generate(widget.channelList.length, (index) => FocusNode());
 
-    _startHideControlsTimer();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(screenFocusNode);
-    });
-
-    // Listen for connectivity changes
-    _connectivitySubscription = Connectivity()
-        .onConnectivityChanged
-        .listen((ConnectivityResult result) {
-      print("Connectivity changed: $result");
-      _updateConnectionStatus(result);
-    });
-  }
-
-  void _updateConnectionStatus(ConnectivityResult result) {
-    bool wasConnected = _isConnected;
-    _isConnected = result != ConnectivityResult.none;
-
-    if (!wasConnected && _isConnected) {
-      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
-        _controller.play();
+    // Initialize isFocused to false for each channel
+    widget.channelList.forEach((channel) {
+      if (channel['isFocused'] == null) {
+        channel['isFocused'] = false;
       }
-    } else if (wasConnected && !_isConnected) {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-      }
-    }
+    });
   }
 
   @override
-  void dispose() async{
-    WidgetsBinding.instance.removeObserver(this);
+  void dispose() {
+    _controller.removeListener(_videoPlayerListener); // Remove listener
     _controller.dispose();
-    _hideControlsTimer.cancel();
-    screenFocusNode.dispose();
-    playPauseFocusNode.dispose();
-    rewindFocusNode.dispose();
-    forwardFocusNode.dispose();
-    backFocusNode.dispose();
-    _connectivitySubscription.cancel();
+    _inactivityTimer?.cancel(); // Cancel the inactivity timer
+    for (var node in focusNodes) {
+      node.dispose();
+    }
     KeepScreenOn.turnOff();
-    await _controller.stopRendererScanning();
-    await _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
-        _controller.play();
-      }
-    } else if (state == AppLifecycleState.paused) {
-      _controller.pause();
-    }
-  }
-
-  void _startHideControlsTimer() {
-    _hideControlsTimer = Timer(Duration(seconds: 10), () {
+  void _videoPlayerListener() {
+    if (_controller.value.hasError) {
+      // Handle the error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${_controller.value.errorDescription}')),
+      );
+    } else if (_controller.value.isBuffering) {
+      // Optionally handle buffering state
       setState(() {
-        _controlsVisible = false;
+        // Show loading indicator if buffering
       });
-    });
-  }
-
-  void _resetHideControlsTimer() {
-    _hideControlsTimer.cancel();
-    setState(() {
-      _controlsVisible = true;
-    });
-    _startHideControlsTimer();
-  }
-
-  void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
-    } else {
+    } else if (_controller.value.isPlaying && _controller.value.position == _controller.value.duration) {
+      // Optionally handle video completion
+    } else if (!_controller.value.isBuffering && !_controller.value.isPlaying) {
+      // Resume playback if not buffering and video is paused
       _controller.play();
     }
-    _resetHideControlsTimer();
+  }
+
+  void toggleGridVisibility() {
+    setState(() {
+      isGridVisible = !isGridVisible;
+      if (isGridVisible) {
+        _resetInactivityTimer(); // Start the inactivity timer when grid is visible
+      }
+    });
+  }
+
+  void toggleFullScreen() {
+    setState(() {
+      isFullScreen = !isFullScreen;
+    });
+  }
+
+  void _onItemFocus(int index, bool hasFocus) {
+    setState(() {
+      widget.channelList[index]['isFocused'] = hasFocus;
+      if (hasFocus) {
+        selectedIndex = index;
+        _resetInactivityTimer(); // Reset inactivity timer on focus change
+      } else if (selectedIndex == index) {
+        selectedIndex = -1;
+      }
+    });
+  }
+
+  void _onItemTap(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+
+    String selectedUrl = widget.channelList[index]['url'] ?? '';
+    _controller.pause();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(selectedUrl))
+      ..addListener(_videoPlayerListener) // Add listener for buffering events
+      ..initialize().then((_) {
+        setState(() {});
+        _controller.play();
+        _controller.setVolume(volume);
+      });
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(const Duration(seconds: 10), () {
+      setState(() {
+        isGridVisible = false;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    double progress = _totalDuration.inSeconds > 0
-        ? _currentPosition.inSeconds / _totalDuration.inSeconds
-        : 0;
-
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Focus(
-        focusNode: screenFocusNode,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.select ||
-                event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
-              _togglePlayPause();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              // Handle rewind if needed
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              // Handle forward if needed
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              _resetHideControlsTimer();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              // Handle back navigation if needed
-              return KeyEventResult.handled;
-            }
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onTap: _resetHideControlsTimer,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: VlcPlayer(
-                  
-                  controller: _controller,
-                  aspectRatio: 16 / 9,
-                  placeholder: Center(child: CircularProgressIndicator()),
-                  // Using AspectRatio to maintain video aspect ratio
-                  // child: AspectRatio(
-                  //   aspectRatio: 16 / 9,
-                  //   child: VlcPlayer(
-                  //     controller: _controller,
-                  //     aspectRatio: 16 / 9,
-                  //     placeholder: Center(child: CircularProgressIndicator()),
-                  //   ),
-                  // ),
-                ),
-              ),
-              if (_controlsVisible)
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.black.withOpacity(0.5),
+      backgroundColor: cardColor,
+      body: Stack(
+        children: [
+          FutureBuilder(
+            future: _initializeVideoPlayerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (_controller.value.hasError) {
+                  return Center(
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.grey,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.yellow),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Focus(
-                                  focusNode: playPauseFocusNode,
-                                  onFocusChange: (hasFocus) {
-                                    setState(() {
-                                      // Change button color on focus
-                                    });
-                                  },
-                                  child: IconButton(
-                                    icon: Icon(
-                                      _controller.value.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: _togglePlayPause,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 15,
-                              child:
-                                  Container(), // Empty container as we use LinearProgressIndicator
-                            ),
-                            SizedBox(width: 20),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.circle,
-                                      color: Colors.red,
-                                      size: 15,
-                                    ),
-                                    SizedBox(width: 5),
-                                    Text(
-                                      'Live',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 20),
-                          ],
-                        ),
+                        Text('Something Went Wrong',
+                            style: TextStyle(fontSize: 20)),
+                        ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context, rootNavigator: true).pop();
+                            },
+                            child: Text(
+                              'Go Back',
+                              style: TextStyle(fontSize: 25, color: borderColor),
+                            ))
                       ],
                     ),
+                  );
+                } else {
+                  return Center(
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          VideoPlayer(_controller),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: LinearProgressIndicator(
+                              value: _controller.value.position.inSeconds /
+                                  _controller.value.duration.inSeconds,
+                              backgroundColor: Colors.transparent,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'An error occurred while loading the video.',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-            ],
+                );
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
           ),
-        ),
+          // Optional grid view or other widgets can be uncommented here
+          // AnimatedPositioned(
+          //   duration: const Duration(milliseconds: 300),
+          //   bottom: isGridVisible ? 210 : 20,
+          //   right: 20,
+          //   child: IconButton(
+          //     color: borderColor,
+          //     focusColor: Colors.black26,
+          //     onPressed: toggleGridVisibility,
+          //     icon: Icon(isGridVisible ? Icons.close : Icons.grid_view),
+          //   ),
+          // ),
+          // if (isGridVisible)
+          //   Positioned(
+          //     bottom: 0,
+          //     left: 0,
+          //     right: 0,
+          //     child: Container(
+          //       height: 200,
+          //       color: Colors.black87,
+          //       child: ListView.builder(
+          //         scrollDirection: Axis.horizontal,
+          //         itemCount: widget.channelList.length,
+          //         itemBuilder: (context, index) {
+          //           return GestureDetector(
+          //             onTap: () => _onItemTap(index),
+          //             child: ClipRRect(
+          //               borderRadius: BorderRadius.circular(50.0),
+          //               child: Focus(
+          //                 focusNode: focusNodes[index],
+          //                 onKeyEvent: (FocusNode node, KeyEvent event) {
+          //                   if (event is KeyDownEvent &&
+          //                       (event.logicalKey ==
+          //                               LogicalKeyboardKey.select ||
+          //                           event.logicalKey ==
+          //                               LogicalKeyboardKey.enter)) {
+          //                     _onItemTap(index);
+          //                     return KeyEventResult.handled;
+          //                   }
+          //                   _resetInactivityTimer(); // Reset inactivity timer on key event
+          //                   return KeyEventResult.ignored;
+          //                 },
+          //                 onFocusChange: (hasFocus) {
+          //                   _onItemFocus(index, hasFocus);
+          //                 },
+          //                 child: Column(
+          //                   mainAxisAlignment: MainAxisAlignment.center,
+          //                   crossAxisAlignment: CrossAxisAlignment.center,
+          //                   children: [
+          //                     Container(
+          //                       padding: EdgeInsets.all(5),
+          //                       child: AnimatedContainer(
+          //                         width:
+          //                         //  widget.channelList[index]['isFocused']? screenwdt * 0.35 : 
+          //                             screenwdt * 0.14,
+          //                         height: 
+          //                         // widget.channelList[index]['isFocused']? screenhgt * 0.23: 
+          //                             screenhgt * 0.2,
+          //                         duration: const Duration(milliseconds: 300),
+          //                         curve: Curves.easeInOut,
+          //                         decoration: BoxDecoration(
+          //                             border: Border.all(
+          //                               color: widget.channelList[index]
+          //                                       ['isFocused']
+          //                                   ? borderColor
+          //                                   : Colors.transparent,
+          //                               width: 5.0,
+          //                             ),
+          //                             borderRadius: BorderRadius.circular(10)),
+          //                         child: ClipRRect(
+          //                           borderRadius: BorderRadius.circular(5),
+          //                           child: CachedNetworkImage(
+          //                             imageUrl: widget.channelList[index]
+          //                                     ['banner'] ??
+          //                                 localImage,
+          //                             placeholder: (context, url) => localImage,
+          //                             fit: BoxFit.cover,
+          //                             width: 
+          //                             // widget.channelList[index]['isFocused']? screenwdt * 0.35 : 
+          //                                 screenwdt * 0.14,
+          //                             height: 
+          //                             // widget.channelList[index] ['isFocused'] ? screenhgt * 0.23:
+          //                                  screenhgt * 0.2,
+          //                           ),
+          //                         ),
+          //                       ),
+          //                     ),
+          //                     Text(
+          //                       widget.channelList[index]['name'] ?? '',
+          //                       style: TextStyle(color: Colors.white),
+          //                     ),
+          //                   ],
+          //                 ),
+          //               ),
+          //             ),
+          //           );
+          //         },
+          //       ),
+          //     ),
+          //   ),
+          // Positioned(
+          //   bottom: 20,
+          //   right: 20,
+          //   child: Focus(
+          //     focusNode: fabFocusNode,
+          //     onFocusChange: (hasFocus) {
+          //       widget.onFabFocusChanged(hasFocus);
+          //     },
+          //     child: FloatingActionButton(
+          //       onPressed: toggleFullScreen,
+          //       child: Icon(isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen),
+          //     ),
+          //   ),
+          // ),
+        ],
       ),
     );
   }

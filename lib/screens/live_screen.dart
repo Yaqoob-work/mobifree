@@ -19,13 +19,13 @@ class LiveScreen extends StatefulWidget {
 class _LiveScreenState extends State<LiveScreen> {
   int _selectedPage = 0;
   late PageController _pageController;
-  bool _ekomenableAll = false; // Track ekomenableAll status
+  bool _tvenableAll = false; // Track tvenableAll status
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedPage);
-    _fetchekomenableAllStatus(); // Fetch ekomenableAll status
+    _fetchTvenableAllStatus(); // Fetch tvenableAll status
   }
 
   @override
@@ -41,7 +41,7 @@ class _LiveScreenState extends State<LiveScreen> {
     _pageController.jumpToPage(index);
   }
 
-  Future<void> _fetchekomenableAllStatus() async {
+  Future<void> _fetchTvenableAllStatus() async {
     try {
       final response = await https.get(
         Uri.parse('https://api.ekomflix.com/android/getSettings'),
@@ -53,7 +53,7 @@ class _LiveScreenState extends State<LiveScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _ekomenableAll = data['ekomenableAll'] == 1;
+          _tvenableAll = data['tvenableAll'] == 1;
         });
       } else {
         print('Failed to load settings');
@@ -82,7 +82,7 @@ class _LiveScreenState extends State<LiveScreen> {
           TopNavigationBar(
             selectedPage: _selectedPage,
             onPageSelected: _onPageSelected,
-            ekomenableAll: _ekomenableAll,
+            tvenableAll: _tvenableAll,
           ),
           Expanded(
             child: PageView(
