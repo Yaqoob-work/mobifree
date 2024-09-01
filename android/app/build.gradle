@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
-    flutterVersionCode = "12"
+    flutterVersionCode = "6"
 }
 
 def flutterVersionName = localProperties.getProperty("flutter.versionName")
@@ -35,15 +35,15 @@ android {
 
     signingConfigs {
         release {
-            keyAlias 'mobiltv'
-            keyPassword 'mobiltv'
-            storeFile file('mobiltv.jks')
-            storePassword 'mobiltv'
+            keyAlias 'ekamflix'
+            keyPassword 'ekamflix'
+            storeFile file('ekamflix-keystore.jks')
+            storePassword 'ekamflix'
         }
     }
 
     defaultConfig {
-        applicationId "com.ecomflixandroidtv.cti"
+        applicationId "com.ekamflixtv.cti"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()
