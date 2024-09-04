@@ -37,7 +37,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.blueGrey[800],
+      color: Colors.grey[800],
       padding: const EdgeInsets.symmetric(vertical: 15),
    
        child: Row(

@@ -7,6 +7,7 @@ import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:http/http.dart' as https;
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void main() {
   runApp(HomeScreen());
@@ -93,14 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
             //   height: screenhgt*0.01,
             //   child: Text('.'),
             // ),
-            if (_tvenableAll) // Conditionally display SubVod
-            Container(
-              color: cardColor,
-              height: screenhgt*0.65,
-              child: BannerSlider(),
-            ),
-            if (_tvenableAll) // Conditionally display SubVod
-
+            // if (_tvenableAll) // Conditionally display SubVod
+              Container(
+                color: cardColor,
+                height: screenhgt * 0.65,
+                child: BannerSlider(),
+              ),
+            // if (_tvenableAll) // Conditionally display SubVod
               Container(
                 color: cardColor,
                 child: Column(
@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               color: cardColor,
               child: SizedBox(
-                height: screenhgt *4 ,
+                height: screenhgt * 4,
                 child: HomeCategory(),
               ),
             ),
@@ -149,15 +149,18 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 0,
               child: Text(''),
             ),
-            if (_isLoading) 
-            // ...[
+            if (_isLoading)
+              // ...[
               // const Padding(
-                // padding: EdgeInsets.symmetric(vertical: 20),
-                // child:
-                 Center(
-                  child: CircularProgressIndicator(),
+              // padding: EdgeInsets.symmetric(vertical: 20),
+              // child:
+              Center(
+                child: SpinKitFadingCircle(
+                  color: borderColor,
+                  size: 50.0,
                 ),
-              // ),
+              ),
+            // ),
             // ],
           ],
         ),

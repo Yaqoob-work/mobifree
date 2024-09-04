@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_movie_screen.dart';
@@ -20,7 +21,9 @@ class NetworkApi {
 
   factory NetworkApi.fromJson(Map<String, dynamic> json) {
     return NetworkApi(
-      id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       logo: json['logo'] ?? localImage,
     );
@@ -36,7 +39,9 @@ class ContentApi {
 
   factory ContentApi.fromJson(Map<String, dynamic> json) {
     return ContentApi(
-      id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       banner: json['banner'] ?? localImage,
     );
@@ -62,7 +67,9 @@ class MovieDetailsApi {
 
   factory MovieDetailsApi.fromJson(Map<String, dynamic> json) {
     return MovieDetailsApi(
-      id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       banner: json['banner'] ?? localImage,
       poster: json['poster'] ?? localImage,
@@ -89,7 +96,8 @@ Future<List<NetworkApi>> fetchNetworks() async {
 
 Future<List<ContentApi>> fetchContent(int networkId) async {
   final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+    Uri.parse(
+        'https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -160,6 +168,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
     _focusNode.dispose();
     super.dispose();
   }
+
 // first page************************************
   @override
   Widget build(BuildContext context) {
@@ -181,13 +190,13 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.only(left: screenwdt*0.015),
+              padding: EdgeInsets.only(left: screenwdt * 0.015),
               child: AnimatedContainer(
                 width:
-                    // _focusNode.hasFocus ? screenwdt * 0.35 : 
+                    // _focusNode.hasFocus ? screenwdt * 0.35 :
                     screenwdt * 0.15,
                 height:
-                    // _focusNode.hasFocus ? screenhgt * 0.23 : 
+                    // _focusNode.hasFocus ? screenhgt * 0.23 :
                     screenhgt * 0.2,
                 duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
@@ -204,43 +213,38 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     placeholder: (context, url) => localImage,
                     fit: BoxFit.cover,
                     width:
-                    //  _focusNode.hasFocus? screenwdt * 0.35:
+                        //  _focusNode.hasFocus? screenwdt * 0.35:
                         screenwdt * 0.15,
-                    height: 
-                    // _focusNode.hasFocus? screenhgt * 0.23:
+                    height:
+                        // _focusNode.hasFocus? screenhgt * 0.23:
                         screenhgt * 0.2,
                   ),
                 ),
-                
               ),
-              
             ),
-             Container(
-                width:
-                //  _focusNode.hasFocus ? screenwdt * 0.33 : 
-                screenwdt * 0.13,
-                child: Center(
-                  child: Text(
-                    widget.network.name,
-                    style: TextStyle(
-                      color: _focusNode.hasFocus ? highlightColor : Colors.white,
-                      fontSize: 15,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+            Container(
+              width:
+                  //  _focusNode.hasFocus ? screenwdt * 0.33 :
+                  screenwdt * 0.13,
+              child: Center(
+                child: Text(
+                  widget.network.name,
+                  style: TextStyle(
+                    color: _focusNode.hasFocus ? highlightColor : Colors.white,
+                    fontSize: 15,
                   ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
-           
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
 
 class FocusableGridItemContent extends StatefulWidget {
   final ContentApi content;
@@ -249,7 +253,8 @@ class FocusableGridItemContent extends StatefulWidget {
   FocusableGridItemContent({required this.content, required this.onTap});
 
   @override
-  _FocusableGridItemContentState createState() => _FocusableGridItemContentState();
+  _FocusableGridItemContentState createState() =>
+      _FocusableGridItemContentState();
 }
 
 class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
@@ -365,7 +370,11 @@ class _SubVodState extends State<SubVod> {
         future: _networksFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+                child: SpinKitFadingCircle(
+              color: borderColor,
+              size: 50.0,
+            ));
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -386,7 +395,8 @@ class _SubVodState extends State<SubVod> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ContentScreen(networkId: networks[index].id),
+                        builder: (context) =>
+                            ContentScreen(networkId: networks[index].id),
                       ),
                     );
                   },
@@ -426,7 +436,11 @@ class _ContentScreenState extends State<ContentScreen> {
         future: _contentFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+                child: SpinKitFadingCircle(
+              color: borderColor,
+              size: 50.0,
+            ));
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -447,7 +461,8 @@ class _ContentScreenState extends State<ContentScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailsPage(content: content[index]),
+                        builder: (context) =>
+                            DetailsPage(content: content[index]),
                       ),
                     );
                   },
@@ -479,7 +494,11 @@ class DetailsPage extends StatelessWidget {
           future: fetchMovieDetails(content.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return Center(
+                  child: SpinKitFadingCircle(
+                color: borderColor,
+                size: 50.0,
+              ));
             } else if (snapshot.hasError) {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -547,7 +566,8 @@ class DetailsPage extends StatelessWidget {
                         return FocusableGridItemContent(
                           content: content,
                           onTap: () async {
-                            if (_isNavigating) return; // Check if navigation is already in progress
+                            if (_isNavigating)
+                              return; // Check if navigation is already in progress
                             _isNavigating = true; // Set the flag to true
                             _isLoadingVideo = true; // Start loading video
 
@@ -556,12 +576,15 @@ class DetailsPage extends StatelessWidget {
                               context: context,
                               barrierDismissible: false,
                               builder: (context) => Center(
-                                child: CircularProgressIndicator(),
-                              ),
+                                  child: SpinKitFadingCircle(
+                                color: borderColor,
+                                size: 50.0,
+                              )),
                             );
 
                             try {
-                              final playLink = await fetchMoviePlayLink(content.id);
+                              final playLink =
+                                  await fetchMoviePlayLink(content.id);
 
                               if (playLink['type'] == 'Youtube' ||
                                   playLink['type'] == 'YoutubeLive') {

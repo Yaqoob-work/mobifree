@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
@@ -193,7 +194,11 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           isLoading
               ? Expanded(
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                      child: SpinKitFadingCircle(
+                    color: borderColor,
+                    size: 50.0,
+                  )),
                 )
               : searchResults.isEmpty
                   ? Expanded(
@@ -242,7 +247,10 @@ class _SearchScreenState extends State<SearchScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: SpinKitFadingCircle(
+            color: borderColor,
+            size: 50.0,
+          ),
         );
       },
     );
@@ -272,30 +280,29 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: screenwdt * 0.15,
-            height: screenhgt * 0.2,
-            duration: const Duration(milliseconds: 300),
-            decoration: BoxDecoration(
-                border: Border.all(
-                  color: selectedIndex == index
-                      ? borderColor
-                      : hintColor, // Replace with your borderColor
-                  width: 5.0,
-                ),
-                borderRadius: BorderRadius.circular(10)),
-            child: status == '1'
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
-                    child: CachedNetworkImage(
-                      imageUrl: result['banner'] ?? localImage,
-                      placeholder: (context, url) => localImage,
-                      width: screenwdt * 0.15,
-                      height: screenhgt * 0.2,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : null
-          ),
+              width: screenwdt * 0.15,
+              height: screenhgt * 0.2,
+              duration: const Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                  border: Border.all(
+                    color: selectedIndex == index
+                        ? borderColor
+                        : hintColor, // Replace with your borderColor
+                    width: 5.0,
+                  ),
+                  borderRadius: BorderRadius.circular(10)),
+              child: status == '1'
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: CachedNetworkImage(
+                        imageUrl: result['banner'] ?? localImage,
+                        placeholder: (context, url) => localImage,
+                        width: screenwdt * 0.15,
+                        height: screenhgt * 0.2,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : null),
           Container(
             width: MediaQuery.of(context).size.width * 0.15,
             child: Text(

@@ -2,39 +2,37 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:video_player/video_player.dart';
 
-class VideoScreen extends StatefulWidget {
+class VlcPlayerScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
-  final List<dynamic> channelList;
-  final Function(bool) onFabFocusChanged;
 
-  VideoScreen({
+  const VlcPlayerScreen({
+    Key? key,
     required this.videoUrl,
     required this.videoTitle,
-    required this.channelList,
-    required this.onFabFocusChanged,
+    required List channelList,
+    required Null Function(dynamic bool) onFabFocusChanged,
     required String genres,
     required List channels,
     required int initialIndex,
-  });
+  }) : super(key: key);
 
   @override
-  _VideoScreenState createState() => _VideoScreenState();
+  VlcPlayerScreenState createState() => VlcPlayerScreenState();
 }
 
-class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
-  late VideoPlayerController _controller;
+class VlcPlayerScreenState extends State<VlcPlayerScreen>
+    with WidgetsBindingObserver {
+  late VlcPlayerController _vlcPlayerController;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
-  Duration _totalDuration = Duration.zero;
-  Duration _currentPosition = Duration.zero;
   bool _isBuffering = false;
-  bool _isConnected =
-      true; // This is a placeholder; handle connectivity manually.
+  bool _isConnected = true;
+  double _progress = 0.0;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -46,42 +44,39 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = VideoPlayerController.network(widget.videoUrl)
-      ..initialize().then((_) {
-        setState(() {
-          _totalDuration = _controller.value.duration;
-        });
-        _controller.play();
-        _startPositionUpdater();
-        KeepScreenOn.turnOn();
+
+    _vlcPlayerController = VlcPlayerController.network(
+      widget.videoUrl,
+      hwAcc: HwAcc.full,
+      autoPlay: true,
+    )..addListener(() {
+        if (_vlcPlayerController.value.isBuffering != _isBuffering) {
+          setState(() {
+            _isBuffering = _vlcPlayerController.value.isBuffering;
+          });
+        }
+
+        // Update progress bar
+        if (_vlcPlayerController.value.duration != null) {
+          setState(() {
+            _progress = _vlcPlayerController.value.position.inSeconds /
+                _vlcPlayerController.value.duration!.inSeconds;
+          });
+        }
       });
 
-    _controller.addListener(() {
-      if (_controller.value.isBuffering != _isBuffering) {
-        setState(() {
-          _isBuffering = _controller.value.isBuffering;
-        });
-        if (!_controller.value.isPlaying &&
-            !_controller.value.isBuffering &&
-            _controller.value.isInitialized) {
-          _controller.play();
-        }
-      }
-    });
-
+    KeepScreenOn.turnOn();
     _startHideControlsTimer();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
     });
-
-    // Handle connectivity manually
-    // You can implement your own method to check connectivity status here.
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _controller.dispose();
+    _vlcPlayerController.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
     playPauseFocusNode.dispose();
@@ -95,11 +90,12 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
-        _controller.play();
+      if (!_vlcPlayerController.value.isPlaying &&
+          !_vlcPlayerController.value.isBuffering) {
+        _vlcPlayerController.play();
       }
     } else if (state == AppLifecycleState.paused) {
-      _controller.pause();
+      _vlcPlayerController.pause();
     }
   }
 
@@ -119,21 +115,11 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _startHideControlsTimer();
   }
 
-  void _startPositionUpdater() {
-    Timer.periodic(Duration(seconds: 1), (_) {
-      if (_controller.value.isInitialized) {
-        setState(() {
-          _currentPosition = _controller.value.position;
-        });
-      }
-    });
-  }
-
   void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
+    if (_vlcPlayerController.value.isPlaying) {
+      _vlcPlayerController.pause();
     } else {
-      _controller.play();
+      _vlcPlayerController.play();
     }
     _resetHideControlsTimer();
   }
@@ -173,21 +159,25 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           child: Stack(
             children: [
               Center(
-                child: _controller.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: VideoPlayer(_controller),
-                      )
-                    : SpinKitFadingCircle(
-                        color: borderColor,
-                        size: 50.0,
-                      ),
+                child: VlcPlayer(
+                  controller: _vlcPlayerController,
+                  aspectRatio: 16 / 9,
+                  placeholder: Center(
+                    child: SpinKitFadingCircle(
+                      color: borderColor,
+                      size: 50.0,
+                    ),
+                  ),
+                ),
               ),
               if (_controlsVisible)
                 Positioned(
                   bottom: 20,
                   left: 0,
                   right: 0,
+                  // child: Column(
+                  //   children: [
+
                   child: Container(
                     color: Colors.black.withOpacity(0.5),
                     child: Row(
@@ -205,7 +195,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                               },
                               child: IconButton(
                                 icon: Icon(
-                                  _controller.value.isPlaying
+                                  _vlcPlayerController.value.isPlaying
                                       ? Icons.pause
                                       : Icons.play_arrow,
                                   color: Colors.white,
@@ -216,16 +206,11 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                           ),
                         ),
                         Expanded(
-                          flex: 15,
-                          child: Center(
-                            child: VideoProgressIndicator(
-                              _controller,
-                              allowScrubbing: true,
-                              colors: VideoProgressColors(
-                                  playedColor: borderColor,
-                                  bufferedColor: Colors.green,
-                                  backgroundColor: Colors.grey),
-                            ),
+                          flex: 20,
+                          child: LinearProgressIndicator(
+                            value: _progress.isNaN ? 0 : _progress,
+                            color: borderColor,
+                            backgroundColor: Colors.green,
                           ),
                         ),
                         SizedBox(width: 20),
@@ -255,6 +240,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                       ],
                     ),
                   ),
+                  // ],
+                  // ),
                 ),
             ],
           ),

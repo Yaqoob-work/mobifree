@@ -8,7 +8,6 @@ import 'package:mobi_tv_entertainment/live_sub_screen/music_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/news_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/religious_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/sports_screen.dart';
-
 import '../video_widget/top_navigation_bar.dart';
 
 class LiveScreen extends StatefulWidget {

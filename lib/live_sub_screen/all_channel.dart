@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+// import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:mobi_tv_entertainment/main.dart';
-import '../video_widget/video_screen.dart';
+import '../video_widget/vlc_player_screen.dart'; // Added VLC player package
 
 void main() {
   runApp(AllChannel());
@@ -45,9 +47,6 @@ class _AllChannelState extends State<AllChannel> {
           tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
-        print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $tvenableAll');
-
         fetchEntertainment();
       } else {
         throw Exception(
@@ -58,7 +57,6 @@ class _AllChannelState extends State<AllChannel> {
         errorMessage = 'Error in fetchSettings: $e';
         isLoading = false;
       });
-      print('Error in fetchSettings: $e');
     }
   }
 
@@ -76,7 +74,6 @@ class _AllChannelState extends State<AllChannel> {
 
         setState(() {
           entertainmentList = responseData.where((channel) {
-            // Ensure 'id' is parsed as an int and check 'status' properly
             int channelId = int.tryParse(channel['id'].toString()) ?? 0;
             String channelStatus = channel['status'].toString();
 
@@ -86,11 +83,6 @@ class _AllChannelState extends State<AllChannel> {
             channel['isFocused'] = false;
             return channel;
           }).toList();
-
-          print(
-              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print(
-              'Filtered Entertainment List Length: ${entertainmentList.length}');
 
           isLoading = false;
         });
@@ -103,16 +95,21 @@ class _AllChannelState extends State<AllChannel> {
         errorMessage = 'Error in fetchEntertainment: $e';
         isLoading = false;
       });
-      print('Error in fetchEntertainment: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor,
+      backgroundColor: Colors.black,
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: SpinKitFadingCircle(
+  color: borderColor
+,
+  size: 50.0,
+)
+
+)
           : errorMessage.isNotEmpty
               ? Center(
                   child: Text(
@@ -163,52 +160,28 @@ class _AllChannelState extends State<AllChannel> {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width: 
-                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
-                    screenwdt * 0.15,
-                height: 
-                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                     screenhgt * 0.2,
-                duration: const Duration(milliseconds: 3),
+                width: screenwdt * 0.15,
+                height: screenhgt * 0.2,
+                duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                     border: Border.all(
                       color: entertainmentList[index]['isFocused']
-                          ? borderColor
-                          : hintColor,
+                          ? Colors.yellow
+                          : Colors.transparent,
                       width: 5.0,
                     ),
                     borderRadius: BorderRadius.circular(10)),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
-                    imageUrl: entertainmentList[index]['banner'] ?? localImage,
-                    placeholder: (context, url) => localImage,
-                    width: 
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                     screenwdt * 0.15,
-                    height: 
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                         screenhgt * 0.2,
+                    imageUrl: entertainmentList[index]['banner'] ?? '',
+                    placeholder: (context, url) => SizedBox(),
+                    width: screenwdt * 0.15,
+                    height: screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              // Positioned(
-              //     left: screenwdt * 0.03,
-              //     top: screenhgt * 0.02,
-              //     child: Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       crossAxisAlignment: CrossAxisAlignment.center,
-              //       children: [
-              //         Text(
-              //           'LIVE',
-              //           style: TextStyle(
-              //               color: Colors.red,
-              //               fontWeight: FontWeight.bold,
-              //               fontSize: 18),
-              //         ),
-              //       ],
-              //     ))
             ],
           ),
           Container(
@@ -220,7 +193,7 @@ class _AllChannelState extends State<AllChannel> {
               style: TextStyle(
                 fontSize: 15,
                 color: entertainmentList[index]['isFocused']
-                    ? highlightColor
+                    ? Colors.yellow
                     : Colors.white,
               ),
               textAlign: TextAlign.center,
@@ -257,30 +230,44 @@ class _AllChannelState extends State<AllChannel> {
         }
       }
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoScreen(
-            videoUrl: entertainmentItem['url'],
-            videoTitle: entertainmentItem['name'],
-            channelList: entertainmentList,
-            onFabFocusChanged: (bool) {},
-            genres: '',
-            channels: [],
-            initialIndex: 1,
+      // if (entertainmentItem['stream_type'] == 'VLC') {
+      //   Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (context) => VlcPlayerScreen(
+      //         videoUrl: entertainmentItem['url'],
+      //         videoTitle: entertainmentItem['name'],
+      //       ),
+      //     ),
+      //   ).then((_) {
+      //     _isNavigating = false;
+      //     Navigator.of(context, rootNavigator: true).pop();
+      //   });
+      // } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VlcPlayerScreen(
+              videoUrl: entertainmentItem['url'],
+              videoTitle: entertainmentItem['name'],
+              channelList: entertainmentList,
+              onFabFocusChanged: (bool) {},
+              genres: '',
+              channels: [],
+              initialIndex: 1,
+            ),
           ),
-        ),
-      ).then((_) {
-        _isNavigating = false;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
+        ).then((_) {
+          _isNavigating = false;
+          Navigator.of(context, rootNavigator: true).pop();
+        });
+      // }
     } catch (e) {
       _isNavigating = false;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Link Error: $e')),
       );
-      print('Error in _navigateToVideoScreen: $e');
     }
   }
 
@@ -290,13 +277,80 @@ class _AllChannelState extends State<AllChannel> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: SpinKitFadingCircle(
+  color: borderColor
+,
+  size: 50.0,
+)
+
+
         );
       },
     );
   }
 }
 
+// class VlcPlayerScreen extends StatefulWidget {
+  // final String videoUrl;
+  // final String videoTitle;
 
+  // const VlcPlayerScreen({
+  //   Key? key,
+  //   required this.videoUrl,
+  //   required this.videoTitle,
+  // }) : super(key: key);
 
+//   @override
+//   _VlcPlayerScreenState createState() => _VlcPlayerScreenState();
+// }
 
+// class _VlcPlayerScreenState extends State<VlcPlayerScreen> {
+//   late VlcPlayerController _vlcPlayerController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _vlcPlayerController = VlcPlayerController.network(
+//       widget.videoUrl,
+//       hwAcc: HwAcc.full,
+//       autoPlay: true,
+//       options: VlcPlayerOptions(),
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     _vlcPlayerController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       body: Stack(
+//         children: [
+//           Center(
+//             child: VlcPlayer(
+//               controller: _vlcPlayerController,
+//               aspectRatio: 16 / 9,
+//               placeholder: Center(child: SpinKitFadingCircle(
+// color: borderColor,
+// size: 50.0,
+// )
+// ),
+//             ),
+//           ),
+//           Positioned(
+//             top: 40,
+//             left: 20,
+//             child: Text(
+//               widget.videoTitle,
+//               style: TextStyle(color: Colors.white, fontSize: 20),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }

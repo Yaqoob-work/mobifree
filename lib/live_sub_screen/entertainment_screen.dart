@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
 import '../video_widget/video_screen.dart';
@@ -62,58 +63,62 @@ class EntertainmentScreenState extends State<EntertainmentScreen> {
     }
   }
 
-Future<void> fetchEntertainment() async {
-  try {
-    final response = await https.get(
-      Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-      headers: {
-        'x-api-key': 'vLQTuPZUxktl5mVW',
-      },
-    );
+  Future<void> fetchEntertainment() async {
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+        headers: {
+          'x-api-key': 'vLQTuPZUxktl5mVW',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
 
+        setState(() {
+          entertainmentList = responseData.where((channel) {
+            int channelId = int.tryParse(channel['id'].toString()) ?? 0;
+            String channelStatus = channel['genres'].toString();
+
+            // Check if the status is "1" and apply the existing filters
+            return channel['status'] == "1" &&
+                channelStatus.contains('Entertainment') &&
+                (tvenableAll || allowedChannelIds.contains(channelId));
+          }).map((channel) {
+            channel['isFocused'] = false;
+            return channel;
+          }).toList();
+
+          print(
+              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
+          print(
+              'Filtered Entertainment List Length: ${entertainmentList.length}');
+
+          isLoading = false;
+        });
+      } else {
+        throw Exception(
+            'Failed to load entertainment data, status code: ${response.statusCode}');
+      }
+    } catch (e) {
       setState(() {
-        entertainmentList = responseData.where((channel) {
-          int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-          String channelStatus = channel['genres'].toString();
-
-          // Check if the status is "1" and apply the existing filters
-          return channel['status'] == "1" &&
-              channelStatus.contains('Entertainment') &&
-              (tvenableAll || allowedChannelIds.contains(channelId));
-        }).map((channel) {
-          channel['isFocused'] = false;
-          return channel;
-        }).toList();
-
-        print(
-            'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-        print(
-            'Filtered Entertainment List Length: ${entertainmentList.length}');
-
+        errorMessage = 'Error in fetchEntertainment: $e';
         isLoading = false;
       });
-    } else {
-      throw Exception(
-          'Failed to load entertainment data, status code: ${response.statusCode}');
+      print('Error in fetchEntertainment: $e');
     }
-  } catch (e) {
-    setState(() {
-      errorMessage = 'Error in fetchEntertainment: $e';
-      isLoading = false;
-    });
-    print('Error in fetchEntertainment: $e');
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: cardColor,
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+              child: SpinKitFadingCircle(
+              color: borderColor,
+              size: 50.0,
+            ))
           : errorMessage.isNotEmpty
               ? Center(
                   child: Text(
@@ -164,12 +169,12 @@ Future<void> fetchEntertainment() async {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width: 
-                // entertainmentList[index]['isFocused']? screenwdt * 0.2: 
+                width:
+                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
                     screenwdt * 0.15,
-                height: 
-                // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                     screenhgt * 0.2,
+                height:
+                    // entertainmentList[index]['isFocused']? screenhgt * 0.25:
+                    screenhgt * 0.2,
                 duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
                     border: Border.all(
@@ -184,12 +189,12 @@ Future<void> fetchEntertainment() async {
                   child: CachedNetworkImage(
                     imageUrl: entertainmentList[index]['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
-                    width: 
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                     screenwdt * 0.15,
-                    height: 
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                         screenhgt * 0.2,
+                    width:
+                        // entertainmentList[index]['isFocused']? screenwdt * 0.2:
+                        screenwdt * 0.15,
+                    height:
+                        // entertainmentList[index]['isFocused']? screenhgt * 0.23:
+                        screenhgt * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -291,13 +296,12 @@ Future<void> fetchEntertainment() async {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: SpinKitFadingCircle(
+            color: borderColor,
+            size: 50.0,
+          ),
         );
       },
     );
   }
 }
-
-
-
-
