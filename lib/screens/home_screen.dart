@@ -103,39 +103,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // if (_tvenableAll) // Conditionally display SubVod
               Container(
                 color: cardColor,
-                child: Column(
-                  children: [
-                    Container(
-                      color: cardColor,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: Text(
-                                "CONTENTS",
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: hintColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Text('')
-                        ],
-                      ),
-                    ),
-                    Container(
-                      color: cardColor,
-                      child: SizedBox(
-                        height: screenhgt * 0.35,
-                        child: SubVod(),
-                      ),
-                    ),
-                  ],
+                child: SizedBox(
+                  height: screenhgt * 0.35,
+                  child: SubVod(),
                 ),
               ),
             Container(

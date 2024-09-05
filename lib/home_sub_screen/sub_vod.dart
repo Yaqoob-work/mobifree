@@ -366,45 +366,70 @@ class _SubVodState extends State<SubVod> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: cardColor,
-      body: FutureBuilder<List<NetworkApi>>(
-        future: _networksFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-                child: SpinKitFadingCircle(
-              color: borderColor,
-              size: 50.0,
-            ));
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No Networks Available'));
-          } else {
-            final networks = snapshot.data!;
-            return GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                // crossAxisSpacing: 10,
-                // mainAxisSpacing: 10,
-              ),
-              itemCount: networks.length,
-              itemBuilder: (context, index) {
-                return FocusableGridItem(
-                  network: networks[index],
-                  onTap: () async {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ContentScreen(networkId: networks[index].id),
+      body: Column(
+        children: [
+          Container(
+                      color: cardColor,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Text(
+                                "CONTENTS",
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: hintColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Text('')
+                        ],
                       ),
-                    );
-                  },
-                );
+                    ),
+          Expanded(
+            child: FutureBuilder<List<NetworkApi>>(
+              future: _networksFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                      child: SpinKitFadingCircle(
+                    color: borderColor,
+                    size: 50.0,
+                  ));
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No Networks Available'));
+                } else {
+                  final networks = snapshot.data!;
+                  return ListView.builder(
+                   scrollDirection: Axis.horizontal,
+                    itemCount: networks.length,
+                    itemBuilder: (context, index) {
+                      return FocusableGridItem(
+                        network: networks[index],
+                        onTap: () async {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ContentScreen(networkId: networks[index].id),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
               },
-            );
-          }
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
