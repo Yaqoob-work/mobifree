@@ -340,6 +340,8 @@
 // }
 
 
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
@@ -411,22 +413,22 @@ class _VlcPlayerScreenState extends State<VlcPlayerScreen> {
   Widget _buildPlaybackControls() {
     return Row(
       children: [
-        IconButton(
-          icon: Icon(
-            _isPlaying ? Icons.pause : Icons.play_arrow,
-            color: Colors.white,
-            size: 36.0,
-          ),
-          onPressed: _togglePlayPause,
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.stop,
-            color: Colors.white,
-            size: 36.0,
-          ),
-          onPressed: _stopPlayback,
-        ),
+        // IconButton(
+        //   icon: Icon(
+        //     _isPlaying ? Icons.pause : Icons.play_arrow,
+        //     color: Colors.white,
+        //     size: 36.0,
+        //   ),
+        //   onPressed: _togglePlayPause,
+        // ),
+        // IconButton(
+        //   icon: Icon(
+        //     Icons.stop,
+        //     color: Colors.white,
+        //     size: 36.0,
+        //   ),
+        //   onPressed: _stopPlayback,
+        // ),
       ],
     );
   }

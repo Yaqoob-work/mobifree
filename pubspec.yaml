@@ -46,6 +46,7 @@ dependencies:
   flare_flutter: ^3.0.2
   loading_animation_widget: ^1.2.1
   flutter_vlc_player: ^7.4.0
+  socket_io_client: ^2.0.3+1
   # better_player: ^0.0.84
   # chewie: ^1.8.1
 

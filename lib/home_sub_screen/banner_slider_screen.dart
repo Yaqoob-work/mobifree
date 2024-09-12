@@ -264,11 +264,15 @@ class _BannerSliderState extends State<BannerSlider> {
                                         ),
                                         child: CachedNetworkImage(
                                           imageUrl:
-                                              banner['banner'] ?? localImage,
+                                              banner['banner'] ?? '',
                                           fit: BoxFit.cover,
                                           // width: screenwdt,
-                                          placeholder: (context, url) =>
-                                              localImage,
+                                          placeholder: (context, url) => Center(
+                                            child: SpinKitFadingCircle(
+                                              color: Colors.white,
+                                              size: 30.0,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),

@@ -11,23 +11,23 @@ class VideoMovieScreen extends StatefulWidget {
   final String videoTitle;
   final List<dynamic> channelList;
 
-  VideoMovieScreen(
-      {required this.videoUrl,
-      required this.videoTitle,
-      required this.channelList,
-      required String videoBanner,
-      required Null Function(bool focused) onFabFocusChanged,
-      required String genres,
-      required String videoType,
-      required String url,
-      required String type});
+  VideoMovieScreen({
+    required this.videoUrl,
+    required this.videoTitle,
+    required this.channelList,
+    required String videoBanner,
+    required Null Function(bool focused) onFabFocusChanged,
+    required String genres,
+    required String videoType,
+    required String url,
+    required String type
+  });
 
   @override
   _VideoMovieScreenState createState() => _VideoMovieScreenState();
 }
 
-class _VideoMovieScreenState extends State<VideoMovieScreen>
-    with WidgetsBindingObserver {
+class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
@@ -37,6 +37,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   Duration _lastKnownPosition = Duration.zero;
   bool _wasPlayingBeforeDisconnection = false;
   bool _isConnected = true;
+  bool _userPaused = false;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -54,8 +55,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
     });
-
-    // Removed connectivity listener
   }
 
   Future<void> _initializeVideo() async {
@@ -79,7 +78,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     _lastKnownPosition = _controller.value.position;
     _controller.pause();
     Future.delayed(Duration(seconds: 5), () {
-      if (!_controller.value.isPlaying) {
+      if (!_controller.value.isPlaying && !_userPaused) {
         _reinitializeVideo();
       }
     });
@@ -97,7 +96,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
         _totalDuration = _controller.value.duration;
         _currentPosition = currentPosition;
       });
-      if (_wasPlayingBeforeDisconnection) {
+      if (_wasPlayingBeforeDisconnection && !_userPaused) {
         _controller.play();
       }
       _controller.addListener(_videoListener);
@@ -121,7 +120,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
-    // Removed connectivity subscription cancel
     KeepScreenOn.turnOff();
     super.dispose();
   }
@@ -133,7 +131,9 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
       _controller.pause();
     } else if (state == AppLifecycleState.resumed) {
       _controller.seekTo(_lastKnownPosition);
-      _controller.play();
+      if (!_userPaused) {
+        _controller.play();
+      }
     }
   }
 
@@ -144,16 +144,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
         _lastKnownPosition = _controller.value.position;
       }
     });
-
-    if (!_isBuffering &&
-        _controller.value.isInitialized &&
-        !_controller.value.isPlaying) {
-      Future.delayed(Duration(seconds: 2), () {
-        if (!_controller.value.isPlaying) {
-          _controller.play();
-        }
-      });
-    }
 
     if (_controller.value.hasError) {
       print('Video error: ${_controller.value.errorDescription}');
@@ -198,11 +188,15 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   }
 
   void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
-    } else {
-      _controller.play();
-    }
+    setState(() {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+        _userPaused = true;
+      } else {
+        _controller.play();
+        _userPaused = false;
+      }
+    });
     _resetHideControlsTimer();
   }
 

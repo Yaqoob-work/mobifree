@@ -9,9 +9,40 @@ import 'package:http/http.dart' as https;
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+import '../video_widget/vlc_player_screen.dart';
 
 // Add a global variable for settings
 Map<String, dynamic> settings = {};
+
+// Add a global variable for socket
+late IO.Socket socket;
+
+// Function to connect to socket
+void connectSocket() {
+  socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
+    'transports': ['websocket'],
+    'autoConnect': false,
+  });
+
+  socket.connect();
+  socket.on('connect', (_) {
+    print('Connected to socket server');
+  });
+
+  socket.on('videoUrl', (data) {
+    print('Received video URL: $data');
+    if (data['youtubeId'] != null && data['videoUrl'] != null) {
+      // Update the channel URL here
+      // You might need to implement a way to find and update the correct channel
+    }
+  });
+
+  socket.on('error', (error) {
+    print('Socket error: $error');
+  });
+}
 
 // Function to fetch settings
 Future<void> fetchSettings() async {
@@ -67,7 +98,14 @@ class _HomeCategoryState extends State<HomeCategory> {
   @override
   void initState() {
     super.initState();
+    connectSocket();
     _categories = fetchCategories();
+  }
+
+  @override
+  void dispose() {
+    socket.disconnect();
+    super.dispose();
   }
 
   @override
@@ -217,42 +255,58 @@ class CategoryWidget extends StatelessWidget {
                           try {
                             if (filteredChannels[index].streamType ==
                                 'YoutubeLive') {
-                              final response = await https.get(
-                                Uri.parse(
-                                    'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                        filteredChannels[index].url),
-                                headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                              );
+                              // Emit YouTube ID to the socket server
+                              socket.emit(
+                                  'youtubeId', filteredChannels[index].url);
 
-                              if (response.statusCode == 200 &&
-                                  json.decode(response.body)['url'] != '') {
-                                filteredChannels[index].url =
-                                    json.decode(response.body)['url'];
-                                filteredChannels[index].streamType = "M3u8";
-                              } else {
-                                throw Exception('Failed to load networks');
+                              // Wait for the response (you might want to implement a timeout here)
+                              await Future.delayed(Duration(seconds: 5));
+
+                              // Check if the URL has been updated
+                              if (filteredChannels[index].streamType !=
+                                  'M3u8') {
+                                throw Exception('Failed to fetch YouTube URL');
                               }
                             }
-                            Navigator.of(context, rootNavigator: true).pop();
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VideoScreen(
-                                  channels: filteredChannels,
-                                  initialIndex: index,
-                                  // videoUrl: null,
-                                  // videoTitle: null,
+                            Navigator.of(context, rootNavigator: true).pop();
+                            if (filteredChannels[index].streamType == 'VLC') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VlcPlayerScreen(
+                                    channels: filteredChannels,
+                                    initialIndex: index,
+                                    onFabFocusChanged: (bool) {},
+                                    genres: '',
+                                    videoUrl: '',
+                                    videoTitle: '',
+                                    channelList: [],
+                                  ),
                                 ),
-                              ),
-                            ).then((_) {
-                              _isNavigating = false;
-                            });
+                              ).then((_) {
+                                _isNavigating = false;
+                                Navigator.of(context, rootNavigator: true)
+                                    .pop();
+                              });
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VideoScreen(
+                                    channels: filteredChannels,
+                                    initialIndex: index,
+                                  ),
+                                ),
+                              ).then((_) {
+                                _isNavigating = false;
+                              });
+                            }
                           } catch (e) {
                             _isNavigating = false;
                             Navigator.of(context, rootNavigator: true).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Link Error')),
+                              SnackBar(content: Text('Link Error: $e')),
                             );
                           }
                         },

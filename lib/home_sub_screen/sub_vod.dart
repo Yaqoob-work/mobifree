@@ -5,11 +5,42 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../video_widget/video_movie_screen.dart';
+import '../video_widget/vlc_player_screen.dart';
 
 void main() {
   runApp(SubVod());
 }
+
+
+late IO.Socket socket;
+
+// Function to connect to socket
+void connectSocket() {
+  socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
+    'transports': ['websocket'],
+    'autoConnect': false,
+  });
+
+  socket.connect();
+  socket.on('connect', (_) {
+    print('Connected to socket server');
+  });
+
+  socket.on('videoUrl', (data) {
+    print('Received video URL: $data');
+    if (data['youtubeId'] != null && data['videoUrl'] != null) {
+      // Update the video URL here
+      // You might need to implement a way to find and update the correct video
+    }
+  });
+
+  socket.on('error', (error) {
+    print('Socket error: $error');
+  });
+}
+
 
 // Models
 class NetworkApi {
@@ -359,7 +390,14 @@ class _SubVodState extends State<SubVod> {
   @override
   void initState() {
     super.initState();
+    connectSocket();
     _networksFuture = fetchNetworks();
+  }
+
+  @override
+  void dispose() {
+    socket.disconnect();
+    super.dispose();
   }
 
   @override
@@ -369,28 +407,28 @@ class _SubVodState extends State<SubVod> {
       body: Column(
         children: [
           Container(
-                      color: cardColor,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: Text(
-                                "CONTENTS",
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: hintColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Text('')
-                        ],
+            color: cardColor,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: Text(
+                      "CONTENTS",
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: hintColor,
                       ),
                     ),
+                  ),
+                ),
+                const Text('')
+              ],
+            ),
+          ),
           Expanded(
             child: FutureBuilder<List<NetworkApi>>(
               future: _networksFuture,
@@ -408,7 +446,7 @@ class _SubVodState extends State<SubVod> {
                 } else {
                   final networks = snapshot.data!;
                   return ListView.builder(
-                   scrollDirection: Axis.horizontal,
+                    scrollDirection: Axis.horizontal,
                     itemCount: networks.length,
                     itemBuilder: (context, index) {
                       return FocusableGridItem(
@@ -563,7 +601,7 @@ class DetailsPage extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (movieDetails.status == '1') // Check if status is '1'
+                  if (movieDetails.status == '1')
                     Container(
                       width: screenwdt * 0.8,
                       height: screenhgt * 0.6,
@@ -586,17 +624,15 @@ class DetailsPage extends StatelessWidget {
                   Expanded(
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: 1, // Assume we have only one detail item
+                      itemCount: 1,
                       itemBuilder: (context, index) {
                         return FocusableGridItemContent(
                           content: content,
                           onTap: () async {
-                            if (_isNavigating)
-                              return; // Check if navigation is already in progress
-                            _isNavigating = true; // Set the flag to true
-                            _isLoadingVideo = true; // Start loading video
+                            if (_isNavigating) return;
+                            _isNavigating = true;
+                            _isLoadingVideo = true;
 
-                            // Show loading indicator
                             showDialog(
                               context: context,
                               barrierDismissible: false,
@@ -613,52 +649,67 @@ class DetailsPage extends StatelessWidget {
 
                               if (playLink['type'] == 'Youtube' ||
                                   playLink['type'] == 'YoutubeLive') {
-                                final response = await https.get(
-                                  Uri.parse(
-                                      'https://test.gigabitcdn.net/yt-dlp.php?v=' +
-                                          playLink['url']!),
-                                  headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-                                );
+                                // Emit YouTube ID to the socket server
+                                socket.emit('youtubeId', playLink['url']);
 
-                                if (response.statusCode == 200) {
-                                  playLink['url'] =
-                                      json.decode(response.body)['url'];
-                                  playLink['type'] = "M3u8";
-                                } else {
-                                  throw Exception('Failed to load video URL');
+                                // Wait for the response (you might want to implement a timeout here)
+                                await Future.delayed(Duration(seconds: 5));
+
+                                // Check if the URL has been updated
+                                if (playLink['type'] != 'M3u8') {
+                                  throw Exception(
+                                      'Failed to fetch YouTube URL');
                                 }
                               }
 
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => VideoMovieScreen(
-                                    videoUrl: playLink['url']!,
-                                    videoTitle: movieDetails.name,
-                                    channelList: [],
-                                    videoBanner: movieDetails.banner,
-                                    onFabFocusChanged: (bool focused) {},
-                                    genres: movieDetails.genres,
-                                    videoType: playLink['type']!,
-                                    url: playLink['url']!,
-                                    type: playLink['type']!,
+                              Navigator.of(context, rootNavigator: true).pop();
+
+                              if (playLink['type'] == 'VLC') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VlcPlayerScreen(
+                                      videoUrl: playLink['url']!,
+                                      videoTitle: movieDetails.name,
+                                      channelList: [],
+                                      onFabFocusChanged: (bool) {},
+                                      genres: movieDetails.genres,
+                                      channels: [],
+                                      initialIndex: 0,
+                                    ),
                                   ),
-                                ),
-                              ).then((_) {
-                                // Reset the flag after the navigation is completed
-                                _isNavigating = false;
-                                Navigator.of(context, rootNavigator: true)
-                                    .pop();
-                              });
+                                ).then((_) {
+                                  _isNavigating = false;
+                                });
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VideoMovieScreen(
+                                      videoUrl: playLink['url']!,
+                                      videoTitle: movieDetails.name,
+                                      channelList: [],
+                                      videoBanner: movieDetails.banner,
+                                      onFabFocusChanged: (bool focused) {},
+                                      genres: movieDetails.genres,
+                                      videoType: playLink['type']!,
+                                      url: playLink['url']!,
+                                      type: playLink['type']!,
+                                    ),
+                                  ),
+                                ).then((_) {
+                                  _isNavigating = false;
+                                });
+                              }
                             } catch (e) {
                               Navigator.of(context, rootNavigator: true).pop();
-                              // Show error message
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content: Text(
-                                  'Something Went Wrong',
-                                  style: TextStyle(fontSize: 20),
-                                )),
+                                  content: Text(
+                                    'Something Went Wrong',
+                                    style: TextStyle(fontSize: 20),
+                                  ),
+                                ),
                               );
                             }
                           },

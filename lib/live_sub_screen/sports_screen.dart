@@ -5,7 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
 import '../video_widget/video_screen.dart';
+import '../video_widget/vlc_player_screen.dart';
 
 void main() {
   runApp(SportsScreen());
@@ -13,21 +16,60 @@ void main() {
 
 class SportsScreen extends StatefulWidget {
   @override
-  SportsScreenState createState() => SportsScreenState();
+  _SportsScreenState createState() => _SportsScreenState();
 }
 
-class SportsScreenState extends State<SportsScreen> {
+class _SportsScreenState extends State<SportsScreen> {
   List<dynamic> entertainmentList = [];
   List<int> allowedChannelIds = [];
   bool isLoading = true;
   String errorMessage = '';
   bool _isNavigating = false;
   bool tvenableAll = false;
+  late IO.Socket socket;
 
   @override
   void initState() {
     super.initState();
+    connectSocket();
     fetchSettings();
+  }
+
+  void connectSocket() {
+    socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+
+    socket.connect();
+    socket.on('connect', (_) {
+      print('Connected to socket server');
+    });
+
+    socket.on('videoUrl', (data) {
+      print('Received video URL: $data');
+      if (data['youtubeId'] != null && data['videoUrl'] != null) {
+        setState(() {
+          for (var item in entertainmentList) {
+            if (item['url'] == data['youtubeId']) {
+              item['url'] = data['videoUrl'];
+              item['stream_type'] = 'M3u8';
+              break;
+            }
+          }
+        });
+      }
+    });
+
+    socket.on('error', (error) {
+      print('Socket error: $error');
+    });
+  }
+
+  @override
+  void dispose() {
+    socket.disconnect();
+    super.dispose();
   }
 
   Future<void> fetchSettings() async {
@@ -46,20 +88,15 @@ class SportsScreenState extends State<SportsScreen> {
           tvenableAll = settingsData['tvenableAll'] == 1;
         });
 
-        print('Allowed Channel IDs: $allowedChannelIds');
-        print('Enable All: $tvenableAll');
-
         fetchEntertainment();
       } else {
-        throw Exception(
-            'Failed to load settings, status code: ${response.statusCode}');
+        throw Exception('Failed to load settings, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
         errorMessage = 'Error in fetchSettings: $e';
         isLoading = false;
       });
-      print('Error in fetchSettings: $e');
     }
   }
 
@@ -79,33 +116,25 @@ class SportsScreenState extends State<SportsScreen> {
           entertainmentList = responseData.where((channel) {
             int channelId = int.tryParse(channel['id'].toString()) ?? 0;
             String channelStatus = channel['genres'].toString();
+            String status = channel['status'].toString();
 
-            // Check if the status is "1" and apply the existing filters
-            return channel['status'] == "1" &&
-                channelStatus.contains('Sports') &&
-                (tvenableAll || allowedChannelIds.contains(channelId));
+            return channelStatus.contains('Sports') &&
+                (tvenableAll || allowedChannelIds.contains(channelId)) &&
+                status == '1';
           }).map((channel) {
             channel['isFocused'] = false;
             return channel;
           }).toList();
-
-          print(
-              'Channel IDs from API: ${responseData.map((channel) => channel['id']).toList()}');
-          print(
-              'Filtered Entertainment List Length: ${entertainmentList.length}');
-
           isLoading = false;
         });
       } else {
-        throw Exception(
-            'Failed to load entertainment data, status code: ${response.statusCode}');
+        throw Exception('Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
         errorMessage = 'Error in fetchEntertainment: $e';
         isLoading = false;
       });
-      print('Error in fetchEntertainment: $e');
     }
   }
 
@@ -123,11 +152,12 @@ class SportsScreenState extends State<SportsScreen> {
           : errorMessage.isNotEmpty
               ? Center(
                   child: Text(
-                  errorMessage,
-                  style: TextStyle(fontSize: 20),
-                ))
+                    errorMessage,
+                    style: TextStyle(fontSize: 20, color: hintColor),
+                  ),
+                )
               : entertainmentList.isEmpty
-                  ? Center(child: Text('No Channels Available'))
+                  ? Center(child: Text('No Channels Available', style: TextStyle(color: hintColor)))
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: GridView.builder(
@@ -137,8 +167,7 @@ class SportsScreenState extends State<SportsScreen> {
                         itemCount: entertainmentList.length,
                         itemBuilder: (context, index) {
                           return GestureDetector(
-                            onTap: () => _navigateToVideoScreen(
-                                context, entertainmentList[index]),
+                            onTap: () => _navigateToVideoScreen(context, entertainmentList[index]),
                             child: _buildGridViewItem(index),
                           );
                         },
@@ -148,18 +177,20 @@ class SportsScreenState extends State<SportsScreen> {
   }
 
   Widget _buildGridViewItem(int index) {
+    final item = entertainmentList[index];
+    final bool isFocused = item['isFocused'] ?? false;
+
     return Focus(
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.select) {
-          _navigateToVideoScreen(context, entertainmentList[index]);
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+          _navigateToVideoScreen(context, item);
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
       onFocusChange: (hasFocus) {
         setState(() {
-          entertainmentList[index]['isFocused'] = hasFocus;
+          item['isFocused'] = hasFocus;
         });
       },
       child: Column(
@@ -170,65 +201,36 @@ class SportsScreenState extends State<SportsScreen> {
             children: [
               AnimatedContainer(
                 curve: Curves.ease,
-                width:
-                    // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                    screenwdt * 0.15,
-                height:
-                    // entertainmentList[index]['isFocused']? screenhgt * 0.25:
-                    screenhgt * 0.2,
-                duration: const Duration(milliseconds: 3),
+                width: MediaQuery.of(context).size.width * 0.15,
+                height: MediaQuery.of(context).size.height * 0.2,
+                duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
-                    border: Border.all(
-                      color: entertainmentList[index]['isFocused']
-                          ? borderColor
-                          : hintColor,
-                      width: 5.0,
-                    ),
-                    borderRadius: BorderRadius.circular(10)),
+                  border: Border.all(
+                    color: isFocused ? borderColor : Colors.transparent,
+                    width: 5.0,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
                   child: CachedNetworkImage(
-                    imageUrl: entertainmentList[index]['banner'] ?? localImage,
+                    imageUrl: item['banner'] ?? localImage,
                     placeholder: (context, url) => localImage,
-                    width:
-                        // entertainmentList[index]['isFocused']? screenwdt * 0.2:
-                        screenwdt * 0.15,
-                    height:
-                        // entertainmentList[index]['isFocused']? screenhgt * 0.23:
-                        screenhgt * 0.2,
+                    width: MediaQuery.of(context).size.width * 0.15,
+                    height: MediaQuery.of(context).size.height * 0.2,
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              // Positioned(
-              //     left: screenwdt * 0.03,
-              //     top: screenhgt * 0.02,
-              //     child: Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       crossAxisAlignment: CrossAxisAlignment.center,
-              //       children: [
-              //         Text(
-              //           'LIVE',
-              //           style: TextStyle(
-              //               color: Colors.red,
-              //               fontWeight: FontWeight.bold,
-              //               fontSize: 18),
-              //         ),
-              //       ],
-              //     ))
             ],
           ),
           Container(
-            width: screenwdt * 0.15,
+            width: MediaQuery.of(context).size.width * 0.15,
             child: Text(
-              (entertainmentList[index]['name'] ?? 'Unknown')
-                  .toString()
-                  .toUpperCase(),
+              (item['name'] ?? '').toString().toUpperCase(),
               style: TextStyle(
                 fontSize: 15,
-                color: entertainmentList[index]['isFocused']
-                    ? highlightColor
-                    : Colors.white,
+                color: isFocused ? highlightColor : hintColor,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -240,8 +242,7 @@ class SportsScreenState extends State<SportsScreen> {
     );
   }
 
-  void _navigateToVideoScreen(
-      BuildContext context, dynamic entertainmentItem) async {
+  void _navigateToVideoScreen(BuildContext context, dynamic entertainmentItem) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
@@ -249,45 +250,56 @@ class SportsScreenState extends State<SportsScreen> {
 
     try {
       if (entertainmentItem['stream_type'] == 'YoutubeLive') {
-        final response = await https.get(
-          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-              entertainmentItem['url']!),
-          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-        );
-
-        if (response.statusCode == 200) {
-          entertainmentItem['url'] = json.decode(response.body)['url']!;
-          entertainmentItem['stream_type'] = "M3u8";
-        } else {
-          throw Exception(
-              'Failed to load networks, status code: ${response.statusCode}');
+        socket.emit('youtubeId', entertainmentItem['url']);
+        await Future.delayed(Duration(seconds: 5));
+        if (entertainmentItem['stream_type'] != 'M3u8') {
+          throw Exception('Failed to fetch YouTube URL');
         }
       }
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoScreen(
-            videoUrl: entertainmentItem['url'],
-            videoTitle: entertainmentItem['name'],
-            channelList: entertainmentList,
-            onFabFocusChanged: (bool) {},
-            genres: '',
-            channels: [],
-            initialIndex: 1,
+      if (entertainmentItem['stream_type'] == 'VLC') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VlcPlayerScreen(
+              videoUrl: entertainmentItem['url'],
+              videoTitle: entertainmentItem['name'],
+              channelList: entertainmentList,
+              onFabFocusChanged: (bool) {},
+              genres: '',
+              channels: [],
+              initialIndex: 1,
+            ),
           ),
-        ),
-      ).then((_) {
-        _isNavigating = false;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
+        ).then((_) {
+          _isNavigating = false;
+          Navigator.of(context, rootNavigator: true).pop();
+        });
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: entertainmentItem['url'],
+              videoTitle: entertainmentItem['name'],
+              channelList: entertainmentList,
+              onFabFocusChanged: (bool) {},
+              genres: '',
+              channels: [],
+              initialIndex: 1,
+            ),
+          ),
+        ).then((_) {
+          _isNavigating = false;
+          Navigator.of(context, rootNavigator: true).pop();
+        });
+      }
     } catch (e) {
       _isNavigating = false;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Link Error: $e')),
       );
-      print('Error in _navigateToVideoScreen: $e');
     }
   }
 
