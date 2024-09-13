@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -35,6 +36,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool _isBuffering = false;
   bool _isConnected =
       true; // This is a placeholder; handle connectivity manually.
+  Timer? _connectivityCheckTimer;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -53,6 +55,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         });
         _controller.play();
         _startPositionUpdater();
+        _startConnectivityCheck();
         KeepScreenOn.turnOn();
       });
 
@@ -68,6 +71,15 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         }
       }
     });
+
+    @override
+    void didChangeAppLifecycleState(AppLifecycleState state) {
+      if (state == AppLifecycleState.paused) {
+        _controller.pause();
+      } else if (state == AppLifecycleState.resumed) {
+        _controller.play();
+      }
+    }
 
     _startHideControlsTimer();
     WidgetsBinding.instance!.addPostFrameCallback((_) {
@@ -88,8 +100,39 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
+    _connectivityCheckTimer?.cancel();
     KeepScreenOn.turnOff();
     super.dispose();
+  }
+
+  void _startConnectivityCheck() {
+    _connectivityCheckTimer =
+        Timer.periodic(Duration(seconds: 5), (timer) async {
+      try {
+        final result = await InternetAddress.lookup('google.com');
+        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+          _updateConnectionStatus(true);
+        } else {
+          _updateConnectionStatus(false);
+        }
+      } on SocketException catch (_) {
+        _updateConnectionStatus(false);
+      }
+    });
+  }
+
+  void _updateConnectionStatus(bool isConnected) {
+    if (isConnected != _isConnected) {
+      setState(() {
+        _isConnected = isConnected;
+      });
+      if (!isConnected) {
+        _controller.pause();
+      } else if (_controller.value.isBuffering ||
+          !_controller.value.isPlaying) {
+        _controller.play();
+      }
+    }
   }
 
   @override
@@ -185,7 +228,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               ),
               if (_controlsVisible)
                 Positioned(
-                  bottom: 20,
+                  bottom: 0,
                   left: 0,
                   right: 0,
                   child: Container(

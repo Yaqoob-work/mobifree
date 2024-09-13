@@ -1,14 +1,15 @@
+
+
+import 'dart:async';
 import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-
+import 'package:cached_network_image/cached_network_image.dart';
+import '../services/socket_service.dart';
 import '../video_widget/video_screen.dart';
-import '../video_widget/vlc_player_screen.dart';
 
 void main() {
   runApp(MusicScreen());
@@ -26,50 +27,15 @@ class _MusicScreenState extends State<MusicScreen> {
   String errorMessage = '';
   bool _isNavigating = false;
   bool tvenableAll = false;
-  late IO.Socket socket;
+  final SocketService _socketService = SocketService();
+  int _maxRetries = 3;
+  int _retryDelay = 5; // seconds
 
   @override
   void initState() {
     super.initState();
-    connectSocket();
+    _socketService.initSocket();
     fetchSettings();
-  }
-
-  void connectSocket() {
-    socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': false,
-    });
-
-    socket.connect();
-    socket.on('connect', (_) {
-      print('Connected to socket server');
-    });
-
-    socket.on('videoUrl', (data) {
-      print('Received video URL: $data');
-      if (data['youtubeId'] != null && data['videoUrl'] != null) {
-        setState(() {
-          for (var item in entertainmentList) {
-            if (item['url'] == data['youtubeId']) {
-              item['url'] = data['videoUrl'];
-              item['stream_type'] = 'M3u8';
-              break;
-            }
-          }
-        });
-      }
-    });
-
-    socket.on('error', (error) {
-      print('Socket error: $error');
-    });
-  }
-
-  @override
-  void dispose() {
-    socket.disconnect();
-    super.dispose();
   }
 
   Future<void> fetchSettings() async {
@@ -90,7 +56,8 @@ class _MusicScreenState extends State<MusicScreen> {
 
         fetchEntertainment();
       } else {
-        throw Exception('Failed to load settings, status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load settings, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -100,7 +67,7 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  Future<void> fetchEntertainment() async {
+    Future<void> fetchEntertainment() async {
     try {
       final response = await https.get(
         Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
@@ -115,12 +82,12 @@ class _MusicScreenState extends State<MusicScreen> {
         setState(() {
           entertainmentList = responseData.where((channel) {
             int channelId = int.tryParse(channel['id'].toString()) ?? 0;
-            String channelStatus = channel['genres'].toString();
-            String status = channel['status'].toString();
+            String channelGenres = channel['genres'].toString();
+            String channelStatus = channel['status'].toString();
 
-            return channelStatus.contains('Music') &&
-                (tvenableAll || allowedChannelIds.contains(channelId)) &&
-                status == '1';
+            return channelGenres.contains('Music') &&
+                   channelStatus == "1" &&
+                   (tvenableAll || allowedChannelIds.contains(channelId));
           }).map((channel) {
             channel['isFocused'] = false;
             return channel;
@@ -128,7 +95,8 @@ class _MusicScreenState extends State<MusicScreen> {
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load entertainment data, status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load entertainment data, status code: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -157,7 +125,9 @@ class _MusicScreenState extends State<MusicScreen> {
                   ),
                 )
               : entertainmentList.isEmpty
-                  ? Center(child: Text('No Channels Available', style: TextStyle(color: hintColor)))
+                  ? Center(
+                      child: Text('No Channels Available',
+                          style: TextStyle(color: hintColor)))
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: GridView.builder(
@@ -167,7 +137,8 @@ class _MusicScreenState extends State<MusicScreen> {
                         itemCount: entertainmentList.length,
                         itemBuilder: (context, index) {
                           return GestureDetector(
-                            onTap: () => _navigateToVideoScreen(context, entertainmentList[index]),
+                            onTap: () => _navigateToVideoScreen(
+                                context, entertainmentList[index]),
                             child: _buildGridViewItem(index),
                           );
                         },
@@ -182,7 +153,8 @@ class _MusicScreenState extends State<MusicScreen> {
 
     return Focus(
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.select) {
           _navigateToVideoScreen(context, item);
           return KeyEventResult.handled;
         }
@@ -242,7 +214,8 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
-  void _navigateToVideoScreen(BuildContext context, dynamic entertainmentItem) async {
+  void _navigateToVideoScreen(
+      BuildContext context, dynamic entertainmentItem) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
@@ -250,50 +223,36 @@ class _MusicScreenState extends State<MusicScreen> {
 
     try {
       if (entertainmentItem['stream_type'] == 'YoutubeLive') {
-        socket.emit('youtubeId', entertainmentItem['url']);
-        await Future.delayed(Duration(seconds: 5));
-        if (entertainmentItem['stream_type'] != 'M3u8') {
-          throw Exception('Failed to fetch YouTube URL');
+        for (int i = 0; i < _maxRetries; i++) {
+          try {
+            String updatedUrl = await _socketService.getUpdatedUrl(entertainmentItem['url']);
+            entertainmentItem['url'] = updatedUrl;
+            entertainmentItem['stream_type'] = 'M3u8';
+            break;
+          } catch (e) {
+            if (i == _maxRetries - 1) rethrow;
+            await Future.delayed(Duration(seconds: _retryDelay));
+          }
         }
       }
 
-      if (entertainmentItem['stream_type'] == 'VLC') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VlcPlayerScreen(
-              videoUrl: entertainmentItem['url'],
-              videoTitle: entertainmentItem['name'],
-              channelList: entertainmentList,
-              onFabFocusChanged: (bool) {},
-              genres: '',
-              channels: [],
-              initialIndex: 1,
-            ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoScreen(
+            videoUrl: entertainmentItem['url'],
+            videoTitle: entertainmentItem['name'],
+            channelList: entertainmentList,
+            onFabFocusChanged: (bool) {},
+            genres: '',
+            channels: [],
+            initialIndex: 1,
           ),
-        ).then((_) {
-          _isNavigating = false;
-          Navigator.of(context, rootNavigator: true).pop();
-        });
-      } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoScreen(
-              videoUrl: entertainmentItem['url'],
-              videoTitle: entertainmentItem['name'],
-              channelList: entertainmentList,
-              onFabFocusChanged: (bool) {},
-              genres: '',
-              channels: [],
-              initialIndex: 1,
-            ),
-          ),
-        ).then((_) {
-          _isNavigating = false;
-          Navigator.of(context, rootNavigator: true).pop();
-        });
-      }
+        ),
+      ).then((_) {
+        _isNavigating = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      });
     } catch (e) {
       _isNavigating = false;
       Navigator.of(context, rootNavigator: true).pop();
@@ -317,4 +276,11 @@ class _MusicScreenState extends State<MusicScreen> {
       },
     );
   }
+
+  @override
+  void dispose() {
+    _socketService.dispose();
+    super.dispose();
+  }
 }
+

@@ -9,40 +9,13 @@ import 'package:http/http.dart' as https;
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+// import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../services/socket_service.dart';
 import '../video_widget/vlc_player_screen.dart';
 
 // Add a global variable for settings
 Map<String, dynamic> settings = {};
-
-// Add a global variable for socket
-late IO.Socket socket;
-
-// Function to connect to socket
-void connectSocket() {
-  socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
-    'transports': ['websocket'],
-    'autoConnect': false,
-  });
-
-  socket.connect();
-  socket.on('connect', (_) {
-    print('Connected to socket server');
-  });
-
-  socket.on('videoUrl', (data) {
-    print('Received video URL: $data');
-    if (data['youtubeId'] != null && data['videoUrl'] != null) {
-      // Update the channel URL here
-      // You might need to implement a way to find and update the correct channel
-    }
-  });
-
-  socket.on('error', (error) {
-    print('Socket error: $error');
-  });
-}
 
 // Function to fetch settings
 Future<void> fetchSettings() async {
@@ -98,13 +71,11 @@ class _HomeCategoryState extends State<HomeCategory> {
   @override
   void initState() {
     super.initState();
-    connectSocket();
     _categories = fetchCategories();
   }
 
   @override
   void dispose() {
-    socket.disconnect();
     super.dispose();
   }
 
@@ -197,11 +168,33 @@ class Channel {
   }
 }
 
-class CategoryWidget extends StatelessWidget {
-  bool _isNavigating = false;
+class CategoryWidget extends StatefulWidget {
   final Category category;
 
   CategoryWidget({required this.category});
+
+  @override
+  State<CategoryWidget> createState() => _CategoryWidgetState();
+}
+
+class _CategoryWidgetState extends State<CategoryWidget> {
+  bool _isNavigating = false;
+  final SocketService _socketService = SocketService();
+  int _maxRetries = 3;
+  int _retryDelay = 5; // seconds
+
+  @override
+  void initState() {
+    super.initState();
+    _socketService.initSocket();
+    fetchSettings();
+  }
+
+  @override
+  void dispose() {
+    _socketService.dispose();
+    super.dispose();
+  }
 
   void _showLoadingIndicator(BuildContext context) {
     showDialog(
@@ -219,8 +212,9 @@ class CategoryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Channel> filteredChannels =
-        category.channels.where((channel) => channel.url.isNotEmpty).toList();
+    List<Channel> filteredChannels = widget.category.channels
+        .where((channel) => channel.url.isNotEmpty)
+        .toList();
 
     return filteredChannels.isNotEmpty
         ? Container(
@@ -231,7 +225,7 @@ class CategoryWidget extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: Text(
-                    category.text.toUpperCase(),
+                    widget.category.text.toUpperCase(),
                     style: TextStyle(
                       color: hintColor,
                       fontSize: 20,
@@ -252,20 +246,36 @@ class CategoryWidget extends StatelessWidget {
                           _isNavigating = true;
                           _showLoadingIndicator(context);
 
+                          // try {
+                          //   if (filteredChannels[index].streamType == 'YoutubeLive') {
+                          //     // Emit YouTube ID to the socket server
+                          //     socket.emit('youtubeId', filteredChannels[index].url);
+
+                          //     // Wait for the response (you might want to implement a timeout here)
+                          //     await Future.delayed(Duration(seconds: 5));
+
+                          //     // Check if the URL has been updated
+                          //     if (filteredChannels[index].streamType != 'M3u8') {
+                          //       throw Exception('Failed to fetch YouTube URL');
+                          //     }
+                          //   }
+
                           try {
                             if (filteredChannels[index].streamType ==
                                 'YoutubeLive') {
-                              // Emit YouTube ID to the socket server
-                              socket.emit(
-                                  'youtubeId', filteredChannels[index].url);
-
-                              // Wait for the response (you might want to implement a timeout here)
-                              await Future.delayed(Duration(seconds: 5));
-
-                              // Check if the URL has been updated
-                              if (filteredChannels[index].streamType !=
-                                  'M3u8') {
-                                throw Exception('Failed to fetch YouTube URL');
+                              for (int i = 0; i < _maxRetries; i++) {
+                                try {
+                                  String updatedUrl =
+                                      await _socketService.getUpdatedUrl(
+                                          filteredChannels[index].url);
+                                  filteredChannels[index].url = updatedUrl;
+                                  filteredChannels[index].streamType = 'M3u8';
+                                  break;
+                                } catch (e) {
+                                  if (i == _maxRetries - 1) rethrow;
+                                  await Future.delayed(
+                                      Duration(seconds: _retryDelay));
+                                }
                               }
                             }
 

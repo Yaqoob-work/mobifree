@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -38,6 +39,8 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
   bool _wasPlayingBeforeDisconnection = false;
   bool _isConnected = true;
   bool _userPaused = false;
+  Timer? _connectivityCheckTimer;
+
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -50,6 +53,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeVideo();
+    _startConnectivityCheck();
     KeepScreenOn.turnOn();
     _startHideControlsTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -113,6 +117,8 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
       _controller.pause();
     }
     _controller.removeListener(_videoListener);
+    _connectivityCheckTimer?.cancel();
+
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
@@ -122,6 +128,36 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     backFocusNode.dispose();
     KeepScreenOn.turnOff();
     super.dispose();
+  }
+
+      void _startConnectivityCheck() {
+    _connectivityCheckTimer =
+        Timer.periodic(Duration(seconds: 5), (timer) async {
+      try {
+        final result = await InternetAddress.lookup('google.com');
+        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+          _updateConnectionStatus(true);
+        } else {
+          _updateConnectionStatus(false);
+        }
+      } on SocketException catch (_) {
+        _updateConnectionStatus(false);
+      }
+    });
+  }
+
+    void _updateConnectionStatus(bool isConnected) {
+    if (isConnected != _isConnected) {
+      setState(() {
+        _isConnected = isConnected;
+      });
+      if (!isConnected) {
+        _controller.pause();
+      } else if (_controller.value.isBuffering ||
+          !_controller.value.isPlaying) {
+        _controller.play();
+      }
+    }
   }
 
   @override
@@ -263,9 +299,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
                   right: 0,
                   child: Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Container(
+                        Container(
                           color: Colors.black.withOpacity(0.5),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
@@ -320,7 +354,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
                             ],
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),

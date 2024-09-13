@@ -8,36 +8,10 @@ import 'package:mobi_tv_entertainment/main.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../video_widget/video_movie_screen.dart';
 import '../video_widget/vlc_player_screen.dart';
+import '../services/socket_service.dart';
 
 void main() {
   runApp(VOD());
-}
-
-late IO.Socket socket;
-
-// Function to connect to socket
-void connectSocket() {
-  socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
-    'transports': ['websocket'],
-    'autoConnect': false,
-  });
-
-  socket.connect();
-  socket.on('connect', (_) {
-    print('Connected to socket server');
-  });
-
-  socket.on('videoUrl', (data) {
-    print('Received video URL: $data');
-    if (data['youtubeId'] != null && data['videoUrl'] != null) {
-      // Update the video URL here
-      // You might need to implement a way to find and update the correct video
-    }
-  });
-
-  socket.on('error', (error) {
-    print('Socket error: $error');
-  });
 }
 
 // Models
@@ -375,14 +349,7 @@ class _VODState extends State<VOD> {
   @override
   void initState() {
     super.initState();
-    connectSocket();
     _networksFuture = fetchNetworks();
-  }
-
-  @override
-  void dispose() {
-    socket.disconnect();
-    super.dispose();
   }
 
   @override
@@ -501,22 +468,44 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
-class DetailsPage extends StatelessWidget {
+
+
+class DetailsPage extends StatefulWidget {
   final ContentApi content;
 
   DetailsPage({required this.content});
 
   @override
+  State<DetailsPage> createState() => _DetailsPageState();
+}
+
+class _DetailsPageState extends State<DetailsPage> {
+  @override
   Widget build(BuildContext context) {
     bool _isNavigating = false;
     bool _isLoadingVideo = false;
+    final SocketService _socketService = SocketService();
+      int _maxRetries = 3;
+  int _retryDelay = 5; // seconds
+
+    @override
+    void initState() {
+      super.initState();
+      _socketService.initSocket();
+    }
+
+    @override
+    void dispose() {
+      _socketService.dispose();
+      super.dispose();
+    }
 
     return Scaffold(
       backgroundColor: cardColor,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: FutureBuilder<MovieDetailsApi>(
-          future: fetchMovieDetails(content.id),
+          future: fetchMovieDetails(widget.content.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(
@@ -589,7 +578,7 @@ class DetailsPage extends StatelessWidget {
                       itemCount: 1,
                       itemBuilder: (context, index) {
                         return FocusableGridItemContent(
-                          content: content,
+                          content: widget.content,
                           onTap: () async {
                             if (_isNavigating) return;
                             _isNavigating = true;
@@ -607,62 +596,64 @@ class DetailsPage extends StatelessWidget {
 
                             try {
                               final playLink =
-                                  await fetchMoviePlayLink(content.id);
+                                  await fetchMoviePlayLink(widget.content.id);
 
                               if (playLink['type'] == 'Youtube' ||
                                   playLink['type'] == 'YoutubeLive') {
-                                // Emit YouTube ID to the socket server
-                                socket.emit('youtubeId', playLink['url']);
-
-                                // Wait for the response (you might want to implement a timeout here)
-                                await Future.delayed(Duration(seconds: 5));
-
-                                // Check if the URL has been updated
-                                if (playLink['type'] != 'M3u8') {
-                                  throw Exception(
-                                      'Failed to fetch YouTube URL');
+                                for (int i = 0; i < _maxRetries; i++) {
+                                  try {
+                                    String updatedUrl = await _socketService
+                                        .getUpdatedUrl(playLink['url']!);
+                                    playLink['url'] = updatedUrl;
+                                    playLink['stream_type'] = 'M3u8';
+                                    break;
+                                  } catch (e) {
+                                    if (i == _maxRetries - 1) rethrow;
+                                    await Future.delayed(
+                                        Duration(seconds: _retryDelay));
+                                  }
                                 }
                               }
 
                               Navigator.of(context, rootNavigator: true).pop();
 
-                              if (playLink['type'] == 'VLC') {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => VlcPlayerScreen(
-                                      videoUrl: playLink['url']!,
-                                      videoTitle: movieDetails.name,
-                                      channelList: [],
-                                      onFabFocusChanged: (bool) {},
-                                      genres: movieDetails.genres,
-                                      channels: [],
-                                      initialIndex: 0,
-                                    ),
+                              // if (playLink['type'] == 'VLC') {
+                              //   Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //       builder: (context) => VlcPlayerScreen(
+                              //         videoUrl: playLink['url']!,
+                              //         videoTitle: movieDetails.name,
+                              //         channelList: [],
+                              //         onFabFocusChanged: (bool) {},
+                              //         genres: movieDetails.genres,
+                              //         channels: [],
+                              //         initialIndex: 0,
+                              //       ),
+                              //     ),
+                              //   ).then((_) {
+                              //     _isNavigating = false;
+                              //   });
+                              // } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VideoMovieScreen(
+                                    videoUrl: playLink['url']!,
+                                    videoTitle: movieDetails.name,
+                                    channelList: [],
+                                    videoBanner: movieDetails.banner,
+                                    onFabFocusChanged: (bool focused) {},
+                                    genres: movieDetails.genres,
+                                    videoType: playLink['type']!,
+                                    url: playLink['url']!,
+                                    type: playLink['type']!,
                                   ),
-                                ).then((_) {
-                                  _isNavigating = false;
-                                });
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => VideoMovieScreen(
-                                      videoUrl: playLink['url']!,
-                                      videoTitle: movieDetails.name,
-                                      channelList: [],
-                                      videoBanner: movieDetails.banner,
-                                      onFabFocusChanged: (bool focused) {},
-                                      genres: movieDetails.genres,
-                                      videoType: playLink['type']!,
-                                      url: playLink['url']!,
-                                      type: playLink['type']!,
-                                    ),
-                                  ),
-                                ).then((_) {
-                                  _isNavigating = false;
-                                });
-                              }
+                                ),
+                              ).then((_) {
+                                _isNavigating = false;
+                              });
+                              // }
                             } catch (e) {
                               Navigator.of(context, rootNavigator: true).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
