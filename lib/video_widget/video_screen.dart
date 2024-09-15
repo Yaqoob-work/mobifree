@@ -36,6 +36,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool _isBuffering = false;
   bool _isConnected =
       true; // This is a placeholder; handle connectivity manually.
+  bool _isVideoInitialized = false;
   Timer? _connectivityCheckTimer;
 
   final FocusNode screenFocusNode = FocusNode();
@@ -52,6 +53,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       ..initialize().then((_) {
         setState(() {
           _totalDuration = _controller.value.duration;
+          _isVideoInitialized = true;
         });
         _controller.play();
         _startPositionUpdater();
@@ -77,6 +79,14 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       if (state == AppLifecycleState.paused) {
         _controller.pause();
       } else if (state == AppLifecycleState.resumed) {
+        _controller.play();
+      }
+    }
+
+    @override
+    void didChangeDependencies() {
+      super.didChangeDependencies();
+      if (_isVideoInitialized && !_controller.value.isPlaying) {
         _controller.play();
       }
     }
@@ -183,123 +193,159 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Focus(
-        focusNode: screenFocusNode,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.select ||
-                event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
-              _togglePlayPause();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              // Handle rewind if needed
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              // Handle forward if needed
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              _resetHideControlsTimer();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              // Handle back navigation if needed
-              return KeyEventResult.handled;
+    return WillPopScope(
+      onWillPop: () async {
+        _controller.pause();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Focus(
+          focusNode: screenFocusNode,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent) {
+              if (event.logicalKey == LogicalKeyboardKey.select ||
+                  event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
+                _togglePlayPause();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                // Handle rewind if needed
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                // Handle forward if needed
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                  event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                _resetHideControlsTimer();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+                // Handle back navigation if needed
+                return KeyEventResult.handled;
+              }
             }
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onTap: _resetHideControlsTimer,
-          child: Stack(
-            children: [
-              Center(
-                child: _controller.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: VideoPlayer(_controller),
-                      )
-                    : SpinKitFadingCircle(
-                        color: borderColor,
-                        size: 50.0,
-                      ),
-              ),
-              if (_controlsVisible)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.black.withOpacity(0.5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Focus(
-                              focusNode: playPauseFocusNode,
-                              onFocusChange: (hasFocus) {
-                                setState(() {
-                                  // Change button color on focus
-                                });
-                              },
-                              child: IconButton(
-                                icon: Icon(
-                                  _controller.value.isPlaying
-                                      ? Icons.pause
-                                      : Icons.play_arrow,
-                                  color: Colors.white,
+            return KeyEventResult.ignored;
+          },
+          child: GestureDetector(
+            onTap: _resetHideControlsTimer,
+            child: Stack(
+              children: [
+                Center(
+                  child: _controller.value.isInitialized
+                      ? AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: screenwdt,
+                              height: screenhgt,
+                              child: VideoPlayer(_controller),
+                            ),
+                          ),
+                        )
+                      //  AspectRatio(
+                      //     aspectRatio: 16 / 9,
+                      //     child: VideoPlayer(_controller),
+                      //   )
+                      // LayoutBuilder(
+                      //     builder: (context, constraints) {
+                      //       final aspectRatio =
+                      //       _controller.value.aspectRatio;
+                      //       final videoWidth = constraints.maxWidth;
+                      //       final videoHeight = videoWidth / aspectRatio;
+
+                      //       return SizedBox(
+                      //         width: videoWidth,
+                      //         height: videoHeight > constraints.maxHeight
+                      //             ? constraints.maxHeight
+                      //             : videoHeight,
+                      //         child: AspectRatio(
+                      //           aspectRatio: aspectRatio,
+                      //           child: VideoPlayer(_controller),
+                      //         ),
+                      //       );
+                      //     },
+                      //   )
+                      : SpinKitFadingCircle(
+                          color: borderColor,
+                          size: 50.0,
+                        ),
+                ),
+                if (_controlsVisible)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Colors.black.withOpacity(0.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Focus(
+                                focusNode: playPauseFocusNode,
+                                onFocusChange: (hasFocus) {
+                                  setState(() {
+                                    // Change button color on focus
+                                  });
+                                },
+                                child: IconButton(
+                                  icon: Icon(
+                                    _controller.value.isPlaying
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: _togglePlayPause,
                                 ),
-                                onPressed: _togglePlayPause,
                               ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          flex: 15,
-                          child: Center(
-                            child: VideoProgressIndicator(
-                              _controller,
-                              allowScrubbing: true,
-                              colors: VideoProgressColors(
-                                  playedColor: borderColor,
-                                  bufferedColor: Colors.green,
-                                  backgroundColor: Colors.grey),
+                          Expanded(
+                            flex: 15,
+                            child: Center(
+                              child: VideoProgressIndicator(
+                                _controller,
+                                allowScrubbing: true,
+                                colors: VideoProgressColors(
+                                    playedColor: borderColor,
+                                    bufferedColor: Colors.green,
+                                    backgroundColor: Colors.yellow),
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 20),
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.circle,
-                                  color: Colors.red,
-                                  size: 15,
-                                ),
-                                SizedBox(width: 5),
-                                Text(
-                                  'Live',
-                                  style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
+                          SizedBox(width: 20),
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.circle,
+                                    color: Colors.red,
+                                    size: 15,
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Live',
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(width: 20),
-                      ],
+                          SizedBox(width: 20),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

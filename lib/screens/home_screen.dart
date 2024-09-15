@@ -62,11 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       } else {
         // Handle errors or non-200 responses
-        print('Failed to load settings');
+        print('Something Went Wrong');
       }
     } catch (e) {
       // Handle network errors or JSON parsing errors
-      print('Error: $e');
+      print('Something Went Wrong');
     }
 
     setState(() {

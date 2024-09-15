@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -5,9 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+// import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../video_widget/video_movie_screen.dart';
-import '../video_widget/vlc_player_screen.dart';
+// import '../video_widget/vlc_player_screen.dart';
 import '../services/socket_service.dart';
 
 void main() {
@@ -51,6 +52,32 @@ class ContentApi {
   }
 }
 
+// class ContentApi {
+//   final int id;
+//   final String name;
+//   final String banner;
+//   final String type;  // यह फील्ड जोड़ा गया
+//   final String url;   // यह फील्ड जोड़ा गया
+
+//   ContentApi({
+//     required this.id,
+//     required this.name,
+//     required this.banner,
+//     required this.type,  // यह पैरामीटर जोड़ा गया
+//     required this.url    // यह पैरामीटर जोड़ा गया
+//   });
+
+//   factory ContentApi.fromJson(Map<String, dynamic> json) {
+//     return ContentApi(
+//       id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
+//       name: json['name'] ?? 'No Name',
+//       banner: json['banner'] ?? localImage,
+//       type: json['type'] ?? '',  // यह फील्ड जोड़ा गया
+//       url: json['url'] ?? '',    // यह फील्ड जोड़ा गया
+//     );
+//   }
+// }
+
 class MovieDetailsApi {
   final int id;
   final String name;
@@ -82,6 +109,27 @@ class MovieDetailsApi {
   }
 }
 
+// Future<bool> isYoutubeVideoValid(String videoId) async {
+//   final apiKey = 'YOUR_YOUTUBE_API_KEY'; // अपनी YouTube API key यहाँ डालें
+//   final url = 'https://www.googleapis.com/youtube/v3/videos?part=status&id=$videoId&key=$apiKey';
+
+//   try {
+//     final response = await https.get(Uri.parse(url));
+//     if (response.statusCode == 200) {
+//       final data = json.decode(response.body);
+//       final items = data['items'] as List;
+//       if (items.isNotEmpty) {
+//         final status = items[0]['status']['uploadStatus'];
+//         return status == 'processed';
+//       }
+//     }
+//     return false;
+//   } catch (e) {
+//     print('Error checking YouTube video: $e');
+//     return false;
+//   }
+// }
+
 // Fetch Functions
 Future<List<NetworkApi>> fetchNetworks() async {
   final response = await https.get(
@@ -93,7 +141,7 @@ Future<List<NetworkApi>> fetchNetworks() async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
   } else {
-    throw Exception('Failed to load networks');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -108,9 +156,39 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
   } else {
-    throw Exception('Failed to load content');
+    throw Exception('Something Went Wrong');
   }
 }
+
+// Future<List<ContentApi>> fetchContent(int networkId) async {
+//   final response = await https.get(
+//     Uri.parse('https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+//     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//   );
+
+//   if (response.statusCode == 200) {
+//     List<dynamic> body = json.decode(response.body);
+//     List<ContentApi> contentList = [];
+
+//     for (var item in body) {
+//       ContentApi content = ContentApi.fromJson(item);
+
+//       if (content.type == 'Youtube' || content.type == 'YoutubeLive') {
+//         String videoId = content.url.split('v=').last;
+//         bool isValid = await isYoutubeVideoValid(videoId);
+//         if (isValid) {
+//           contentList.add(content);
+//         }
+//       } else {
+//         contentList.add(content);
+//       }
+//     }
+
+//     return contentList;
+//   } else {
+//     throw Exception('Failed to load content');
+//   }
+// }
 
 Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
   final response = await https.get(
@@ -122,7 +200,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
     final Map<String, dynamic> body = json.decode(response.body);
     return MovieDetailsApi.fromJson(body);
   } else {
-    throw Exception('Failed to load movie details');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -140,7 +218,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     }
     return {'url': '', 'type': ''};
   } else {
-    throw Exception('Failed to load movie play link');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -367,9 +445,9 @@ class _VODState extends State<VOD> {
               ),
             );
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Something Went Wrong'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No Networks Available'));
+            return Center(child: Text('Something Went Wrong'));
           } else {
             final networks = snapshot.data!;
             return GridView.builder(
@@ -434,9 +512,9 @@ class _ContentScreenState extends State<ContentScreen> {
               ),
             );
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Something Went Wrong'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No Content Available'));
+            return Center(child: Text('Something Went Wrong'));
           } else {
             final content = snapshot.data!;
             return GridView.builder(
@@ -468,8 +546,6 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
-
-
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
 
@@ -485,8 +561,8 @@ class _DetailsPageState extends State<DetailsPage> {
     bool _isNavigating = false;
     bool _isLoadingVideo = false;
     final SocketService _socketService = SocketService();
-      int _maxRetries = 3;
-  int _retryDelay = 5; // seconds
+    int _maxRetries = 3;
+    int _retryDelay = 5; // seconds
 
     @override
     void initState() {
@@ -582,22 +658,39 @@ class _DetailsPageState extends State<DetailsPage> {
                           onTap: () async {
                             if (_isNavigating) return;
                             _isNavigating = true;
-                            _isLoadingVideo = true;
+                            // _isLoadingVideo = true;
+
+                            // Set a timeout to reset _isNavigating after 10 seconds
+                            Timer(Duration(seconds: 10), () {
+                              _isNavigating = false;
+                            });
+
+                            bool shouldPop = true;
+                            bool shouldPlayVideo = true;
 
                             showDialog(
                               context: context,
                               barrierDismissible: false,
-                              builder: (context) => Center(
-                                  child: SpinKitFadingCircle(
-                                color: borderColor,
-                                size: 50.0,
-                              )),
+                              builder: (BuildContext context) {
+                                return WillPopScope(
+                                  onWillPop: () async {
+                                    shouldPlayVideo = false;
+                                    shouldPop = false;
+                                    return true;
+                                  },
+                                  child: Center(
+                                    child: SpinKitFadingCircle(
+                                      color: borderColor,
+                                      size: 50.0,
+                                    ),
+                                  ),
+                                );
+                              },
                             );
 
                             try {
                               final playLink =
                                   await fetchMoviePlayLink(widget.content.id);
-
                               if (playLink['type'] == 'Youtube' ||
                                   playLink['type'] == 'YoutubeLive') {
                                 for (int i = 0; i < _maxRetries; i++) {
@@ -614,47 +707,57 @@ class _DetailsPageState extends State<DetailsPage> {
                                   }
                                 }
                               }
+                              if (shouldPop) {
+                                Navigator.of(context)
+                                    .pop(); // Dismiss the loading indicator
+                              }
 
-                              Navigator.of(context, rootNavigator: true).pop();
+                              // Navigator.of(context, rootNavigator: true).pop();
+                              if (shouldPlayVideo) {
+                                // if (playLink['type'] == 'VLC') {
+                                //   Navigator.push(
+                                //     context,
+                                //     MaterialPageRoute(
+                                //       builder: (context) => VlcPlayerScreen(
+                                //         videoUrl: playLink['url']!,
+                                //         videoTitle: movieDetails.name,
+                                //         channelList: [],
+                                //         onFabFocusChanged: (bool) {},
+                                //         genres: movieDetails.genres,
+                                //         channels: [],
+                                //         initialIndex: 0,
+                                //       ),
+                                //     ),
+                                //   ).then((_) {
+                                //     _isNavigating = false;
+                                //   });
+                                // } else {
 
-                              // if (playLink['type'] == 'VLC') {
-                              //   Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //       builder: (context) => VlcPlayerScreen(
-                              //         videoUrl: playLink['url']!,
-                              //         videoTitle: movieDetails.name,
-                              //         channelList: [],
-                              //         onFabFocusChanged: (bool) {},
-                              //         genres: movieDetails.genres,
-                              //         channels: [],
-                              //         initialIndex: 0,
-                              //       ),
-                              //     ),
-                              //   ).then((_) {
-                              //     _isNavigating = false;
-                              //   });
-                              // } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => VideoMovieScreen(
-                                    videoUrl: playLink['url']!,
-                                    videoTitle: movieDetails.name,
-                                    channelList: [],
-                                    videoBanner: movieDetails.banner,
-                                    onFabFocusChanged: (bool focused) {},
-                                    genres: movieDetails.genres,
-                                    videoType: playLink['type']!,
-                                    url: playLink['url']!,
-                                    type: playLink['type']!,
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VideoMovieScreen(
+                                      videoUrl: playLink['url']!,
+                                      videoTitle: movieDetails.name,
+                                      channelList: [],
+                                      videoBanner: movieDetails.banner,
+                                      onFabFocusChanged: (bool focused) {},
+                                      genres: movieDetails.genres,
+                                      videoType: playLink['type']!,
+                                      url: playLink['url']!,
+                                      type: playLink['type']!,
+                                    ),
                                   ),
-                                ),
-                              ).then((_) {
-                                _isNavigating = false;
-                              });
+                                ).then((_) {
+                                  _isNavigating = false;
+                                });
+                              }
                               // }
                             } catch (e) {
+                              if (shouldPop) {
+                                Navigator.of(context)
+                                    .pop(); // Dismiss the loading indicator
+                              }
                               Navigator.of(context, rootNavigator: true).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -664,6 +767,8 @@ class _DetailsPageState extends State<DetailsPage> {
                                   ),
                                 ),
                               );
+                            } finally {
+                              _isNavigating = false;
                             }
                           },
                         );

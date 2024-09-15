@@ -90,8 +90,8 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                 title,
                 style: TextStyle(
                   color: focusNode.hasFocus
-                      ? Color.fromARGB(255, 247, 6, 118)
-                      : Colors.white,
+                      ? borderColor
+                      : hintColor,
                   fontSize: screenwdt*0.015,
                   fontWeight: FontWeight.bold,
                 ),

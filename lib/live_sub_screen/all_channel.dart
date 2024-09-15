@@ -57,11 +57,11 @@ class _AllChannelState extends State<AllChannel> {
         fetchEntertainment();
       } else {
         throw Exception(
-            'Failed to load settings, status code: ${response.statusCode}');
+            'Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchSettings: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
     }
@@ -96,11 +96,11 @@ class _AllChannelState extends State<AllChannel> {
         });
       } else {
         throw Exception(
-            'Failed to load entertainment data, status code: ${response.statusCode}');
+            'Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchEntertainment: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
     }
@@ -126,7 +126,7 @@ class _AllChannelState extends State<AllChannel> {
                 )
               : entertainmentList.isEmpty
                   ? Center(
-                      child: Text('No Channels Available',
+                      child: Text('Something Went Wrong',
                           style: TextStyle(color: hintColor)))
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
@@ -214,18 +214,44 @@ class _AllChannelState extends State<AllChannel> {
     );
   }
 
+ 
   void _navigateToVideoScreen(
       BuildContext context, dynamic entertainmentItem) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    _showLoadingIndicator(context);
+    // Set a timeout to reset _isNavigating after 10 seconds
+    Timer(Duration(seconds: 10), () {
+      _isNavigating = false;
+    });
+
+    bool shouldPop = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            shouldPop = false;
+            return true;
+          },
+          child: Center(
+            child: SpinKitFadingCircle(
+              color: borderColor,
+              size: 50.0,
+            ),
+          ),
+        );
+      },
+    );
 
     try {
       if (entertainmentItem['stream_type'] == 'YoutubeLive') {
         for (int i = 0; i < _maxRetries; i++) {
           try {
-            String updatedUrl = await _socketService.getUpdatedUrl(entertainmentItem['url']);
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(entertainmentItem['url']);
             entertainmentItem['url'] = updatedUrl;
             entertainmentItem['stream_type'] = 'M3u8';
             break;
@@ -236,51 +262,34 @@ class _AllChannelState extends State<AllChannel> {
         }
       }
 
-      Navigator.push(
+      if (shouldPop) {
+        Navigator.of(context).pop(); // Dismiss the loading indicator
+      }
+
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VideoScreen(
-            videoUrl: entertainmentItem['url'],
-            videoTitle: entertainmentItem['name'],
-            channelList: entertainmentList,
-            onFabFocusChanged: (bool) {},
-            genres: '',
-            channels: [],
-            initialIndex: 1,
+            videoUrl: entertainmentItem['url'], 
+            videoTitle: '', channelList: [], onFabFocusChanged: (bool ) {  }, 
+            genres: '', channels: [], initialIndex: 1, 
           ),
         ),
-      ).then((_) {
-        _isNavigating = false;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
-    } catch (e) {
-      _isNavigating = false;
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Link Error: $e')),
       );
+    } catch (e) {
+      if (shouldPop) {
+        Navigator.of(context).pop(); // Dismiss the loading indicator
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      _isNavigating = false;
     }
   }
-
-  void _showLoadingIndicator(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: SpinKitFadingCircle(
-            color: borderColor,
-            size: 50.0,
-          ),
-        );
-      },
-    );
-  }
-
-  @override
+    @override
   void dispose() {
     _socketService.dispose();
     super.dispose();
   }
 }
-

@@ -36,7 +36,7 @@ class SocketService {
 
     socket.on('disconnect', (_) {
       print('Disconnected from socket server');
-      Future.delayed(Duration(seconds: 5), () {
+      Future.delayed(Duration(seconds: 1), () {
         if (!socket.connected) {
           initSocket(); // Attempt to reconnect
         }
@@ -59,8 +59,8 @@ class SocketService {
 
     try {
       return await _pendingUrlUpdates[originalUrl]!.future.timeout(
-        Duration(seconds: 60),
-        onTimeout: () => throw TimeoutException('Failed to get YouTube URL: Timeout'),
+        Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException('Timeout'),
       );
     } catch (e) {
       _pendingUrlUpdates.remove(originalUrl);
@@ -77,7 +77,7 @@ class SocketService {
     socket.emit('youtubeId', originalUrl);
 
     // Set a timeout timer
-    Timer(Duration(seconds: 20), () {
+    Timer(Duration(seconds: 5), () {
       if (_pendingUrlUpdates.containsKey(originalUrl) &&
           !_pendingUrlUpdates[originalUrl]!.isCompleted) {
         if (retryCount < 3) {
@@ -96,3 +96,5 @@ class SocketService {
     socket.disconnect();
   }
 }
+
+

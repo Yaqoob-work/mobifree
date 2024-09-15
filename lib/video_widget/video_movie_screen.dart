@@ -12,23 +12,23 @@ class VideoMovieScreen extends StatefulWidget {
   final String videoTitle;
   final List<dynamic> channelList;
 
-  VideoMovieScreen({
-    required this.videoUrl,
-    required this.videoTitle,
-    required this.channelList,
-    required String videoBanner,
-    required Null Function(bool focused) onFabFocusChanged,
-    required String genres,
-    required String videoType,
-    required String url,
-    required String type
-  });
+  VideoMovieScreen(
+      {required this.videoUrl,
+      required this.videoTitle,
+      required this.channelList,
+      required String videoBanner,
+      required Null Function(bool focused) onFabFocusChanged,
+      required String genres,
+      required String videoType,
+      required String url,
+      required String type});
 
   @override
   _VideoMovieScreenState createState() => _VideoMovieScreenState();
 }
 
-class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBindingObserver {
+class _VideoMovieScreenState extends State<VideoMovieScreen>
+    with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
@@ -40,7 +40,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
   bool _isConnected = true;
   bool _userPaused = false;
   Timer? _connectivityCheckTimer;
-
+  bool _isVideoInitialized = false;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -66,13 +66,14 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     try {
       await _controller.initialize();
       setState(() {
+        _isVideoInitialized = true;
         _totalDuration = _controller.value.duration;
       });
       _controller.play();
       _startPositionUpdater();
       _controller.addListener(_videoListener);
     } catch (error) {
-      print('Net error: $error');
+      print('Something Went Wrong');
       _handleNetworkError();
     }
   }
@@ -97,6 +98,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
       await _controller.initialize();
       await _controller.seekTo(currentPosition);
       setState(() {
+        
         _totalDuration = _controller.value.duration;
         _currentPosition = currentPosition;
       });
@@ -105,7 +107,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
       }
       _controller.addListener(_videoListener);
     } catch (error) {
-      print('Error reinitializing video: $error');
+      print('Something Went Wrong');
       _handleNetworkError();
     }
   }
@@ -130,7 +132,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     super.dispose();
   }
 
-      void _startConnectivityCheck() {
+  void _startConnectivityCheck() {
     _connectivityCheckTimer =
         Timer.periodic(Duration(seconds: 5), (timer) async {
       try {
@@ -146,7 +148,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     });
   }
 
-    void _updateConnectionStatus(bool isConnected) {
+  void _updateConnectionStatus(bool isConnected) {
     if (isConnected != _isConnected) {
       setState(() {
         _isConnected = isConnected;
@@ -173,6 +175,15 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     }
   }
 
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isVideoInitialized && !_controller.value.isPlaying) {
+      _controller.play();
+    }
+  }
+
   void _videoListener() {
     setState(() {
       _isBuffering = _controller.value.isBuffering;
@@ -182,7 +193,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
     });
 
     if (_controller.value.hasError) {
-      print('Video error: ${_controller.value.errorDescription}');
+      print('Something Went Wrong');
       _handleNetworkError();
     }
   }
@@ -249,56 +260,107 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Focus(
-        focusNode: screenFocusNode,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.select ||
-                event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
-              _togglePlayPause();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              _onRewind();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              _onForward();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              _resetHideControlsTimer();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              _navigateBack();
-              return KeyEventResult.handled;
+    return WillPopScope(
+      onWillPop: () async {
+        _controller.pause();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Focus(
+          focusNode: screenFocusNode,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent) {
+              if (event.logicalKey == LogicalKeyboardKey.select ||
+                  event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
+                _togglePlayPause();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                _onRewind();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                _onForward();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                  event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                _resetHideControlsTimer();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+                _navigateBack();
+                return KeyEventResult.handled;
+              }
             }
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onTap: _resetHideControlsTimer,
-          child: Stack(
-            children: [
-              Center(
-                child: _controller.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: VideoPlayer(_controller),
-                      )
-                    : SpinKitFadingCircle(
-                        color: borderColor,
-                        size: 50.0,
-                      ),
-              ),
-              if (_controlsVisible)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    children: [
+            return KeyEventResult.ignored;
+          },
+          child: GestureDetector(
+            onTap: _resetHideControlsTimer,
+            child: Stack(
+              children: [
+                Center(
+                  child: _controller.value.isInitialized
+                      ? AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: screenwdt,
+                              height: screenhgt,
+                              child: VideoPlayer(_controller),
+                            ),
+                          ),
+                        )
+                      // AspectRatio(
+                      //     aspectRatio: 16 / 9, // Fixed aspect ratio
+                      //     child: FittedBox(
+                      //       fit: widget.videoUrl.contains('youtube')
+                      //           ? BoxFit.cover
+                      //           : BoxFit.contain,
+                      //       child: SizedBox(
+                      //         width: _controller.value.size.width,
+                      //         height: _controller.value.size.height,
+                      //         child: VideoPlayer(_controller),
+                      //       ),
+                      //     ),
+                      //   )
+                      : SpinKitFadingCircle(
+                          color: borderColor,
+                          size: 50.0,
+                        ),
+                  // AspectRatio(
+                  //     aspectRatio: 16 / 9,
+                  //     child: VideoPlayer(_controller),
+                  //   )
+                  //       LayoutBuilder(
+                  //           builder: (context, constraints) {
+                  //             final aspectRatio = _controller.value.aspectRatio;
+                  //             final videoWidth = constraints.maxWidth;
+                  //             final videoHeight = videoWidth / aspectRatio;
+      
+                  //             return SizedBox(
+                  //               width: videoWidth,
+                  //               height: videoHeight > constraints.maxHeight
+                  //                   ? constraints.maxHeight
+                  //                   : videoHeight,
+                  //               child: AspectRatio(
+                  //                 aspectRatio: aspectRatio,
+                  //                 child: VideoPlayer(_controller),
+                  //               ),
+                  //             );
+                  //           },
+                  //         )
+                  //       : SpinKitFadingCircle(
+                  //           color: borderColor,
+                  //           size: 50.0,
+                  //         ),
+                ),
+                if (_controlsVisible)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
                         Container(
                           color: Colors.black.withOpacity(0.5),
                           child: Row(
@@ -354,10 +416,11 @@ class _VideoMovieScreenState extends State<VideoMovieScreen> with WidgetsBinding
                             ],
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

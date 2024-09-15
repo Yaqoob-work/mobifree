@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -5,41 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+// import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/socket_service.dart';
 import '../video_widget/video_movie_screen.dart';
-import '../video_widget/vlc_player_screen.dart';
+// import '../video_widget/vlc_player_screen.dart';
 
 void main() {
   runApp(SubVod());
-}
-
-
-late IO.Socket socket;
-
-// Function to connect to socket
-void connectSocket() {
-  socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
-    'transports': ['websocket'],
-    'autoConnect': false,
-  });
-
-  socket.connect();
-  socket.on('connect', (_) {
-    print('Connected to socket server');
-  });
-
-  socket.on('videoUrl', (data) {
-    print('Received video URL: $data');
-    if (data['youtubeId'] != null && data['videoUrl'] != null) {
-      // Update the video URL here
-      // You might need to implement a way to find and update the correct video
-    }
-  });
-
-  socket.on('error', (error) {
-    print('Socket error: $error');
-  });
 }
 
 
@@ -122,7 +95,7 @@ Future<List<NetworkApi>> fetchNetworks() async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
   } else {
-    throw Exception('Failed to load networks');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -137,7 +110,7 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
   } else {
-    throw Exception('Failed to load content');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -151,7 +124,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
     final Map<String, dynamic> body = json.decode(response.body);
     return MovieDetailsApi.fromJson(body);
   } else {
-    throw Exception('Failed to load movie details');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -169,7 +142,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     }
     return {'url': '', 'type': ''};
   } else {
-    throw Exception('Failed to load movie play link');
+    throw Exception('Something Went Wrong');
   }
 }
 
@@ -439,9 +412,9 @@ class _SubVodState extends State<SubVod> {
                     size: 50.0,
                   ));
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(child: Text('Something Went Wrong'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No Networks Available'));
+                  return Center(child: Text('Something Went Wrong'));
                 } else {
                   final networks = snapshot.data!;
                   return ListView.builder(
@@ -504,9 +477,9 @@ class _ContentScreenState extends State<ContentScreen> {
               size: 50.0,
             ));
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Something Went Wrong'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No Content Available'));
+            return Center(child: Text('Something Went Wrong'));
           } else {
             final content = snapshot.data!;
             return GridView.builder(
@@ -556,8 +529,8 @@ class _DetailsPageState extends State<DetailsPage> {
     bool _isNavigating = false;
     bool _isLoadingVideo = false;
     final SocketService _socketService = SocketService();
-      int _maxRetries = 3;
-  int _retryDelay = 5; // seconds
+    int _maxRetries = 3;
+    int _retryDelay = 5; // seconds
 
     @override
     void initState() {
@@ -655,14 +628,30 @@ class _DetailsPageState extends State<DetailsPage> {
                             _isNavigating = true;
                             _isLoadingVideo = true;
 
+                            // Set a timeout to reset _isNavigating after 10 seconds
+                            Timer(Duration(seconds: 10), () {
+                              _isNavigating = false;
+                            });
+
+                            bool shouldPop = true;
+
                             showDialog(
                               context: context,
                               barrierDismissible: false,
-                              builder: (context) => Center(
-                                  child: SpinKitFadingCircle(
-                                color: borderColor,
-                                size: 50.0,
-                              )),
+                              builder: (BuildContext context) {
+                                return WillPopScope(
+                                  onWillPop: () async {
+                                    shouldPop = false;
+                                    return true;
+                                  },
+                                  child: Center(
+                                    child: SpinKitFadingCircle(
+                                      color: borderColor,
+                                      size: 50.0,
+                                    ),
+                                  ),
+                                );
+                              },
                             );
 
                             try {
@@ -685,8 +674,12 @@ class _DetailsPageState extends State<DetailsPage> {
                                   }
                                 }
                               }
+                              if (shouldPop) {
+                                Navigator.of(context)
+                                    .pop(); // Dismiss the loading indicator
+                              }
 
-                              Navigator.of(context, rootNavigator: true).pop();
+                              // Navigator.of(context, rootNavigator: true).pop();
 
                               // if (playLink['type'] == 'VLC') {
                               //   Navigator.push(
@@ -726,6 +719,10 @@ class _DetailsPageState extends State<DetailsPage> {
                               });
                               // }
                             } catch (e) {
+                              if (shouldPop) {
+                                Navigator.of(context)
+                                    .pop(); // Dismiss the loading indicator
+                              }
                               Navigator.of(context, rootNavigator: true).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -735,6 +732,8 @@ class _DetailsPageState extends State<DetailsPage> {
                                   ),
                                 ),
                               );
+                            } finally {
+                              _isNavigating = false;
                             }
                           },
                         );

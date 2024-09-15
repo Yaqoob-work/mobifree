@@ -1,11 +1,10 @@
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+// import 'package:mobi_tv_entertainment/live_sub_screen/video_screen.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/socket_service.dart';
@@ -56,18 +55,17 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
 
         fetchEntertainment();
       } else {
-        throw Exception(
-            'Failed to load settings, status code: ${response.statusCode}');
+        throw Exception('Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchSettings: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
     }
   }
 
-    Future<void> fetchEntertainment() async {
+  Future<void> fetchEntertainment() async {
     try {
       final response = await https.get(
         Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
@@ -86,8 +84,8 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
             String channelStatus = channel['status'].toString();
 
             return channelGenres.contains('Religious') &&
-                   channelStatus == "1" &&
-                   (tvenableAll || allowedChannelIds.contains(channelId));
+                channelStatus == "1" &&
+                (tvenableAll || allowedChannelIds.contains(channelId));
           }).map((channel) {
             channel['isFocused'] = false;
             return channel;
@@ -95,12 +93,11 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
           isLoading = false;
         });
       } else {
-        throw Exception(
-            'Failed to load entertainment data, status code: ${response.statusCode}');
+        throw Exception('Something Went Wrong');
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error in fetchEntertainment: $e';
+        errorMessage = 'Something Went Wrong';
         isLoading = false;
       });
     }
@@ -126,7 +123,7 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
                 )
               : entertainmentList.isEmpty
                   ? Center(
-                      child: Text('No Channels Available',
+                      child: Text('Something Went Wrong',
                           style: TextStyle(color: hintColor)))
                   : Padding(
                       padding: const EdgeInsets.all(10.0),
@@ -214,18 +211,125 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
     );
   }
 
+//   void _navigateToVideoScreen(
+//       BuildContext context, dynamic entertainmentItem) async {
+//     if (_isNavigating) return;
+//     _isNavigating = true;
+
+//     // Set a timeout to reset _isNavigating after 10 seconds
+//     Timer(Duration(seconds: 10), () {
+//       _isNavigating = false;
+//     });
+
+//     bool shouldPop = true;
+
+//     showDialog(
+//       context: context,
+//       barrierDismissible: false,
+//       builder: (BuildContext context) {
+//         return WillPopScope(
+//           onWillPop: () async {
+//             shouldPop = false;
+//             return true;
+//           },
+//           child: Center(
+//             child: SpinKitFadingCircle(
+//               color: borderColor,
+//               size: 50.0,
+//             ),
+//           ),
+//         );
+//       },
+//     );
+
+//     try {
+//       if (entertainmentItem['stream_type'] == 'YoutubeLive') {
+//         for (int i = 0; i < _maxRetries; i++) {
+//           try {
+//             String updatedUrl =
+//                 await _socketService.getUpdatedUrl(entertainmentItem['url']);
+//             entertainmentItem['url'] = updatedUrl;
+//             entertainmentItem['stream_type'] = 'M3u8';
+//             break;
+//           } catch (e) {
+//             if (i == _maxRetries - 1) rethrow;
+//             await Future.delayed(Duration(seconds: _retryDelay));
+//           }
+//         }
+//       }
+
+//       if (shouldPop) {
+//         Navigator.of(context).pop(); // Dismiss the loading indicator
+//       }
+
+//       await Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) =>  VideoScreen(
+//             videoUrl: entertainmentItem['url'],
+//             videoTitle: '', channelList: [], onFabFocusChanged: (bool ) {  },
+//             genres: '', channels: [], initialIndex: 1,
+
+//           ),
+//         ),
+//       );
+//     } catch (e) {
+//       if (shouldPop) {
+//         Navigator.of(context).pop(); // Dismiss the loading indicator
+//       }
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Something Went Wrong')),
+//       );
+//     } finally {
+//       _isNavigating = false;
+//     }
+//   }
+//     @override
+//   void dispose() {
+//     _socketService.dispose();
+//     super.dispose();
+//   }
+// }
+
   void _navigateToVideoScreen(
       BuildContext context, dynamic entertainmentItem) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    _showLoadingIndicator(context);
+    bool shouldPlayVideo = true;
+    bool shouldPop = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            shouldPlayVideo = false;
+            shouldPop = false;
+            return true;
+          },
+          child: Center(
+            child: SpinKitFadingCircle(
+              color: borderColor,
+              size: 50.0,
+            ),
+          ),
+        );
+      },
+    );
+
+    // Set a timeout to reset _isNavigating after 10 seconds
+    Timer(Duration(seconds: 5), () {
+      _isNavigating = false;
+    });
 
     try {
       if (entertainmentItem['stream_type'] == 'YoutubeLive') {
         for (int i = 0; i < _maxRetries; i++) {
           try {
-            String updatedUrl = await _socketService.getUpdatedUrl(entertainmentItem['url']);
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(entertainmentItem['url']);
             entertainmentItem['url'] = updatedUrl;
             entertainmentItem['stream_type'] = 'M3u8';
             break;
@@ -236,51 +340,35 @@ class _ReligiousScreenState extends State<ReligiousScreen> {
         }
       }
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoScreen(
-            videoUrl: entertainmentItem['url'],
-            videoTitle: entertainmentItem['name'],
-            channelList: entertainmentList,
-            onFabFocusChanged: (bool) {},
-            genres: '',
-            channels: [],
-            initialIndex: 1,
-          ),
-        ),
-      ).then((_) {
-        _isNavigating = false;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
-    } catch (e) {
-      _isNavigating = false;
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Link Error: $e')),
-      );
-    }
-  }
+      if (shouldPop) {
+        Navigator.of(context).pop(); // Dismiss the loading indicator
+      }
 
-  void _showLoadingIndicator(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: SpinKitFadingCircle(
-            color: borderColor,
-            size: 50.0,
+      if (shouldPlayVideo) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: entertainmentItem['url'],
+              videoTitle: '',
+              channelList: [],
+              onFabFocusChanged: (bool) {},
+              genres: '',
+              channels: [],
+              initialIndex: 1,
+            ),
           ),
         );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _socketService.dispose();
-    super.dispose();
+      }
+    } catch (e) {
+      if (shouldPop) {
+        Navigator.of(context).pop(); // Dismiss the loading indicator
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      _isNavigating = false;
+    }
   }
 }
-

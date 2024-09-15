@@ -56,10 +56,10 @@ class _LiveScreenState extends State<LiveScreen> {
           _tvenableAll = data['tvenableAll'] == 1;
         });
       } else {
-        print('Failed to load settings');
+        print('Something Went Wrong');
       }
     } catch (e) {
-      print('Error: $e');
+      print('Something Went Wrong');
     }
   }
 
