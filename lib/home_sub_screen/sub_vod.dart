@@ -1,20 +1,14 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
-// import 'package:socket_io_client/socket_io_client.dart' as IO;
-import '../services/socket_service.dart';
 import '../video_widget/video_movie_screen.dart';
-// import '../video_widget/vlc_player_screen.dart';
 
 void main() {
   runApp(SubVod());
 }
-
 
 // Models
 class NetworkApi {
@@ -26,9 +20,7 @@ class NetworkApi {
 
   factory NetworkApi.fromJson(Map<String, dynamic> json) {
     return NetworkApi(
-      id: json['id'] is int
-          ? json['id'] as int
-          : int.parse(json['id'].toString()),
+      id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       logo: json['logo'] ?? localImage,
     );
@@ -44,9 +36,7 @@ class ContentApi {
 
   factory ContentApi.fromJson(Map<String, dynamic> json) {
     return ContentApi(
-      id: json['id'] is int
-          ? json['id'] as int
-          : int.parse(json['id'].toString()),
+      id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       banner: json['banner'] ?? localImage,
     );
@@ -72,9 +62,7 @@ class MovieDetailsApi {
 
   factory MovieDetailsApi.fromJson(Map<String, dynamic> json) {
     return MovieDetailsApi(
-      id: json['id'] is int
-          ? json['id'] as int
-          : int.parse(json['id'].toString()),
+      id: json['id'] is int ? json['id'] as int : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       banner: json['banner'] ?? localImage,
       poster: json['poster'] ?? localImage,
@@ -95,14 +83,13 @@ Future<List<NetworkApi>> fetchNetworks() async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
   } else {
-    throw Exception('Something Went Wrong');
+    throw Exception('Failed to load networks');
   }
 }
 
 Future<List<ContentApi>> fetchContent(int networkId) async {
   final response = await https.get(
-    Uri.parse(
-        'https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+    Uri.parse('https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
@@ -110,7 +97,7 @@ Future<List<ContentApi>> fetchContent(int networkId) async {
     List<dynamic> body = json.decode(response.body);
     return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
   } else {
-    throw Exception('Something Went Wrong');
+    throw Exception('Failed to load content');
   }
 }
 
@@ -124,7 +111,7 @@ Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
     final Map<String, dynamic> body = json.decode(response.body);
     return MovieDetailsApi.fromJson(body);
   } else {
-    throw Exception('Something Went Wrong');
+    throw Exception('Failed to load movie details');
   }
 }
 
@@ -142,7 +129,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     }
     return {'url': '', 'type': ''};
   } else {
-    throw Exception('Something Went Wrong');
+    throw Exception('Failed to load movie play link');
   }
 }
 
@@ -173,7 +160,6 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
     _focusNode.dispose();
     super.dispose();
   }
-
 // first page************************************
   @override
   Widget build(BuildContext context) {
@@ -195,13 +181,13 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.only(left: screenwdt * 0.015),
+              padding: EdgeInsets.only(left: screenwdt*0.015),
               child: AnimatedContainer(
                 width:
-                    // _focusNode.hasFocus ? screenwdt * 0.35 :
+                    // _focusNode.hasFocus ? screenwdt * 0.35 : 
                     screenwdt * 0.15,
                 height:
-                    // _focusNode.hasFocus ? screenhgt * 0.23 :
+                    // _focusNode.hasFocus ? screenhgt * 0.23 : 
                     screenhgt * 0.2,
                 duration: const Duration(milliseconds: 3),
                 decoration: BoxDecoration(
@@ -218,38 +204,43 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     placeholder: (context, url) => localImage,
                     fit: BoxFit.cover,
                     width:
-                        //  _focusNode.hasFocus? screenwdt * 0.35:
+                    //  _focusNode.hasFocus? screenwdt * 0.35:
                         screenwdt * 0.15,
-                    height:
-                        // _focusNode.hasFocus? screenhgt * 0.23:
+                    height: 
+                    // _focusNode.hasFocus? screenhgt * 0.23:
                         screenhgt * 0.2,
                   ),
                 ),
+                
               ),
+              
             ),
-            Container(
-              width:
-                  //  _focusNode.hasFocus ? screenwdt * 0.33 :
-                  screenwdt * 0.13,
-              child: Center(
-                child: Text(
-                  widget.network.name,
-                  style: TextStyle(
-                    color: _focusNode.hasFocus ? highlightColor : Colors.white,
-                    fontSize: 15,
+             Container(
+                width:
+                //  _focusNode.hasFocus ? screenwdt * 0.33 : 
+                screenwdt * 0.13,
+                child: Center(
+                  child: Text(
+                    widget.network.name,
+                    style: TextStyle(
+                      color: _focusNode.hasFocus ? highlightColor : Colors.white,
+                      fontSize: 15,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
                 ),
               ),
-            ),
+           
           ],
         ),
       ),
     );
   }
 }
+
+
 
 class FocusableGridItemContent extends StatefulWidget {
   final ContentApi content;
@@ -258,8 +249,7 @@ class FocusableGridItemContent extends StatefulWidget {
   FocusableGridItemContent({required this.content, required this.onTap});
 
   @override
-  _FocusableGridItemContentState createState() =>
-      _FocusableGridItemContentState();
+  _FocusableGridItemContentState createState() => _FocusableGridItemContentState();
 }
 
 class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
@@ -368,78 +358,43 @@ class _SubVodState extends State<SubVod> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: cardColor,
-      body: Column(
-        children: [
-          Container(
-            color: cardColor,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Text(
-                      "CONTENTS",
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: hintColor,
+      body: FutureBuilder<List<NetworkApi>>(
+        future: _networksFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No Networks Available'));
+          } else {
+            final networks = snapshot.data!;
+            return GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                // crossAxisSpacing: 10,
+                // mainAxisSpacing: 10,
+              ),
+              itemCount: networks.length,
+              itemBuilder: (context, index) {
+                return FocusableGridItem(
+                  network: networks[index],
+                  onTap: () async {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContentScreen(networkId: networks[index].id),
                       ),
-                    ),
-                  ),
-                ),
-                const Text('')
-              ],
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<NetworkApi>>(
-              future: _networksFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                      child: SpinKitFadingCircle(
-                    color: borderColor,
-                    size: 50.0,
-                  ));
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Something Went Wrong'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('Something Went Wrong'));
-                } else {
-                  final networks = snapshot.data!;
-                  return ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: networks.length,
-                    itemBuilder: (context, index) {
-                      return FocusableGridItem(
-                        network: networks[index],
-                        onTap: () async {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ContentScreen(networkId: networks[index].id),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                }
+                    );
+                  },
+                );
               },
-            ),
-          ),
-        ],
+            );
+          }
+        },
       ),
     );
   }
@@ -471,15 +426,11 @@ class _ContentScreenState extends State<ContentScreen> {
         future: _contentFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-                child: SpinKitFadingCircle(
-              color: borderColor,
-              size: 50.0,
-            ));
+            return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Something Went Wrong'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('Something Went Wrong'));
+            return Center(child: Text('No Content Available'));
           } else {
             final content = snapshot.data!;
             return GridView.builder(
@@ -496,8 +447,7 @@ class _ContentScreenState extends State<ContentScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            DetailsPage(content: content[index]),
+                        builder: (context) => DetailsPage(content: content[index]),
                       ),
                     );
                   },
@@ -511,52 +461,25 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
-
-
-
-class DetailsPage extends StatefulWidget {
+class DetailsPage extends StatelessWidget {
   final ContentApi content;
 
   DetailsPage({required this.content});
 
   @override
-  State<DetailsPage> createState() => _DetailsPageState();
-}
-
-class _DetailsPageState extends State<DetailsPage> {
-  @override
   Widget build(BuildContext context) {
     bool _isNavigating = false;
     bool _isLoadingVideo = false;
-    final SocketService _socketService = SocketService();
-    int _maxRetries = 3;
-    int _retryDelay = 5; // seconds
-
-    @override
-    void initState() {
-      super.initState();
-      _socketService.initSocket();
-    }
-
-    @override
-    void dispose() {
-      _socketService.dispose();
-      super.dispose();
-    }
 
     return Scaffold(
       backgroundColor: cardColor,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: FutureBuilder<MovieDetailsApi>(
-          future: fetchMovieDetails(widget.content.id),
+          future: fetchMovieDetails(content.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                  child: SpinKitFadingCircle(
-                color: borderColor,
-                size: 50.0,
-              ));
+              return Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -596,7 +519,7 @@ class _DetailsPageState extends State<DetailsPage> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (movieDetails.status == '1')
+                  if (movieDetails.status == '1') // Check if status is '1'
                     Container(
                       width: screenwdt * 0.8,
                       height: screenhgt * 0.6,
@@ -619,86 +542,45 @@ class _DetailsPageState extends State<DetailsPage> {
                   Expanded(
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: 1,
+                      itemCount: 1, // Assume we have only one detail item
                       itemBuilder: (context, index) {
                         return FocusableGridItemContent(
-                          content: widget.content,
+                          content: content,
                           onTap: () async {
-                            if (_isNavigating) return;
-                            _isNavigating = true;
-                            _isLoadingVideo = true;
+                            if (_isNavigating) return; // Check if navigation is already in progress
+                            _isNavigating = true; // Set the flag to true
+                            _isLoadingVideo = true; // Start loading video
 
-                            // Set a timeout to reset _isNavigating after 10 seconds
-                            Timer(Duration(seconds: 10), () {
-                              _isNavigating = false;
-                            });
-
-                            bool shouldPop = true;
-
+                            // Show loading indicator
                             showDialog(
                               context: context,
                               barrierDismissible: false,
-                              builder: (BuildContext context) {
-                                return WillPopScope(
-                                  onWillPop: () async {
-                                    shouldPop = false;
-                                    return true;
-                                  },
-                                  child: Center(
-                                    child: SpinKitFadingCircle(
-                                      color: borderColor,
-                                      size: 50.0,
-                                    ),
-                                  ),
-                                );
-                              },
+                              builder: (context) => Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             );
 
                             try {
-                              final playLink =
-                                  await fetchMoviePlayLink(widget.content.id);
+                              final playLink = await fetchMoviePlayLink(content.id);
 
                               if (playLink['type'] == 'Youtube' ||
                                   playLink['type'] == 'YoutubeLive') {
-                                for (int i = 0; i < _maxRetries; i++) {
-                                  try {
-                                    String updatedUrl = await _socketService
-                                        .getUpdatedUrl(playLink['url']!);
-                                    playLink['url'] = updatedUrl;
-                                    playLink['stream_type'] = 'M3u8';
-                                    break;
-                                  } catch (e) {
-                                    if (i == _maxRetries - 1) rethrow;
-                                    await Future.delayed(
-                                        Duration(seconds: _retryDelay));
-                                  }
+                                final response = await https.get(
+                                  Uri.parse(
+                                      'https://test.gigabitcdn.net/yt-dlp.php?v=' +
+                                          playLink['url']!),
+                                  headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+                                );
+
+                                if (response.statusCode == 200) {
+                                  playLink['url'] =
+                                      json.decode(response.body)['url'];
+                                  playLink['type'] = "M3u8";
+                                } else {
+                                  throw Exception('Failed to load video URL');
                                 }
                               }
-                              if (shouldPop) {
-                                Navigator.of(context)
-                                    .pop(); // Dismiss the loading indicator
-                              }
 
-                              // Navigator.of(context, rootNavigator: true).pop();
-
-                              // if (playLink['type'] == 'VLC') {
-                              //   Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //       builder: (context) => VlcPlayerScreen(
-                              //         videoUrl: playLink['url']!,
-                              //         videoTitle: movieDetails.name,
-                              //         channelList: [],
-                              //         onFabFocusChanged: (bool) {},
-                              //         genres: movieDetails.genres,
-                              //         channels: [],
-                              //         initialIndex: 0,
-                              //       ),
-                              //     ),
-                              //   ).then((_) {
-                              //     _isNavigating = false;
-                              //   });
-                              // } else {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -715,25 +597,21 @@ class _DetailsPageState extends State<DetailsPage> {
                                   ),
                                 ),
                               ).then((_) {
+                                // Reset the flag after the navigation is completed
                                 _isNavigating = false;
+                                Navigator.of(context, rootNavigator: true)
+                                    .pop();
                               });
-                              // }
                             } catch (e) {
-                              if (shouldPop) {
-                                Navigator.of(context)
-                                    .pop(); // Dismiss the loading indicator
-                              }
                               Navigator.of(context, rootNavigator: true).pop();
+                              // Show error message
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(
-                                    'Something Went Wrong',
-                                    style: TextStyle(fontSize: 20),
-                                  ),
-                                ),
+                                    content: Text(
+                                  'Something Went Wrong',
+                                  style: TextStyle(fontSize: 20),
+                                )),
                               );
-                            } finally {
-                              _isNavigating = false;
                             }
                           },
                         );

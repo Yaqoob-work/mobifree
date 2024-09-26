@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
-    flutterVersionCode = "6"
+    flutterVersionCode = "10"
 }
 
 def flutterVersionName = localProperties.getProperty("flutter.versionName")
@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.ekom.five"
+        applicationId "com.ekamflixtv.cti"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()

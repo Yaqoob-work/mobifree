@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as https;
 import 'package:flutter/material.dart';
-// import 'package:mobi_tv_entertainment/live_sub_screen/all_channels.dart';
+import 'package:mobi_tv_entertainment/live_sub_screen/all_channel.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/entertainment_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/movie_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/music_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/news_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/religious_screen.dart';
 import 'package:mobi_tv_entertainment/live_sub_screen/sports_screen.dart';
-import '../live_sub_screen/all_channel.dart';
+
 import '../video_widget/top_navigation_bar.dart';
 
 class LiveScreen extends StatefulWidget {
@@ -56,10 +56,10 @@ class _LiveScreenState extends State<LiveScreen> {
           _tvenableAll = data['tvenableAll'] == 1;
         });
       } else {
-        print('Something Went Wrong');
+        print('Failed to load settings');
       }
     } catch (e) {
-      print('Something Went Wrong');
+      print('Error: $e');
     }
   }
 

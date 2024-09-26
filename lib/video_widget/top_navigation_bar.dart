@@ -37,7 +37,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.grey[800],
+      color: Colors.blueGrey[800],
       padding: const EdgeInsets.symmetric(vertical: 15),
    
        child: Row(
@@ -90,8 +90,8 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                 title,
                 style: TextStyle(
                   color: focusNode.hasFocus
-                      ? borderColor
-                      : hintColor,
+                      ? Color.fromARGB(255, 247, 6, 118)
+                      : Colors.white,
                   fontSize: screenwdt*0.015,
                   fontWeight: FontWeight.bold,
                 ),
