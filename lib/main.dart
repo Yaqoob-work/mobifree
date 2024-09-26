@@ -1,23 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as https;
-
 import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
-import 'package:mobi_tv_entertainment/live_sub_screen/all_channel.dart';
-// import 'package:mobi_tv_entertainment/home_sub_screen/banner_slider_screen.dart';
-// import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/screens/home_screen.dart';
 import 'package:mobi_tv_entertainment/screens/live_screen.dart';
 import 'package:mobi_tv_entertainment/screens/vod.dart';
 import 'package:mobi_tv_entertainment/screens/search_screen.dart';
-// import 'package:mobi_tv_entertainment/screens/custom_appbar.dart';
 import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
 
 class MyHttpOverrides extends HttpOverrides {
-  @override 
+  @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
       ..badCertificateCallback =
@@ -51,14 +45,14 @@ class MyApp extends StatelessWidget {
     cardColor = Color.fromARGB(255, 8, 1, 34);
     hintColor = Colors.white;
     borderColor = Color.fromARGB(255, 247, 6, 118);
-    localImage = Image.asset('assets/logo.png');
+    localImage = Image.asset('assets/logo.png',fit: BoxFit.fill ,);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => SplashScreen(),
-        '/myhome': (context) => MyHomePage(),
+        // '/': (context) => SplashScreen(),
+        '/': (context) => MyHomePage(),
         '/category': (context) => HomeCategory(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
@@ -74,7 +68,7 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   int _selectedPage = 0;
   late PageController _pageController;
   bool _tvenableAll = false; // Track tvenableAll status
@@ -82,14 +76,24 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _selectedPage);
     _fetchTvenableAllStatus(); // Fetch tvenableAll status
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+    @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App resume hone par home page par navigate karein
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+    }
   }
 
   void _onPageSelected(int index) {
@@ -125,11 +129,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     List<Widget> pages = [
       HomeScreen(),
-      if (_tvenableAll) SearchScreen(), // Conditionally include SearchScreen
+      // if (_tvenableAll)  // Conditionally include SearchScreen
+      SearchScreen(),
       LiveScreen(),
-      // AllChannel(),
-      if (_tvenableAll) VOD(), // Conditionally include VOD
-      // HomeCategory(),
+      // if (_tvenableAll) // Conditionally include VOD
+      VOD(), 
     ];
 
     return SafeArea(
@@ -210,14 +214,15 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
             ),
             padding: const EdgeInsets.all(20.0),
             child: ClipRRect(
-              child: Image.asset('assets/logo.png',
+              child: Image.asset(
+                'assets/logo.png',
                 fit: BoxFit.cover,
               ),
             ),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(left:8.0),
+              padding: const EdgeInsets.only(left: 8.0),
               child: ListView(
                 children: <Widget>[
                   _buildNavigationItem(
@@ -226,7 +231,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                     0,
                     _focusNodes[0],
                   ),
-                  if (widget.tvenableAll) // Conditionally show Search option
+                  // if (widget.tvenableAll) // Conditionally show Search option
                     _buildNavigationItem(
                       Icons.search,
                       'SEARCH',
@@ -239,7 +244,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                     2,
                     _focusNodes[2],
                   ),
-                  if (widget.tvenableAll) // Conditionally show VOD option
+                  // if (widget.tvenableAll) // Conditionally show VOD option
                     _buildNavigationItem(
                       Icons.video_camera_front,
                       'VOD',
@@ -304,7 +309,7 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
                   color: focusNode.hasFocus
                       ? Color.fromARGB(255, 247, 6, 118)
                       : Color.fromARGB(255, 20, 27, 122),
-                  fontSize: isSelected ? screenwdt*0.024 : screenwdt*0.02,
+                  fontSize: isSelected ? screenwdt * 0.024 : screenwdt * 0.02,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -315,5 +320,3 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     );
   }
 }
-
-

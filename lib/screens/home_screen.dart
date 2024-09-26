@@ -7,6 +7,7 @@ import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:http/http.dart' as https;
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void main() {
   runApp(HomeScreen());
@@ -61,11 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       } else {
         // Handle errors or non-200 responses
-        print('Failed to load settings');
+        print('Something Went Wrong');
       }
     } catch (e) {
       // Handle network errors or JSON parsing errors
-      print('Error: $e');
+      print('Something Went Wrong');
     }
 
     setState(() {
@@ -93,55 +94,24 @@ class _HomeScreenState extends State<HomeScreen> {
             //   height: screenhgt*0.01,
             //   child: Text('.'),
             // ),
-            if (_tvenableAll) // Conditionally display SubVod
-            Container(
-              color: cardColor,
-              height: screenhgt*0.65,
-              child: BannerSlider(),
-            ),
-            if (_tvenableAll) // Conditionally display SubVod
-
+            // if (_tvenableAll) // Conditionally display SubVod
               Container(
                 color: cardColor,
-                child: Column(
-                  children: [
-                    Container(
-                      color: cardColor,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: Text(
-                                "CONTENTS",
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: hintColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Text('')
-                        ],
-                      ),
-                    ),
-                    Container(
-                      color: cardColor,
-                      child: SizedBox(
-                        height: screenhgt * 0.35,
-                        child: SubVod(),
-                      ),
-                    ),
-                  ],
+                height: screenhgt * 0.65,
+                child: BannerSlider(),
+              ),
+            // if (_tvenableAll) // Conditionally display SubVod
+              Container(
+                color: cardColor,
+                child: SizedBox(
+                  height: screenhgt * 0.35,
+                  child: SubVod(),
                 ),
               ),
             Container(
               color: cardColor,
               child: SizedBox(
-                height: screenhgt *4 ,
+                height: screenhgt * 4,
                 child: HomeCategory(),
               ),
             ),
@@ -149,15 +119,18 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 0,
               child: Text(''),
             ),
-            if (_isLoading) 
-            // ...[
+            if (_isLoading)
+              // ...[
               // const Padding(
-                // padding: EdgeInsets.symmetric(vertical: 20),
-                // child:
-                 Center(
-                  child: CircularProgressIndicator(),
+              // padding: EdgeInsets.symmetric(vertical: 20),
+              // child:
+              Center(
+                child: SpinKitFadingCircle(
+                  color: borderColor,
+                  size: 50.0,
                 ),
-              // ),
+              ),
+            // ),
             // ],
           ],
         ),
@@ -165,3 +138,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+
+

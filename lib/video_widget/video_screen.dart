@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
 
@@ -11,7 +11,7 @@ class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
   final List<dynamic> channelList;
-  final Function(bool) onFabFocusChanged; // Callback to notify FAB focus change
+  final Function(bool) onFabFocusChanged;
 
   VideoScreen({
     required this.videoUrl,
@@ -19,7 +19,7 @@ class VideoScreen extends StatefulWidget {
     required this.channelList,
     required this.onFabFocusChanged,
     required String genres,
-    required List<Channel> channels,
+    required List channels,
     required int initialIndex,
   });
 
@@ -27,304 +27,327 @@ class VideoScreen extends StatefulWidget {
   _VideoScreenState createState() => _VideoScreenState();
 }
 
-class _VideoScreenState extends State<VideoScreen> {
+class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
-  late Future<void> _initializeVideoPlayerFuture;
-  bool isGridVisible = false;
-  int selectedIndex = -1;
-  bool isFullScreen = false;
-  double volume = 0.5;
-  bool isVolumeControlVisible = false;
-  Timer? _inactivityTimer; // Timer to track inactivity
-  List<FocusNode> focusNodes = [];
-  FocusNode fabFocusNode = FocusNode();
-  FocusNode _focusNode = FocusNode();
+  bool _controlsVisible = true;
+  late Timer _hideControlsTimer;
+  Duration _totalDuration = Duration.zero;
+  Duration _currentPosition = Duration.zero;
+  bool _isBuffering = false;
+  bool _isConnected =
+      true; // This is a placeholder; handle connectivity manually.
+  bool _isVideoInitialized = false;
+  Timer? _connectivityCheckTimer;
+
+  final FocusNode screenFocusNode = FocusNode();
+  final FocusNode playPauseFocusNode = FocusNode();
+  final FocusNode rewindFocusNode = FocusNode();
+  final FocusNode forwardFocusNode = FocusNode();
+  final FocusNode backFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-      ..addListener(_videoPlayerListener); // Add listener for buffering events
-    _initializeVideoPlayerFuture = _controller.initialize();
-    _controller.setLooping(true);
-    _controller.play();
-    KeepScreenOn.turnOn();
-    focusNodes = List.generate(widget.channelList.length, (index) => FocusNode());
+    WidgetsBinding.instance.addObserver(this);
+    _controller = VideoPlayerController.network(widget.videoUrl)
+      ..initialize().then((_) {
+        setState(() {
+          _totalDuration = _controller.value.duration;
+          _isVideoInitialized = true;
+        });
+        _controller.play();
+        _startPositionUpdater();
+        _startConnectivityCheck();
+        KeepScreenOn.turnOn();
+      });
 
-    // Initialize isFocused to false for each channel
-    widget.channelList.forEach((channel) {
-      if (channel['isFocused'] == null) {
-        channel['isFocused'] = false;
+    _controller.addListener(() {
+      if (_controller.value.isBuffering != _isBuffering) {
+        setState(() {
+          _isBuffering = _controller.value.isBuffering;
+        });
+        if (!_controller.value.isPlaying &&
+            !_controller.value.isBuffering &&
+            _controller.value.isInitialized) {
+          _controller.play();
+        }
       }
     });
+
+    @override
+    void didChangeAppLifecycleState(AppLifecycleState state) {
+      if (state == AppLifecycleState.paused) {
+        _controller.pause();
+      } else if (state == AppLifecycleState.resumed) {
+        _controller.play();
+      }
+    }
+
+    @override
+    void didChangeDependencies() {
+      super.didChangeDependencies();
+      if (_isVideoInitialized && !_controller.value.isPlaying) {
+        _controller.play();
+      }
+    }
+
+    _startHideControlsTimer();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(screenFocusNode);
+    });
+
+    // Handle connectivity manually
+    // You can implement your own method to check connectivity status here.
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_videoPlayerListener); // Remove listener
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
-    _inactivityTimer?.cancel(); // Cancel the inactivity timer
-    for (var node in focusNodes) {
-      node.dispose();
-    }
+    _hideControlsTimer.cancel();
+    screenFocusNode.dispose();
+    playPauseFocusNode.dispose();
+    rewindFocusNode.dispose();
+    forwardFocusNode.dispose();
+    backFocusNode.dispose();
+    _connectivityCheckTimer?.cancel();
     KeepScreenOn.turnOff();
-    _focusNode.dispose();
     super.dispose();
   }
 
-  void _videoPlayerListener() {
-    if (_controller.value.hasError) {
-      // Handle the error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${_controller.value.errorDescription}')),
-      );
-    } else if (_controller.value.isBuffering) {
-      // Optionally handle buffering state
+  void _startConnectivityCheck() {
+    _connectivityCheckTimer =
+        Timer.periodic(Duration(seconds: 5), (timer) async {
+      try {
+        final result = await InternetAddress.lookup('google.com');
+        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+          _updateConnectionStatus(true);
+        } else {
+          _updateConnectionStatus(false);
+        }
+      } on SocketException catch (_) {
+        _updateConnectionStatus(false);
+      }
+    });
+  }
+
+  void _updateConnectionStatus(bool isConnected) {
+    if (isConnected != _isConnected) {
       setState(() {
-        // Show loading indicator if buffering
+        _isConnected = isConnected;
       });
-    } else if (_controller.value.isPlaying && _controller.value.position == _controller.value.duration) {
-      // Optionally handle video completion
-    } else if (!_controller.value.isBuffering && !_controller.value.isPlaying) {
-      // Resume playback if not buffering and video is paused
-      _controller.play();
+      if (!isConnected) {
+        _controller.pause();
+      } else if (_controller.value.isBuffering ||
+          !_controller.value.isPlaying) {
+        _controller.play();
+      }
     }
   }
 
-  void toggleGridVisibility() {
-    setState(() {
-      isGridVisible = !isGridVisible;
-      if (isGridVisible) {
-        _resetInactivityTimer(); // Start the inactivity timer when grid is visible
-      }
-    });
-  }
-
-  void toggleFullScreen() {
-    setState(() {
-      isFullScreen = !isFullScreen;
-    });
-  }
-
-  void _onItemFocus(int index, bool hasFocus) {
-    setState(() {
-      widget.channelList[index]['isFocused'] = hasFocus;
-      if (hasFocus) {
-        selectedIndex = index;
-        _resetInactivityTimer(); // Reset inactivity timer on focus change
-      } else if (selectedIndex == index) {
-        selectedIndex = -1;
-      }
-    });
-  }
-
-  void _onItemTap(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
-
-    String selectedUrl = widget.channelList[index]['url'] ?? '';
-    _controller.pause();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(selectedUrl))
-      ..addListener(_videoPlayerListener) // Add listener for buffering events
-      ..initialize().then((_) {
-        setState(() {});
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
         _controller.play();
-        _controller.setVolume(volume);
-      });
+      }
+    } else if (state == AppLifecycleState.paused) {
+      _controller.pause();
+    }
   }
 
-  void _resetInactivityTimer() {
-    _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(const Duration(seconds: 10), () {
+  void _startHideControlsTimer() {
+    _hideControlsTimer = Timer(Duration(seconds: 10), () {
       setState(() {
-        isGridVisible = false;
+        _controlsVisible = false;
       });
     });
+  }
+
+  void _resetHideControlsTimer() {
+    _hideControlsTimer.cancel();
+    setState(() {
+      _controlsVisible = true;
+    });
+    _startHideControlsTimer();
+  }
+
+  void _startPositionUpdater() {
+    Timer.periodic(Duration(seconds: 1), (_) {
+      if (_controller.value.isInitialized) {
+        setState(() {
+          _currentPosition = _controller.value.position;
+        });
+      }
+    });
+  }
+
+  void _togglePlayPause() {
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
+    _resetHideControlsTimer();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: cardColor,
-      body: Stack(
-        children: [
-          FutureBuilder(
-            future: _initializeVideoPlayerFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
-                if (_controller.value.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text('Something Went Wrong',
-                            style: TextStyle(fontSize: 20)),
-                        ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context, rootNavigator: true).pop();
-                            },
-                            child: Text(
-                              'Go Back',
-                              style: TextStyle(fontSize: 25, color: borderColor),
-                            ))
-                      ],
-                    ),
-                  );
-                } else {
-                  return Center(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          VideoPlayer(_controller),
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: LinearProgressIndicator(
-                              value: _controller.value.position.inSeconds /
-                                  _controller.value.duration.inSeconds,
-                              backgroundColor: Colors.transparent,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.grey),
+    return WillPopScope(
+      onWillPop: () async {
+        _controller.pause();
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Focus(
+          focusNode: screenFocusNode,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent) {
+              if (event.logicalKey == LogicalKeyboardKey.select ||
+                  event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
+                _togglePlayPause();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                // Handle rewind if needed
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                // Handle forward if needed
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                  event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                _resetHideControlsTimer();
+                return KeyEventResult.handled;
+              } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+                // Handle back navigation if needed
+                return KeyEventResult.handled;
+              }
+            }
+            return KeyEventResult.ignored;
+          },
+          child: GestureDetector(
+            onTap: _resetHideControlsTimer,
+            child: Stack(
+              children: [
+                Center(
+                  child: _controller.value.isInitialized
+                      ? AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: screenwdt,
+                              height: screenhgt,
+                              child: VideoPlayer(_controller),
                             ),
                           ),
+                        )
+                      //  AspectRatio(
+                      //     aspectRatio: 16 / 9,
+                      //     child: VideoPlayer(_controller),
+                      //   )
+                      // LayoutBuilder(
+                      //     builder: (context, constraints) {
+                      //       final aspectRatio =
+                      //       _controller.value.aspectRatio;
+                      //       final videoWidth = constraints.maxWidth;
+                      //       final videoHeight = videoWidth / aspectRatio;
+
+                      //       return SizedBox(
+                      //         width: videoWidth,
+                      //         height: videoHeight > constraints.maxHeight
+                      //             ? constraints.maxHeight
+                      //             : videoHeight,
+                      //         child: AspectRatio(
+                      //           aspectRatio: aspectRatio,
+                      //           child: VideoPlayer(_controller),
+                      //         ),
+                      //       );
+                      //     },
+                      //   )
+                      : SpinKitFadingCircle(
+                          color: borderColor,
+                          size: 50.0,
+                        ),
+                ),
+                if (_controlsVisible)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Colors.black.withOpacity(0.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Focus(
+                                focusNode: playPauseFocusNode,
+                                onFocusChange: (hasFocus) {
+                                  setState(() {
+                                    // Change button color on focus
+                                  });
+                                },
+                                child: IconButton(
+                                  icon: Icon(
+                                    _controller.value.isPlaying
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: _togglePlayPause,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 15,
+                            child: Center(
+                              child: VideoProgressIndicator(
+                                _controller,
+                                allowScrubbing: true,
+                                colors: VideoProgressColors(
+                                    playedColor: borderColor,
+                                    bufferedColor: Colors.green,
+                                    backgroundColor: Colors.yellow),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 20),
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.circle,
+                                    color: Colors.red,
+                                    size: 15,
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Live',
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 20),
                         ],
                       ),
                     ),
-                  );
-                }
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text(
-                    'An error occurred while loading the video.',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                    textAlign: TextAlign.center,
                   ),
-                );
-              } else {
-                return const Center(child: CircularProgressIndicator());
-              }
-            },
+              ],
+            ),
           ),
-          // Optional grid view or other widgets can be uncommented here
-          // AnimatedPositioned(
-          //   duration: const Duration(milliseconds: 300),
-          //   bottom: isGridVisible ? 210 : 20,
-          //   right: 20,
-          //   child: IconButton(
-          //     color: borderColor,
-          //     focusColor: Colors.black26,
-          //     onPressed: toggleGridVisibility,
-          //     icon: Icon(isGridVisible ? Icons.close : Icons.grid_view),
-          //   ),
-          // ),
-          // if (isGridVisible)
-          //   Positioned(
-          //     bottom: 0,
-          //     left: 0,
-          //     right: 0,
-          //     child: Container(
-          //       height: 200,
-          //       color: Colors.black87,
-          //       child: ListView.builder(
-          //         scrollDirection: Axis.horizontal,
-          //         itemCount: widget.channelList.length,
-          //         itemBuilder: (context, index) {
-          //           return GestureDetector(
-          //             onTap: () => _onItemTap(index),
-          //             child: ClipRRect(
-          //               borderRadius: BorderRadius.circular(50.0),
-          //               child: Focus(
-          //                 focusNode: focusNodes[index],
-          //                 onKeyEvent: (FocusNode node, KeyEvent event) {
-          //                   if (event is KeyDownEvent &&
-          //                       (event.logicalKey ==
-          //                               LogicalKeyboardKey.select ||
-          //                           event.logicalKey ==
-          //                               LogicalKeyboardKey.enter)) {
-          //                     _onItemTap(index);
-          //                     return KeyEventResult.handled;
-          //                   }
-          //                   _resetInactivityTimer(); // Reset inactivity timer on key event
-          //                   return KeyEventResult.ignored;
-          //                 },
-          //                 onFocusChange: (hasFocus) {
-          //                   _onItemFocus(index, hasFocus);
-          //                 },
-          //                 child: Column(
-          //                   mainAxisAlignment: MainAxisAlignment.center,
-          //                   crossAxisAlignment: CrossAxisAlignment.center,
-          //                   children: [
-          //                     Container(
-          //                       padding: EdgeInsets.all(5),
-          //                       child: AnimatedContainer(
-          //                         width:
-          //                         //  widget.channelList[index]['isFocused']? screenwdt * 0.35 : 
-          //                             screenwdt * 0.14,
-          //                         height: 
-          //                         // widget.channelList[index]['isFocused']? screenhgt * 0.23: 
-          //                             screenhgt * 0.2,
-          //                         duration: const Duration(milliseconds: 300),
-          //                         curve: Curves.easeInOut,
-          //                         decoration: BoxDecoration(
-          //                             border: Border.all(
-          //                               color: widget.channelList[index]
-          //                                       ['isFocused']
-          //                                   ? borderColor
-          //                                   : Colors.transparent,
-          //                               width: 5.0,
-          //                             ),
-          //                             borderRadius: BorderRadius.circular(10)),
-          //                         child: ClipRRect(
-          //                           borderRadius: BorderRadius.circular(5),
-          //                           child: CachedNetworkImage(
-          //                             imageUrl: widget.channelList[index]
-          //                                     ['banner'] ??
-          //                                 localImage,
-          //                             placeholder: (context, url) => localImage,
-          //                             fit: BoxFit.cover,
-          //                             width: 
-          //                             // widget.channelList[index]['isFocused']? screenwdt * 0.35 : 
-          //                                 screenwdt * 0.14,
-          //                             height: 
-          //                             // widget.channelList[index] ['isFocused'] ? screenhgt * 0.23:
-          //                                  screenhgt * 0.2,
-          //                           ),
-          //                         ),
-          //                       ),
-          //                     ),
-          //                     Text(
-          //                       widget.channelList[index]['name'] ?? '',
-          //                       style: TextStyle(color: Colors.white),
-          //                     ),
-          //                   ],
-          //                 ),
-          //               ),
-          //             ),
-          //           );
-          //         },
-          //       ),
-          //     ),
-          //   ),
-          // Positioned(
-          //   bottom: 20,
-          //   right: 20,
-          //   child: Focus(
-          //     focusNode: fabFocusNode,
-          //     onFocusChange: (hasFocus) {
-          //       widget.onFabFocusChanged(hasFocus);
-          //     },
-          //     child: FloatingActionButton(
-          //       onPressed: toggleFullScreen,
-          //       child: Icon(isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen),
-          //     ),
-          //   ),
-          // ),
-        ],
+        ),
       ),
     );
   }

@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/main.dart';
+import '../services/socket_service.dart';
 import '../video_widget/video_screen.dart';
 
 // Add a global variable for settings
@@ -21,10 +23,10 @@ Future<void> fetchSettings() async {
     if (response.statusCode == 200) {
       settings = json.decode(response.body);
     } else {
-      throw Exception('Failed to load settings');
+      throw Exception('Something Went Wrong');
     }
   } catch (e) {
-    print('Error fetching settings: $e');
+    print('Something Went Wrong');
   }
 }
 
@@ -47,10 +49,14 @@ class _SearchScreenState extends State<SearchScreen> {
   Timer? _debounce;
   final List<FocusNode> _itemFocusNodes = [];
   bool _isNavigating = false;
+  final SocketService _socketService = SocketService();
+  int _maxRetries = 3;
+  int _retryDelay = 5; // seconds
 
   @override
   void initState() {
     super.initState();
+    _socketService.initSocket();
     _focusNode.addListener(_onFocusChanged);
     fetchSettings(); // Fetch settings when initializing
   }
@@ -61,6 +67,8 @@ class _SearchScreenState extends State<SearchScreen> {
     _focusNode.dispose();
     _searchController.dispose();
     _debounce?.cancel();
+    _socketService.dispose();
+
     _itemFocusNodes.forEach((node) => node.dispose());
     super.dispose();
   }
@@ -108,10 +116,10 @@ class _SearchScreenState extends State<SearchScreen> {
               .toList();
         }
       } else {
-        throw Exception('Failed to load data from API 1');
+        throw Exception('Something Went Wrong');
       }
     } catch (e) {
-      print('Error fetching from API 1: $e');
+      print('Something Went Wrong');
       return [];
     }
   }
@@ -193,7 +201,11 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           isLoading
               ? Expanded(
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                      child: SpinKitFadingCircle(
+                    color: borderColor,
+                    size: 50.0,
+                  )),
                 )
               : searchResults.isEmpty
                   ? Expanded(
@@ -242,7 +254,10 @@ class _SearchScreenState extends State<SearchScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(),
+          child: SpinKitFadingCircle(
+            color: borderColor,
+            size: 50.0,
+          ),
         );
       },
     );
@@ -272,30 +287,29 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            width: screenwdt * 0.15,
-            height: screenhgt * 0.2,
-            duration: const Duration(milliseconds: 300),
-            decoration: BoxDecoration(
-                border: Border.all(
-                  color: selectedIndex == index
-                      ? borderColor
-                      : hintColor, // Replace with your borderColor
-                  width: 5.0,
-                ),
-                borderRadius: BorderRadius.circular(10)),
-            child: status == '1'
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
-                    child: CachedNetworkImage(
-                      imageUrl: result['banner'] ?? localImage,
-                      placeholder: (context, url) => localImage,
-                      width: screenwdt * 0.15,
-                      height: screenhgt * 0.2,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : null
-          ),
+              width: screenwdt * 0.15,
+              height: screenhgt * 0.2,
+              duration: const Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                  border: Border.all(
+                    color: selectedIndex == index
+                        ? borderColor
+                        : hintColor, // Replace with your borderColor
+                    width: 5.0,
+                  ),
+                  borderRadius: BorderRadius.circular(10)),
+              child: status == '1'
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: CachedNetworkImage(
+                        imageUrl: result['banner'] ?? localImage,
+                        placeholder: (context, url) => localImage,
+                        width: screenwdt * 0.15,
+                        height: screenhgt * 0.2,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : null),
           Container(
             width: MediaQuery.of(context).size.width * 0.15,
             child: Text(
@@ -303,8 +317,8 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(
                 fontSize: 15,
                 color: selectedIndex == index
-                    ? Colors.yellow
-                    : Colors.white, // Replace with your highlightColor
+                    ? highlightColor
+                    : hintColor, // Replace with your highlightColor
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -321,54 +335,87 @@ class _SearchScreenState extends State<SearchScreen> {
     _isNavigating = true;
     _showLoadingIndicator(context);
 
-    if (searchResults[index]['stream_type'] == 'YoutubeLive' ||
-        searchResults[index]['type'] == 'Youtube') {
-      try {
-        final response = await https.get(
-          Uri.parse('https://test.gigabitcdn.net/yt-dlp.php?v=' +
-              searchResults[index]['url']),
-          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-        );
-
-        if (response.statusCode == 200) {
-          final jsonResponse = json.decode(response.body);
-          if (jsonResponse['url'] != '') {
-            searchResults[index]['url'] = jsonResponse['url'];
-            searchResults[index]['stream_type'] = "M3u8";
-          }
-        } else {
-          _isNavigating = false;
-          Navigator.of(context, rootNavigator: true).pop();
-          throw Exception('Failed to load networks');
-        }
-      } catch (e) {
-        _isNavigating = false;
-        Navigator.of(context, rootNavigator: true).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Link Error')),
-        );
-      }
-    }
-    Navigator.of(context, rootNavigator: true).pop();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VideoScreen(
-          videoUrl: searchResults[index]['url'] ?? '',
-          videoTitle: searchResults[index]['name'] ?? '',
-          channelList: searchResults,
-          onFabFocusChanged: _handleFabFocusChanged,
-          genres: '',
-          channels: [],
-          initialIndex: index,
-        ),
-      ),
-    ).then((_) {
+    // Set a timeout to reset _isNavigating after 10 seconds
+    Timer(Duration(seconds: 5), () {
       _isNavigating = false;
     });
-  }
 
-  void _handleFabFocusChanged(bool hasFocus) {
-    // Handle FAB focus change if needed
+    bool shouldPop = true;
+    bool shouldPlayVideo = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            shouldPlayVideo = false;
+            shouldPop = false;
+            return true;
+          },
+          child: Center(
+            child: SpinKitFadingCircle(
+              color: borderColor,
+              size: 50.0,
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      if (searchResults[index]['stream_type'] == 'YoutubeLive' ||
+          searchResults[index]['type'] == 'Youtube') {
+        for (int i = 0; i < _maxRetries; i++) {
+          try {
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(searchResults[index]['url']);
+            searchResults[index]['url'] = updatedUrl;
+            searchResults[index]['stream_type'] = 'M3u8';
+            break;
+          } catch (e) {
+            if (i == _maxRetries - 1) rethrow;
+            await Future.delayed(Duration(seconds: _retryDelay));
+          }
+        }
+      }
+      if (shouldPop) {
+        Navigator.of(context).pop(); // Dismiss the loading indicator
+      }
+      Navigator.of(context, rootNavigator: true).pop();
+      if (shouldPlayVideo) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: searchResults[index]['url'] ?? '',
+              videoTitle: searchResults[index]['name'] ?? '',
+              channelList: searchResults,
+              onFabFocusChanged: _handleFabFocusChanged,
+              genres: '',
+              channels: [],
+              initialIndex: index,
+            ),
+          ),
+        ).then((_) {
+          _isNavigating = false;
+        });
+      }
+    } catch (e) {
+      if (shouldPop) {
+        Navigator.of(context).pop(); // Dismiss the loading indicator
+      }
+      _isNavigating = false;
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      _isNavigating = false;
+    }
   }
+}
+
+void _handleFabFocusChanged(bool hasFocus) {
+  // Handle FAB focus change if needed
 }
