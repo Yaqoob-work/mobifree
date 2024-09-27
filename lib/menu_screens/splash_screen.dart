@@ -1,6 +1,8 @@
 // import 'dart:async';
-// import 'package:flutter/material.dart';
 // import 'package:mobi_tv_entertainment/main.dart';
+// import 'package:flutter/material.dart';
+
+// import '../menu_two_items/music_screen.dart';
 
 // void main() {
 //   runApp(SplashScreen());
@@ -19,7 +21,7 @@
 //     super.initState();
 //     Timer(Duration(seconds: 2), () {
 //       Navigator.pushReplacement(
-//           context, MaterialPageRoute(builder: (context) => MyHomePage()));
+//           context, MaterialPageRoute(builder: (context) => MyHome()));
 //     });
 //   }
 
@@ -29,7 +31,8 @@
 //       backgroundColor: cardColor,
 //       body: Center(
 //         // child: Image.asset('assets/images/logo.png'),
-//         child: Image.asset('assets/logo.png', width: screenwdt * 0.5),
+//         child: Image.asset('assets/logo.png', width: screenwdt, fit: BoxFit.cover,),
+        
 //       ),
 //     );
 //   }

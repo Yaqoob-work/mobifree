@@ -4,20 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+
+import '../main.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
   final List<dynamic> channelList;
-  final Function(bool) onFabFocusChanged;
+  // final Function(bool) onFabFocusChanged;
 
   VideoScreen({
     required this.videoUrl,
     required this.videoTitle,
     required this.channelList,
-    required this.onFabFocusChanged,
+    // required this.onFabFocusChanged,
     required String genres,
     required List channels,
     required int initialIndex,
@@ -196,7 +197,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     return WillPopScope(
       onWillPop: () async {
         _controller.pause();
-        return true;
+        Navigator.of(context).pop(true);
+        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -233,16 +235,16 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                 Center(
                   child: _controller.value.isInitialized
                       ? AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: screenwdt,
-                              height: screenhgt,
-                              child: VideoPlayer(_controller),
-                            ),
+                        aspectRatio: 16 / 9,
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: screenwdt,
+                            height: screenhgt,
+                            child: VideoPlayer(_controller),
                           ),
-                        )
+                        ),
+                      )
                       //  AspectRatio(
                       //     aspectRatio: 16 / 9,
                       //     child: VideoPlayer(_controller),

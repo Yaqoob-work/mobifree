@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:mobi_tv_entertainment/main.dart';
 import 'package:video_player/video_player.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 
 class VideoMovieScreen extends StatefulWidget {
   final String videoUrl;
@@ -38,9 +37,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   Duration _lastKnownPosition = Duration.zero;
   bool _wasPlayingBeforeDisconnection = false;
   bool _isConnected = true;
-  bool _userPaused = false;
-  Timer? _connectivityCheckTimer;
-  bool _isVideoInitialized = false;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -53,12 +49,13 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeVideo();
-    _startConnectivityCheck();
     KeepScreenOn.turnOn();
     _startHideControlsTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(screenFocusNode);
     });
+
+    // Removed connectivity listener
   }
 
   Future<void> _initializeVideo() async {
@@ -66,14 +63,13 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     try {
       await _controller.initialize();
       setState(() {
-        _isVideoInitialized = true;
         _totalDuration = _controller.value.duration;
       });
       _controller.play();
       _startPositionUpdater();
       _controller.addListener(_videoListener);
     } catch (error) {
-      print('Something Went Wrong');
+      print('Net error: $error');
       _handleNetworkError();
     }
   }
@@ -83,7 +79,7 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     _lastKnownPosition = _controller.value.position;
     _controller.pause();
     Future.delayed(Duration(seconds: 5), () {
-      if (!_controller.value.isPlaying && !_userPaused) {
+      if (!_controller.value.isPlaying) {
         _reinitializeVideo();
       }
     });
@@ -98,16 +94,15 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
       await _controller.initialize();
       await _controller.seekTo(currentPosition);
       setState(() {
-        
         _totalDuration = _controller.value.duration;
         _currentPosition = currentPosition;
       });
-      if (_wasPlayingBeforeDisconnection && !_userPaused) {
+      if (_wasPlayingBeforeDisconnection) {
         _controller.play();
       }
       _controller.addListener(_videoListener);
     } catch (error) {
-      print('Something Went Wrong');
+      print('Error reinitializing video: $error');
       _handleNetworkError();
     }
   }
@@ -119,8 +114,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
       _controller.pause();
     }
     _controller.removeListener(_videoListener);
-    _connectivityCheckTimer?.cancel();
-
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
@@ -128,38 +121,9 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     rewindFocusNode.dispose();
     forwardFocusNode.dispose();
     backFocusNode.dispose();
+    // Removed connectivity subscription cancel
     KeepScreenOn.turnOff();
     super.dispose();
-  }
-
-  void _startConnectivityCheck() {
-    _connectivityCheckTimer =
-        Timer.periodic(Duration(seconds: 5), (timer) async {
-      try {
-        final result = await InternetAddress.lookup('google.com');
-        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          _updateConnectionStatus(true);
-        } else {
-          _updateConnectionStatus(false);
-        }
-      } on SocketException catch (_) {
-        _updateConnectionStatus(false);
-      }
-    });
-  }
-
-  void _updateConnectionStatus(bool isConnected) {
-    if (isConnected != _isConnected) {
-      setState(() {
-        _isConnected = isConnected;
-      });
-      if (!isConnected) {
-        _controller.pause();
-      } else if (_controller.value.isBuffering ||
-          !_controller.value.isPlaying) {
-        _controller.play();
-      }
-    }
   }
 
   @override
@@ -169,17 +133,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
       _controller.pause();
     } else if (state == AppLifecycleState.resumed) {
       _controller.seekTo(_lastKnownPosition);
-      if (!_userPaused) {
-        _controller.play();
-      }
-    }
-  }
-
-  
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isVideoInitialized && !_controller.value.isPlaying) {
       _controller.play();
     }
   }
@@ -192,8 +145,18 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
       }
     });
 
+    if (!_isBuffering &&
+        _controller.value.isInitialized &&
+        !_controller.value.isPlaying) {
+      Future.delayed(Duration(seconds: 2), () {
+        if (!_controller.value.isPlaying) {
+          _controller.play();
+        }
+      });
+    }
+
     if (_controller.value.hasError) {
-      print('Something Went Wrong');
+      print('Video error: ${_controller.value.errorDescription}');
       _handleNetworkError();
     }
   }
@@ -235,15 +198,11 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   }
 
   void _togglePlayPause() {
-    setState(() {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-        _userPaused = true;
-      } else {
-        _controller.play();
-        _userPaused = false;
-      }
-    });
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
     _resetHideControlsTimer();
   }
 
@@ -261,45 +220,51 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        _controller.pause();
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Focus(
-          focusNode: screenFocusNode,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent) {
-              if (event.logicalKey == LogicalKeyboardKey.select ||
-                  event.logicalKey == LogicalKeyboardKey.enter ||
-                  event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
-                _togglePlayPause();
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                _onRewind();
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                _onForward();
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                  event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                _resetHideControlsTimer();
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-                _navigateBack();
-                return KeyEventResult.handled;
+        onWillPop: () async {
+          _controller.pause();
+          Navigator.of(context).pop(true);
+          return false;
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Focus(
+            focusNode: screenFocusNode,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent) {
+                if (event.logicalKey == LogicalKeyboardKey.select ||
+                    event.logicalKey == LogicalKeyboardKey.enter ||
+                    event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
+                  _togglePlayPause();
+                  return KeyEventResult.handled;
+                } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                  _onRewind();
+                  return KeyEventResult.handled;
+                } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  _onForward();
+                  return KeyEventResult.handled;
+                } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                    event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                  _resetHideControlsTimer();
+                  return KeyEventResult.handled;
+                } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+                  _navigateBack();
+                  return KeyEventResult.handled;
+                }
               }
-            }
-            return KeyEventResult.ignored;
-          },
-          child: GestureDetector(
-            onTap: _resetHideControlsTimer,
-            child: Stack(
-              children: [
-                Center(
-                  child: _controller.value.isInitialized
-                      ? AspectRatio(
+              return KeyEventResult.ignored;
+            },
+            child: GestureDetector(
+              onTap: _resetHideControlsTimer,
+              child: Stack(
+                children: [
+                  Center(
+                    child: _controller.value.isInitialized
+                        ?
+                        // AspectRatio(
+                        //     aspectRatio: 16 / 9,
+                        //     child: VideoPlayer(_controller),
+                        //   )
+                        AspectRatio(
                           aspectRatio: 16 / 9,
                           child: FittedBox(
                             fit: BoxFit.cover,
@@ -310,120 +275,85 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
                             ),
                           ),
                         )
-                      // AspectRatio(
-                      //     aspectRatio: 16 / 9, // Fixed aspect ratio
-                      //     child: FittedBox(
-                      //       fit: widget.videoUrl.contains('youtube')
-                      //           ? BoxFit.cover
-                      //           : BoxFit.contain,
-                      //       child: SizedBox(
-                      //         width: _controller.value.size.width,
-                      //         height: _controller.value.size.height,
-                      //         child: VideoPlayer(_controller),
-                      //       ),
-                      //     ),
-                      //   )
-                      : SpinKitFadingCircle(
-                          color: borderColor,
-                          size: 50.0,
-                        ),
-                  // AspectRatio(
-                  //     aspectRatio: 16 / 9,
-                  //     child: VideoPlayer(_controller),
-                  //   )
-                  //       LayoutBuilder(
-                  //           builder: (context, constraints) {
-                  //             final aspectRatio = _controller.value.aspectRatio;
-                  //             final videoWidth = constraints.maxWidth;
-                  //             final videoHeight = videoWidth / aspectRatio;
-      
-                  //             return SizedBox(
-                  //               width: videoWidth,
-                  //               height: videoHeight > constraints.maxHeight
-                  //                   ? constraints.maxHeight
-                  //                   : videoHeight,
-                  //               child: AspectRatio(
-                  //                 aspectRatio: aspectRatio,
-                  //                 child: VideoPlayer(_controller),
-                  //               ),
-                  //             );
-                  //           },
-                  //         )
-                  //       : SpinKitFadingCircle(
-                  //           color: borderColor,
-                  //           size: 50.0,
-                  //         ),
-                ),
-                if (_controlsVisible)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Column(
-                      children: [
-                        Container(
-                          color: Colors.black.withOpacity(0.5),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: Center(
-                                  child: IconButton(
-                                    icon: Icon(
-                                      _controller.value.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: highlightColor,
-                                    ),
-                                    onPressed: _togglePlayPause,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Text(
-                                    _formatDuration(_currentPosition),
-                                    style: TextStyle(
-                                        color: highlightColor, fontSize: 20),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 6,
-                                child: Center(
-                                  child: VideoProgressIndicator(
-                                    _controller,
-                                    allowScrubbing: true,
-                                    colors: VideoProgressColors(
-                                        playedColor: borderColor,
-                                        bufferedColor: Colors.green,
-                                        backgroundColor: Colors.yellow),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Text(
-                                    _formatDuration(_totalDuration),
-                                    style: TextStyle(
-                                        color: highlightColor, fontSize: 20),
-                                  ),
-                                ),
-                              ),
-                            ],
+                        : SpinKitFadingCircle(
+                            color: borderColor,
+                            size: 50.0,
                           ),
-                        ),
-                      ],
-                    ),
                   ),
-              ],
+                  if (_controlsVisible)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Container(
+                              color: Colors.black.withOpacity(0.5),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: Center(
+                                      child: IconButton(
+                                        icon: Icon(
+                                          _controller.value.isPlaying
+                                              ? Icons.pause
+                                              : Icons.play_arrow,
+                                          color: highlightColor,
+                                        ),
+                                        onPressed: _togglePlayPause,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Center(
+                                      child: Text(
+                                        _formatDuration(_currentPosition),
+                                        style: TextStyle(
+                                            color: highlightColor,
+                                            fontSize: 20),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 6,
+                                    child: Center(
+                                      child: VideoProgressIndicator(
+                                        _controller,
+                                        allowScrubbing: true,
+                                        colors: VideoProgressColors(
+                                            playedColor: borderColor,
+                                            bufferedColor: Colors.green,
+                                            backgroundColor: Colors.yellow),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Center(
+                                      child: Text(
+                                        _formatDuration(_totalDuration),
+                                        style: TextStyle(
+                                            color: highlightColor,
+                                            fontSize: 20),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

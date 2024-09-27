@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.ekamflixtv.cti"
+        applicationId "com.ekamflixtv.six"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()

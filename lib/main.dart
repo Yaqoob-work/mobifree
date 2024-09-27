@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/menu_screens/home_screen.dart';
+import 'package:mobi_tv_entertainment/menu_screens/notification_screen.dart';
+import 'package:mobi_tv_entertainment/menu_screens/search_screen.dart';
+import 'package:mobi_tv_entertainment/menu_screens/splash_screen.dart';
+import 'package:mobi_tv_entertainment/menu_screens/vod.dart';
 import 'package:http/http.dart' as https;
-import 'package:mobi_tv_entertainment/home_sub_screen/home_category.dart';
-import 'package:mobi_tv_entertainment/screens/home_screen.dart';
-import 'package:mobi_tv_entertainment/screens/live_screen.dart';
-import 'package:mobi_tv_entertainment/screens/vod.dart';
-import 'package:mobi_tv_entertainment/screens/search_screen.dart';
-import 'package:mobi_tv_entertainment/screens/splash_screen.dart';
+import 'package:flutter/material.dart';
+import 'menu/top_navigation_bar.dart';
+import 'menu_screens/live_screen.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -45,30 +45,33 @@ class MyApp extends StatelessWidget {
     cardColor = Color.fromARGB(255, 8, 1, 34);
     hintColor = Colors.white;
     borderColor = Color.fromARGB(255, 247, 6, 118);
-    localImage = Image.asset('assets/logo.png',fit: BoxFit.fill ,);
+    localImage = Image.asset('assets/logo.png' ,fit: BoxFit.fill,);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
         // '/': (context) => SplashScreen(),
-        '/': (context) => MyHomePage(),
-        '/category': (context) => HomeCategory(),
+        '/notification': (context) => NotificationScreen(),
+        '/category': (context) => HomeScreen(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
+        '/': (context) => MyHome(),
         '/live': (context) => LiveScreen(),
-        // '/live': (context) => AllChannel(),
+        
       },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
+
+
+class MyHome extends StatefulWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _MyHomeState createState() => _MyHomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
+class _MyHomeState extends State<MyHome> {
   int _selectedPage = 0;
   late PageController _pageController;
   bool _tvenableAll = false; // Track tvenableAll status
@@ -76,24 +79,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _selectedPage);
     _fetchTvenableAllStatus(); // Fetch tvenableAll status
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
-  }
-
-    @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // App resume hone par home page par navigate karein
-      Navigator.of(context).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
-    }
   }
 
   void _onPageSelected(int index) {
@@ -128,194 +121,44 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     List<Widget> pages = [
+      // Your LiveScreen content pages
       HomeScreen(),
-      // if (_tvenableAll)  // Conditionally include SearchScreen
-      SearchScreen(),
+      VOD(),
+      VOD(),
       LiveScreen(),
-      // if (_tvenableAll) // Conditionally include VOD
-      VOD(), 
+      SearchScreen(),
+      NotificationScreen(),
+      // ReligiousScreen(),
+      // EntertainmentScreen(),
     ];
 
-    return SafeArea(
-      child: Scaffold(
-        body: Row(
-          children: <Widget>[
-            NavigationSidebar(
-              selectedPage: _selectedPage,
-              onPageSelected: _onPageSelected,
-              tvenableAll: _tvenableAll, // Pass _tvenableAll
-            ),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _selectedPage = index;
-                  });
-                },
-                children: pages,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class NavigationSidebar extends StatefulWidget {
-  final int selectedPage;
-  final ValueChanged<int> onPageSelected;
-  final bool tvenableAll; // Add this line to accept the parameter
-
-  const NavigationSidebar({
-    required this.selectedPage,
-    required this.onPageSelected,
-    required this.tvenableAll, // Add this line
-  });
-
-  @override
-  _NavigationSidebarState createState() => _NavigationSidebarState();
-}
-
-class _NavigationSidebarState extends State<NavigationSidebar> {
-  late List<FocusNode> _focusNodes;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNodes = List.generate(4, (index) => FocusNode());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_focusNodes[0]);
-    });
-  }
-
-  @override
-  void dispose() {
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: screenwdt * 0.2, // Adjust percentage as needed
-      decoration: BoxDecoration(
-        color: hintColor,
-      ),
-      child: Column(
-        children: <Widget>[
-          Container(
-            width: screenwdt,
-            decoration: BoxDecoration(
-              color: hintColor,
-            ),
-            padding: const EdgeInsets.all(20.0),
-            child: ClipRRect(
-              child: Image.asset(
-                'assets/logo.png',
-                fit: BoxFit.cover,
-              ),
-            ),
+    return Scaffold(
+      body: Column(
+        children: [
+          TopNavigationBar(
+            selectedPage: _selectedPage,
+            onPageSelected: _onPageSelected,
+            tvenableAll: _tvenableAll,
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: ListView(
-                children: <Widget>[
-                  _buildNavigationItem(
-                    Icons.home,
-                    'HOME',
-                    0,
-                    _focusNodes[0],
-                  ),
-                  // if (widget.tvenableAll) // Conditionally show Search option
-                    _buildNavigationItem(
-                      Icons.search,
-                      'SEARCH',
-                      1,
-                      _focusNodes[1],
-                    ),
-                  _buildNavigationItem(
-                    Icons.tv,
-                    'LIVE TV',
-                    2,
-                    _focusNodes[2],
-                  ),
-                  // if (widget.tvenableAll) // Conditionally show VOD option
-                    _buildNavigationItem(
-                      Icons.video_camera_front,
-                      'VOD',
-                      3,
-                      _focusNodes[3],
-                    ),
-                  // _buildNavigationItem(
-                  //   Icons.category,
-                  //   'CATEGORY',
-                  //   4,
-                  //   _focusNodes[4],
-                  // ),
-                ],
-              ),
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _selectedPage = index;
+                });
+              },
+              children: pages,
             ),
           ),
+          // Positioned(
+          //   left: 0,
+          //   right: 0,
+          //   top: 0,
+          //   child:
+      
+          // ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNavigationItem(
-      IconData iconData, String title, int index, FocusNode focusNode) {
-    bool isSelected = widget.selectedPage == index;
-    return Focus(
-      focusNode: focusNode,
-      onFocusChange: (hasFocus) {
-        if (hasFocus) {
-          setState(() {}); // Trigger rebuild to update UI when focused
-        }
-      },
-      onKeyEvent: (node, event) {
-        if (HardwareKeyboard.instance
-                .isLogicalKeyPressed(LogicalKeyboardKey.select) ||
-            HardwareKeyboard.instance
-                .isLogicalKeyPressed(LogicalKeyboardKey.enter)) {
-          widget.onPageSelected(index);
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: () {
-          widget.onPageSelected(index);
-          focusNode.requestFocus();
-        },
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            color: hintColor,
-            child: ListTile(
-              leading: Icon(
-                iconData,
-                color: focusNode.hasFocus
-                    ? Color.fromARGB(255, 247, 6, 118)
-                    : Color.fromARGB(255, 20, 27, 122),
-                size: isSelected ? 23 : 20,
-              ),
-              title: Text(
-                title,
-                style: TextStyle(
-                  color: focusNode.hasFocus
-                      ? Color.fromARGB(255, 247, 6, 118)
-                      : Color.fromARGB(255, 20, 27, 122),
-                  fontSize: isSelected ? screenwdt * 0.024 : screenwdt * 0.02,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
