@@ -32,6 +32,9 @@ var borderColor;
 var screenhgt;
 var screenwdt;
 var screensz;
+var nametextsz;
+var menutextsz;
+var Headingtextsz;
 
 var localImage;
 
@@ -41,6 +44,9 @@ class MyApp extends StatelessWidget {
     screenhgt = MediaQuery.of(context).size.height;
     screenwdt = MediaQuery.of(context).size.width;
     screensz = MediaQuery.of(context).size;
+    nametextsz = MediaQuery.of(context).size.width / 60.0;
+    menutextsz = MediaQuery.of(context).size.width / 70;
+    Headingtextsz = MediaQuery.of(context).size.width / 50 ;
     highlightColor = Colors.blue;
     cardColor = Color.fromARGB(255, 8, 1, 34);
     hintColor = Colors.white;
@@ -132,33 +138,35 @@ class _MyHomeState extends State<MyHome> {
       // EntertainmentScreen(),
     ];
 
-    return Scaffold(
-      body: Column(
-        children: [
-          TopNavigationBar(
-            selectedPage: _selectedPage,
-            onPageSelected: _onPageSelected,
-            tvenableAll: _tvenableAll,
-          ),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _selectedPage = index;
-                });
-              },
-              children: pages,
+    return SafeArea(
+      child: Scaffold(
+        body: Column(
+          children: [
+            TopNavigationBar(
+              selectedPage: _selectedPage,
+              onPageSelected: _onPageSelected,
+              tvenableAll: _tvenableAll,
             ),
-          ),
-          // Positioned(
-          //   left: 0,
-          //   right: 0,
-          //   top: 0,
-          //   child:
-      
-          // ),
-        ],
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _selectedPage = index;
+                  });
+                },
+                children: pages,
+              ),
+            ),
+            // Positioned(
+            //   left: 0,
+            //   right: 0,
+            //   top: 0,
+            //   child:
+        
+            // ),
+          ],
+        ),
       ),
     );
   }

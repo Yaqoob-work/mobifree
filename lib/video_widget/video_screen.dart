@@ -5,13 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:video_player/video_player.dart';
-
+  import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
   final String videoTitle;
   final List<dynamic> channelList;
+  final String bannerImageUrl;
+  final Duration startAtPosition;
   // final Function(bool) onFabFocusChanged;
 
   VideoScreen({
@@ -21,7 +23,9 @@ class VideoScreen extends StatefulWidget {
     // required this.onFabFocusChanged,
     required String genres,
     required List channels,
-    required int initialIndex,
+    required int initialIndex, 
+    required this.bannerImageUrl, 
+    required this.startAtPosition,
   });
 
   @override
@@ -50,17 +54,23 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+        KeepScreenOn.turnOn();
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
         setState(() {
+          _controller.seekTo(widget.startAtPosition);
           _totalDuration = _controller.value.duration;
           _isVideoInitialized = true;
         });
+        // final Duration startAtPosition;
         _controller.play();
+        _saveLastPlayedVideo(widget.videoUrl, _controller.value.position,  widget.bannerImageUrl);
         _startPositionUpdater();
         _startConnectivityCheck();
         KeepScreenOn.turnOn();
       });
+
+
 
     _controller.addListener(() {
       if (_controller.value.isBuffering != _isBuffering) {
@@ -101,9 +111,39 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     // You can implement your own method to check connectivity status here.
   }
 
+
+
+void _saveLastPlayedVideo(String videoUrl, Duration position, String bannerImageUrl) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  List<String>? lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
+
+  // Debugging - Check if the URL is correct
+  print("Saving video URL: $videoUrl");
+  print("Saving banner image URL: $bannerImageUrl");
+
+  // Create a new entry for the current video
+  String newVideoEntry = "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
+
+  // Insert the new entry at the beginning of the list
+  lastPlayedVideos.insert(0, newVideoEntry);
+
+  // Keep only the last 12 videos
+  if (lastPlayedVideos.length > 12) {
+    lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+  }
+
+  // Save the updated list back to SharedPreferences
+  await prefs.setStringList('last_played_videos', lastPlayedVideos);
+}
+
+
+
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _saveLastPlayedVideo(widget.videoUrl, _controller.value.position,widget.bannerImageUrl);
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();

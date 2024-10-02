@@ -23,7 +23,7 @@ class NewsItemModel {
     return NewsItemModel(
       id: json['id'].toString(),
       name: json['name'] ?? '',
-      description: json['description'] ?? 'No Description   lhvkjxfhvflh gljhdkj.gkvxj sfhkdgkf lkgsdlkvhdflskhglsdfkjhg;kljhg sdkfhlvkjdfbhv sdhlfgdhsdfhlgh',
+      description: json['description'] ?? '',
       banner: json['banner'] ?? '',
       url: json['url'] ?? '',
       streamType: json['stream_type'] ?? '',

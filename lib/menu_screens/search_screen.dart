@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -58,7 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isNavigating = false;
   bool _showSearchField = false;
   Color paletteColor = Colors.grey; // Default color, updated dynamically
-final PaletteColorService _paletteColorService = PaletteColorService();
+  final PaletteColorService _paletteColorService = PaletteColorService();
   final SocketService _socketService = SocketService();
   final int _maxRetries = 3;
   final int _retryDelay = 5; // seconds
@@ -70,11 +63,8 @@ final PaletteColorService _paletteColorService = PaletteColorService();
     _searchFieldFocusNode.addListener(_onSearchFieldFocusChanged);
     _searchIconFocusNode.addListener(_onSearchIconFocusChanged);
     _socketService.initSocket();
+    checkServerStatus();
   }
-
-
-
-
 
   @override
   void dispose() {
@@ -87,6 +77,17 @@ final PaletteColorService _paletteColorService = PaletteColorService();
     _itemFocusNodes.forEach((node) => node.dispose());
     _socketService.dispose();
     super.dispose();
+  }
+
+  // Server status check method
+  void checkServerStatus() {
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      // Check if the socket is connected, otherwise attempt to reconnect
+      if (!_socketService.socket.connected) {
+        print('YouTube server down, retrying...');
+        _socketService.initSocket(); // Re-establish the socket connection
+      }
+    });
   }
 
   void _onSearchFieldFocusChanged() {
@@ -185,7 +186,7 @@ final PaletteColorService _paletteColorService = PaletteColorService();
     });
   }
 
-    Future<void> _updatePaletteColor(String imageUrl) async {
+  Future<void> _updatePaletteColor(String imageUrl) async {
     try {
       Color color = await _paletteColorService.getSecondaryColor(imageUrl);
       setState(() {
@@ -237,9 +238,11 @@ final PaletteColorService _paletteColorService = PaletteColorService();
                         ),
                       )
                     : Padding(
-                        padding:  EdgeInsets.symmetric(horizontal: screenwdt *0.03),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
                         child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 5,
                             // childAspectRatio: 0.7,
                             // crossAxisSpacing: 10,
@@ -264,12 +267,12 @@ final PaletteColorService _paletteColorService = PaletteColorService();
 
   Widget _buildSearchBar() {
     return Container(
-      width: screenwdt*0.93,
-      padding: EdgeInsets.only(top: screenhgt*0.02),
-      height: screenhgt*0.1,
+      width: screenwdt * 0.93,
+      padding: EdgeInsets.only(top: screenhgt * 0.02),
+      height: screenhgt * 0.1,
       child: Row(
         children: [
-          if (!_showSearchField)Expanded(child: Text('')),
+          if (!_showSearchField) Expanded(child: Text('')),
           if (_showSearchField)
             Expanded(
               child: TextField(
@@ -299,7 +302,8 @@ final PaletteColorService _paletteColorService = PaletteColorService();
           Focus(
             focusNode: _searchIconFocusNode,
             onKey: (node, event) {
-              if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+              if (event is RawKeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.select) {
                 _toggleSearchField();
                 return KeyEventResult.handled;
               }
@@ -308,19 +312,18 @@ final PaletteColorService _paletteColorService = PaletteColorService();
             child: IconButton(
               icon: Icon(
                 Icons.search,
-                color: _searchIconFocusNode.hasFocus ? borderColor : Colors.white,
+                color:
+                    _searchIconFocusNode.hasFocus ? borderColor : Colors.white,
                 size: _searchIconFocusNode.hasFocus ? 35 : 30,
               ),
               onPressed: _toggleSearchField,
               focusColor: Colors.transparent,
             ),
           ),
-          
         ],
       ),
     );
   }
-
 
   Widget _buildGridViewItem(BuildContext context, int index) {
     final result = searchResults[index];
@@ -337,7 +340,7 @@ final PaletteColorService _paletteColorService = PaletteColorService();
         return KeyEventResult.ignored;
       },
       onFocusChange: (hasFocus) {
-          _updatePaletteColor(result['banner'] ?? ''); 
+        _updatePaletteColor(result['banner'] ?? '');
 
         setState(() {
           selectedIndex = hasFocus ? index : -1;
@@ -352,14 +355,15 @@ final PaletteColorService _paletteColorService = PaletteColorService();
             height: screenhgt * 0.2,
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              border: selectedIndex == index ?Border.all(
-                color:  paletteColor ,
-                width: 3.0,
-              ):
-              Border.all(
-                color:  Colors.transparent ,
-                width: 3.0,
-              ),
+              border: selectedIndex == index
+                  ? Border.all(
+                      color: paletteColor,
+                      width: 3.0,
+                    )
+                  : Border.all(
+                      color: Colors.transparent,
+                      width: 3.0,
+                    ),
               // borderRadius: BorderRadius.circular(10),
               boxShadow: selectedIndex == index
                   ? [
@@ -402,39 +406,38 @@ final PaletteColorService _paletteColorService = PaletteColorService();
     );
   }
 
+  void _onItemTap(BuildContext context, int index) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
+    _showLoadingIndicator(context);
 
-
-void _onItemTap(BuildContext context, int index) async {
-  if (_isNavigating) return;
-  _isNavigating = true;
-  _showLoadingIndicator(context);
-
-  try {
-    await _updateChannelUrlIfNeeded(searchResults, index);
-    if (_shouldContinueLoading) {
-      await _navigateToVideoScreen(context, searchResults, index);
+    try {
+      await _updateChannelUrlIfNeeded(searchResults, index);
+      if (_shouldContinueLoading) {
+        await _navigateToVideoScreen(context, searchResults, index);
+      }
+    } catch (e) {
+      print("Error playing video: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      // Always reset these states regardless of success or failure
+      _isNavigating = false;
+      _shouldContinueLoading = true;
+      _dismissLoadingIndicator();
     }
-  } catch (e) {
-    print("Error playing video: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Something Went Wrong')),
-    );
-  } finally {
-    // Always reset these states regardless of success or failure
-    _isNavigating = false;
-    _shouldContinueLoading = true;
-    _dismissLoadingIndicator();
   }
-}
 
-
-
-  Future<void> _updateChannelUrlIfNeeded(List<dynamic> channels, int index) async {
-    if (channels[index]['stream_type'] == 'YoutubeLive' || channels[index]['stream_type'] == 'Youtube') {
+  Future<void> _updateChannelUrlIfNeeded(
+      List<dynamic> channels, int index) async {
+    if (channels[index]['stream_type'] == 'YoutubeLive' ||
+        channels[index]['stream_type'] == 'Youtube') {
       for (int i = 0; i < _maxRetries; i++) {
         if (!_shouldContinueLoading) break;
         try {
-          String updatedUrl = await _socketService.getUpdatedUrl(channels[index]['url']);
+          String updatedUrl =
+              await _socketService.getUpdatedUrl(channels[index]['url']);
           channels[index]['url'] = updatedUrl;
           channels[index]['stream_type'] = 'M3u8';
           break;
@@ -446,7 +449,8 @@ void _onItemTap(BuildContext context, int index) async {
     }
   }
 
-  Future<void> _navigateToVideoScreen(BuildContext context, List<dynamic> channels, int index) async {
+  Future<void> _navigateToVideoScreen(
+      BuildContext context, List<dynamic> channels, int index) async {
     if (_shouldContinueLoading) {
       await Navigator.push(
         context,
@@ -464,6 +468,8 @@ void _onItemTap(BuildContext context, int index) async {
               genres: channels[index]['genres'] ?? '',
               channels: channels,
               initialIndex: index,
+              bannerImageUrl: '',
+              startAtPosition: Duration.zero,
             ),
           ),
         ),
@@ -477,11 +483,12 @@ void _onItemTap(BuildContext context, int index) async {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return WillPopScope(
-        onWillPop: () async {
-          _shouldContinueLoading = false;
-          _dismissLoadingIndicator();  // Adjust the method if needed
-          return Future.value(false);  // Prevent dialog from closing automatically
-        },
+          onWillPop: () async {
+            _shouldContinueLoading = false;
+            _dismissLoadingIndicator(); // Adjust the method if needed
+            return Future.value(
+                false); // Prevent dialog from closing automatically
+          },
           child: Center(
             child: SpinKitFadingCircle(
               color: borderColor,
@@ -493,15 +500,13 @@ void _onItemTap(BuildContext context, int index) async {
     );
   }
 
-
-
   void _dismissLoadingIndicator() {
-  if (Navigator.of(context).canPop()) {
-    // Reset the state before popping the navigator
-    _isNavigating = false;
-    // _shouldContinueLoading = true;
-    
-    Navigator.of(context).pop();
+    if (Navigator.of(context).canPop()) {
+      // Reset the state before popping the navigator
+      _isNavigating = false;
+      // _shouldContinueLoading = true;
+
+      Navigator.of(context).pop();
+    }
   }
-}
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobi_tv_entertainment/main.dart';
@@ -207,8 +208,9 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
             Stack(
               children: [
                 AnimatedContainer(
-                  width: screenwdt * 0.15,
-                  height: isFocused ? screenhgt * 0.32 : screenhgt * 0.3,
+
+                width: screenwdt * 0.19,
+                height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
                   duration: const Duration(milliseconds: 300),
                   decoration: BoxDecoration(
                     border: isFocused
@@ -235,8 +237,9 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     imageUrl: widget.network.logo,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => localImage,
-                    width: screenwdt * 0.15,
-                    height: isFocused ? screenhgt * 0.32 : screenhgt * 0.3,
+
+                width: screenwdt * 0.19,
+                height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
                   ),
                 ),
               ],
@@ -251,7 +254,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     style: TextStyle(
                       color: isFocused ? paletcolor : Colors.grey,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: nametextsz,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -333,8 +336,6 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             AnimatedContainer(
-              // width: screenwdt * 0.15,
-              // height: isFocused ? screenhgt * 0.22 : screenhgt * 0.2,
 
               width: screenwdt * 0.19,
               height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
@@ -363,8 +364,6 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                 imageUrl: widget.content.banner,
                 placeholder: (context, url) => localImage,
                 fit: BoxFit.cover,
-                // width: screenwdt * 0.15,
-                // height: screenhgt * 0.2,
 
                 width: screenwdt * 0.19,
                 height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
@@ -378,7 +377,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
                 style: TextStyle(
                   color: isFocused ? paletcolor : Colors.grey,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize: nametextsz,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -537,6 +536,10 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
+
+
+
+
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
 
@@ -558,6 +561,7 @@ class _DetailsPageState extends State<DetailsPage> {
   void initState() {
     super.initState();
     _socketService.initSocket();
+    checkServerStatus();
     _loadMovieDetails();
   }
 
@@ -579,6 +583,16 @@ class _DetailsPageState extends State<DetailsPage> {
     }
   }
 
+  // Add this method to check the server status and reconnect if needed
+  void checkServerStatus() {
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      if (!_socketService.socket.connected) {
+        print('YouTube server down, retrying...');
+        _socketService.initSocket(); // Re-establish the socket connection
+      }
+    });
+  }
+
   Future<void> _updateUrlIfNeeded(Map<String, String> playLink) async {
     if (playLink['type'] == 'Youtube' || playLink['type'] == 'YoutubeLive') {
       for (int i = 0; i < _maxRetries; i++) {
@@ -596,6 +610,7 @@ class _DetailsPageState extends State<DetailsPage> {
       }
     }
   }
+  
 
   Future<bool> _onWillPop() async {
     if (_isLoading) {
@@ -618,7 +633,10 @@ class _DetailsPageState extends State<DetailsPage> {
           children: [
             _movieDetails == null
                 ? Center(child: CircularProgressIndicator())
-                : _buildMovieDetailsUI(context, _movieDetails!),
+                : Padding(
+                    padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
+                    child: _buildMovieDetailsUI(context, _movieDetails!),
+                  ),
             if (_isLoading)
               Center(
                 child: SpinKitFadingCircle(
@@ -648,7 +666,7 @@ class _DetailsPageState extends State<DetailsPage> {
               height: screenhgt * 0.5,
             ),
           Text(movieDetails.name,
-              style: TextStyle(color: Colors.white, fontSize: 20)),
+              style: TextStyle(color: Colors.white, fontSize: nametextsz)),
           SizedBox(height: 10),
           Expanded(
             child: ListView.builder(

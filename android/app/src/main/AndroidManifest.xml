@@ -8,7 +8,7 @@
 
 
     <application
-        android:label="Ekom Six"
+        android:label="Ekom Seven"
         android:name="${applicationName}"
         android:banner="@drawable/banner"
         android:icon="@mipmap/ic_launcher"

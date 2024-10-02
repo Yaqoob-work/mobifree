@@ -1,8 +1,3 @@
-
-
-
-
-
 import 'dart:async';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
@@ -36,7 +31,18 @@ class _LiveScreenState extends State<LiveScreen> {
   void initState() {
     super.initState();
     _socketService.initSocket();
+    checkServerStatus();
     fetchData();
+  }
+
+  void checkServerStatus() {
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      // Check if the socket is connected, otherwise attempt to reconnect
+      if (!_socketService.socket.connected) {
+        print('YouTube server down, retrying...');
+        _socketService.initSocket(); // Re-establish the socket connection
+      }
+    });
   }
 
   Future<void> fetchData() async {
@@ -60,7 +66,7 @@ class _LiveScreenState extends State<LiveScreen> {
     return Scaffold(
       backgroundColor: cardColor,
       body: Padding(
-        padding:  EdgeInsets.symmetric(horizontal: screenwdt *0.03),
+        padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
         child: _buildBody(),
       ),
     );
@@ -84,10 +90,10 @@ class _LiveScreenState extends State<LiveScreen> {
       child: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 5,
-          childAspectRatio: 0.85,
-          ),
+          // childAspectRatio: 0.85,
+        ),
         // scrollDirection: Axis.horizontal,
-        itemCount: _entertainmentList.length ,
+        itemCount: _entertainmentList.length,
         itemBuilder: (context, index) {
           return _buildNewsItem(_entertainmentList[index]);
         },
@@ -106,17 +112,19 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 
   void _handleEnterPress(String itemId) {
-      final selectedItem = _entertainmentList.firstWhere((item) => item.id == itemId);
-      _navigateToVideoScreen(selectedItem);
+    final selectedItem =
+        _entertainmentList.firstWhere((item) => item.id == itemId);
+    _navigateToVideoScreen(selectedItem);
   }
 
-  void _navigateToVideoScreen(NewsItemModel newsItem) async {
+  Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
     bool shouldPlayVideo = true;
     bool shouldPop = true;
 
+    // Show loading indicator while video is loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -132,15 +140,17 @@ class _LiveScreenState extends State<LiveScreen> {
       },
     );
 
-    Timer(Duration(seconds: 5), () {
+    Timer(Duration(seconds: 10), () {
       _isNavigating = false;
     });
 
     try {
       if (newsItem.streamType == 'YoutubeLive') {
+        // Retry fetching the updated URL if stream type is YouTube Live
         for (int i = 0; i < _maxRetries; i++) {
           try {
-            String updatedUrl = await _socketService.getUpdatedUrl(newsItem.url);
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(newsItem.url);
             newsItem = NewsItemModel(
               id: newsItem.id,
               name: newsItem.name,
@@ -151,10 +161,11 @@ class _LiveScreenState extends State<LiveScreen> {
               genres: newsItem.genres,
               status: newsItem.status,
             );
-            break;
+            break; // Exit loop when URL is successfully updated
           } catch (e) {
-            if (i == _maxRetries - 1) rethrow;
-            await Future.delayed(Duration(seconds: _retryDelay));
+            if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
+            await Future.delayed(
+                Duration(seconds: _retryDelay)); // Delay before next retry
           }
         }
       }
@@ -171,10 +182,11 @@ class _LiveScreenState extends State<LiveScreen> {
               videoUrl: newsItem.url,
               videoTitle: newsItem.name,
               channelList: _entertainmentList,
-              // onFabFocusChanged: (bool) {},
               genres: newsItem.genres,
               channels: [],
               initialIndex: 1,
+              bannerImageUrl: newsItem.banner,
+              startAtPosition: Duration.zero,
             ),
           ),
         );

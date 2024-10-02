@@ -1,3 +1,4 @@
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/widgets/utils/color_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,10 +90,10 @@ class _NewsItemState extends State<NewsItem> {
                       ),
                     ),
                     Text(
-                      _formatViewAllText(widget.item.name),
+                      widget.item.name,
                       style: TextStyle(
                         color: isFocused ? dominantColor : Colors.white,
-                        fontSize: _calculateFontSize(widget.item.name),
+                        fontSize: nametextsz,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -116,23 +117,23 @@ class _NewsItemState extends State<NewsItem> {
     );
   }
 
-  String _formatViewAllText(String text) {
-    List<String> words = text.split(' ');
-    if (words.length > 1) {
-      return words
-          .map((word) => word.trim())
-          .where((word) => word.isNotEmpty)
-          .join('\n');
-    }
-    return text;
-  }
+  // String _formatViewAllText(String text) {
+  //   List<String> words = text.split(' ');
+  //   if (words.length > 1) {
+  //     return words
+  //         .map((word) => word.trim())
+  //         .where((word) => word.isNotEmpty)
+  //         .join('\n');
+  //   }
+  //   return text;
+  // }
 
-  double _calculateFontSize(String text) {
-    if (text.length <= 5) return 20;
-    if (text.length <= 10) return 18;
-    if (text.length <= 15) return 16;
-    return 14;
-  }
+  // double _calculateFontSize(String text) {
+  //   if (text.length <= 5) return 20;
+  //   if (text.length <= 10) return 18;
+  //   if (text.length <= 15) return 16;
+  //   return 14;
+  // }
 
   Widget _buildTextContent() {
     return Container(
@@ -142,7 +143,7 @@ class _NewsItemState extends State<NewsItem> {
           Text(
             widget.item.name.toUpperCase(),
             style: TextStyle(
-              fontSize: 15,
+              fontSize: nametextsz,
               fontWeight: FontWeight.bold,
               color: isFocused ? dominantColor : Colors.white,
             ),
@@ -151,19 +152,19 @@ class _NewsItemState extends State<NewsItem> {
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 4),
-          if (!widget.hideDescription)
-          Text(
-            widget.item.description,
-            style: TextStyle(
-              fontSize: 12,
-              color: isFocused
-                  ? dominantColor.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.8),
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
+          // if (!widget.hideDescription)
+          // Text(
+          //   widget.item.description,
+          //   style: TextStyle(
+          //     fontSize: 12,
+          //     color: isFocused
+          //         ? dominantColor.withOpacity(0.8)
+          //         : Colors.white.withOpacity(0.8),
+          //   ),
+          //   textAlign: TextAlign.center,
+          //   maxLines: 3,
+          //   overflow: TextOverflow.ellipsis,
+          // ),
         ],
       ),
     );

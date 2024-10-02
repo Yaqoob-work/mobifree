@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobi_tv_entertainment/main.dart';
@@ -200,8 +201,8 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
             Stack(
               children: [
                 AnimatedContainer(
-                  width: screenwdt * 0.15,
-                  height: screenhgt * 0.3,
+                  width: screenwdt * 0.19,
+                  height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
                   duration: const Duration(milliseconds: 300),
                   decoration: BoxDecoration(
                     border: Border.all(
@@ -222,17 +223,16 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                   child: CachedNetworkImage(
                     imageUrl: widget.network.logo,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        localImage,
-                    width: screenwdt * 0.15,
-                    height: screenhgt * 0.3,
+                    placeholder: (context, url) => localImage,
+                    width: screenwdt * 0.19,
+                    height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
                   ),
                 ),
               ],
             ),
             SizedBox(height: 10),
             Container(
-              width: screenwdt * 0.15,
+              width: screenwdt * 0.17,
               child: Column(
                 children: [
                   Text(
@@ -240,7 +240,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
                     style: TextStyle(
                       color: isFocused ? paletcolor : Colors.grey,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: nametextsz,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -347,13 +347,13 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
             ),
             SizedBox(height: 10),
             Container(
-              width: screenwdt * 0.15,
+              width: screenwdt * 0.17,
               child: Text(
                 widget.content.name,
                 style: TextStyle(
                   color: isFocused ? dominantColor : Colors.grey,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize: nametextsz,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -404,13 +404,15 @@ class _VODState extends State<VOD> {
             return Container(
               // margin: EdgeInsets.only(top: screenhgt * 0.1),
               child: Padding(
-                padding:  EdgeInsets.symmetric(horizontal: screenwdt *0.03, vertical: screenhgt*0.01),
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenwdt * 0.03,
+                ),
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
+                    crossAxisCount: 5,
                     // crossAxisSpacing: 10,
                     // mainAxisSpacing: 10,
-                    childAspectRatio: 0.6,
+                    childAspectRatio: 0.8,
                   ),
                   itemCount: networks.length,
                   itemBuilder: (context, index) {
@@ -476,7 +478,8 @@ class _ContentScreenState extends State<ContentScreen> {
           } else {
             final content = snapshot.data!;
             return Padding(
-              padding:  EdgeInsets.symmetric(horizontal: screenwdt *0.03, vertical: screenhgt*0.01),
+              padding: EdgeInsets.symmetric(
+                  horizontal: screenwdt * 0.03, vertical: screenhgt * 0.01),
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 5,
@@ -508,6 +511,9 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
+
+
+
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
 
@@ -529,6 +535,7 @@ class _DetailsPageState extends State<DetailsPage> {
   void initState() {
     super.initState();
     _socketService.initSocket();
+    checkServerStatus();
     _loadMovieDetails();
   }
 
@@ -550,6 +557,16 @@ class _DetailsPageState extends State<DetailsPage> {
     }
   }
 
+  // Add this method to check the server status and reconnect if needed
+  void checkServerStatus() {
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      if (!_socketService.socket.connected) {
+        print('YouTube server down, retrying...');
+        _socketService.initSocket(); // Re-establish the socket connection
+      }
+    });
+  }
+
   Future<void> _updateUrlIfNeeded(Map<String, String> playLink) async {
     if (playLink['type'] == 'Youtube' || playLink['type'] == 'YoutubeLive') {
       for (int i = 0; i < _maxRetries; i++) {
@@ -567,6 +584,7 @@ class _DetailsPageState extends State<DetailsPage> {
       }
     }
   }
+  
 
   Future<bool> _onWillPop() async {
     if (_isLoading) {
@@ -590,9 +608,9 @@ class _DetailsPageState extends State<DetailsPage> {
             _movieDetails == null
                 ? Center(child: CircularProgressIndicator())
                 : Padding(
-                  padding:  EdgeInsets.symmetric(horizontal: screenwdt *0.03),
-                  child: _buildMovieDetailsUI(context, _movieDetails!),
-                ),
+                    padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
+                    child: _buildMovieDetailsUI(context, _movieDetails!),
+                  ),
             if (_isLoading)
               Center(
                 child: SpinKitFadingCircle(
@@ -622,7 +640,7 @@ class _DetailsPageState extends State<DetailsPage> {
               height: screenhgt * 0.5,
             ),
           Text(movieDetails.name,
-              style: TextStyle(color: Colors.white, fontSize: 20)),
+              style: TextStyle(color: Colors.white, fontSize: nametextsz)),
           SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
