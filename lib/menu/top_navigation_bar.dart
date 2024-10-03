@@ -219,14 +219,15 @@ class TopNavigationBar extends StatefulWidget {
   @override
   _TopNavigationBarState createState() => _TopNavigationBarState();
 }
-
 class _TopNavigationBarState extends State<TopNavigationBar> {
   late List<FocusNode> _focusNodes;
+  late List<Color?> _randomColors; // Store random colors for each item
 
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(6, (index) => FocusNode());
+    _focusNodes = List.generate(4, (index) => FocusNode());
+    _randomColors = List.filled(4, null); // Initialize with null
 
     // Set initial focus to the first menu item
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -245,7 +246,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt * 0.04 ), // Adjust padding
+      padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt * 0.04),
       color: cardColor,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -261,10 +262,10 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
           Row(
             children: [
               _buildNavigationItem('Vod', 1, _focusNodes[1]),
-              _buildNavigationItem('Web Series', 2, _focusNodes[2]),
-              _buildNavigationItem('Live TV', 3, _focusNodes[3]),
-              _buildNavigationItem('Search', 4, _focusNodes[4]),
-              _buildNavigationItem('Notification', 5, _focusNodes[5]),
+              // _buildNavigationItem('Web Series', 2, _focusNodes[2]),
+              _buildNavigationItem('Live TV', 2, _focusNodes[2]),
+              _buildNavigationItem('Search', 3, _focusNodes[3]),
+              // _buildNavigationItem('Notification', 5, _focusNodes[5]),
             ],
           ),
         ],
@@ -274,12 +275,19 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
 
   Widget _buildNavigationItem(String title, int index, FocusNode focusNode) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.013),
-      child: IntrinsicWidth( // IntrinsicWidth to adjust width dynamically based on text size
+      padding: EdgeInsets.only(top: screenwdt * 0.007, left: screenwdt * 0.013, right: screenwdt * 0.013),
+      child: IntrinsicWidth(
         child: Focus(
           focusNode: focusNode,
           onFocusChange: (hasFocus) {
-            setState(() {}); // Redraw when focused
+            if (hasFocus && _randomColors[index] == null) {
+              // Generate the random color only once when focused
+              _randomColors[index] = generateRandomLightColor();
+            } else if (!hasFocus) {
+              // Reset color when focus is lost
+              _randomColors[index] = null;
+            }
+            setState(() {});
           },
           onKeyEvent: (node, event) {
             if (event is KeyDownEvent) {
@@ -289,8 +297,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
               } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
                 _focusNodes[(index - 1 + _focusNodes.length) % _focusNodes.length].requestFocus();
                 return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.select ||
-                  event.logicalKey == LogicalKeyboardKey.enter) {
+              } else if (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter) {
                 widget.onPageSelected(index);
                 return KeyEventResult.handled;
               }
@@ -303,63 +310,59 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
               focusNode.requestFocus();
             },
             child: Container(
-              // margin: EdgeInsets.symmetric(horizontal: 5.0), // Slight margin
               decoration: BoxDecoration(
-                color:focusNode.hasFocus? Colors.black :Colors.transparent , // Black background
+                color: focusNode.hasFocus ? Colors.black : Colors.transparent,
                 boxShadow: focusNode.hasFocus
                     ? [
                         BoxShadow(
-                          color: generateRandomLightColor().withOpacity(0.8), // Random shadow color on focus
-                          blurRadius: 15.0, // Soft shadow
-                          spreadRadius: 5.0, // Increase spread for prominence
+                          color: _randomColors[index] ?? Colors.transparent, // Use the stored color
+                          blurRadius: 15.0,
+                          spreadRadius: 5.0,
                         ),
                       ]
                     : [],
                 border: focusNode.hasFocus
                     ? Border.all(
-                        color: generateRandomLightColor(), // Random border color
+                        color: _randomColors[index] ?? Colors.transparent, // Use the stored color
                         width: 2.0,
                       )
                     : Border.all(
-                        color: Colors.transparent, // No border when not focused
+                        color: Colors.transparent,
                         width: 2.0,
-                      ), 
+                      ),
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: screenhgt*0.01, horizontal: 15),
+                padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: 15),
                 child: index == 0
                     ? Image.asset(
-                        'assets/logo3.png', // Image for the "All" item
-                        height: screenhgt * 0.05, // Adjust the size as needed
+                        'assets/logo3.png',
+                        height: screenhgt * 0.05,
                       )
-                    : index == 4 // Check if this is the "Search" item
+                    : index == 4
                         ? Icon(
-                            Icons.search, // Replace text with search icon
+                            Icons.search,
                             color: focusNode.hasFocus
-                                ? generateRandomLightColor() // Random color on focus
+                                ? _randomColors[index] ?? hintColor // Use the stored color
                                 : hintColor,
-                            size: screenwdt * 0.025, // Adjust icon size
+                            size: screenwdt * 0.025,
                           )
-                        : index == 5 // Check if this is the "Notification" item
+                        : index == 5
                             ? Icon(
                                 Icons.notifications,
                                 color: focusNode.hasFocus
-                                    ? generateRandomLightColor() // Random color on focus
+                                    ? _randomColors[index] ?? hintColor // Use the stored color
                                     : hintColor,
-                                size: screenwdt * 0.025, // Adjust icon size
+                                size: screenwdt * 0.025,
                               )
                             : Text(
                                 title,
                                 style: TextStyle(
                                   color: focusNode.hasFocus
-                                      ? generateRandomLightColor() // Random color on focus
+                                      ? _randomColors[index] ?? hintColor // Use the stored color
                                       : hintColor,
-                                  // fontSize: screenwdt * 0.015,
-                                  fontSize: menutextsz ,
-                                  fontWeight: focusNode.hasFocus
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                                  fontSize: menutextsz,
+                                  fontWeight: focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
               ),
