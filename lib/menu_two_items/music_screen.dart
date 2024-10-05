@@ -54,18 +54,19 @@ class _MusicScreenState extends State<MusicScreen> {
       categoryFocusNodes[category] = FocusNode();
     }
     moreFocusNode = FocusNode();
+
+
   }
 
   void checkServerStatus() {
-  Timer.periodic(Duration(seconds: 10), (timer) {
-    // Check if the socket is connected, otherwise attempt to reconnect
-    if (!_socketService.socket.connected) {
-      print('YouTube server down, retrying...');
-      _socketService.initSocket(); // Re-establish the socket connection
-    }
-  });
-}
-
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      // Check if the socket is connected, otherwise attempt to reconnect
+      if (!_socketService.socket.connected) {
+        print('YouTube server down, retrying...');
+        _socketService.initSocket(); // Re-establish the socket connection
+      }
+    });
+  }
 
   Future<void> fetchData() async {
     setState(() {
@@ -189,14 +190,14 @@ class _MusicScreenState extends State<MusicScreen> {
                   return Container(
                     margin: EdgeInsets.symmetric(horizontal: screenwdt * 0.02),
                     decoration: BoxDecoration(
-                      color:hasFocus? Colors.black : Colors.transparent,
+                      color: hasFocus ? Colors.black : Colors.transparent,
                       boxShadow: [
                         if (hasFocus)
                           BoxShadow(
                             color: randomBorderColor
                             // .withOpacity(
-                                // 0.8)
-                                , // Adjust opacity for visibility
+                            // 0.8)
+                            , // Adjust opacity for visibility
                             blurRadius:
                                 15.0, // Reduced blur radius for sharper shadow
                             spreadRadius:
@@ -213,7 +214,8 @@ class _MusicScreenState extends State<MusicScreen> {
                           : null, // No border when not focused
                     ),
                     child: SizedBox(
-                      height: screenhgt*0.01, // Adjust height to control button size
+                      height: screenhgt *
+                          0.01, // Adjust height to control button size
                       child: Center(
                         child: TextButton(
                           onPressed: () => _selectCategory(category),
@@ -249,7 +251,7 @@ class _MusicScreenState extends State<MusicScreen> {
                 } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
                   FocusScope.of(context)
                       .requestFocus(categoryFocusNodes[categories.last]);
-                      
+
                   return KeyEventResult.handled;
                 } else if (event.logicalKey == LogicalKeyboardKey.enter ||
                     event.logicalKey == LogicalKeyboardKey.select) {
@@ -270,14 +272,14 @@ class _MusicScreenState extends State<MusicScreen> {
                 return Container(
                   margin: EdgeInsets.symmetric(horizontal: screenwdt * 0.02),
                   decoration: BoxDecoration(
-                    color: hasFocus? Colors.black : Colors.transparent ,
+                    color: hasFocus ? Colors.black : Colors.transparent,
                     boxShadow: [
                       if (hasFocus)
                         BoxShadow(
                           color: randomBorderColor
                           // .withOpacity(
-                              // 0.8)
-                              , // Adjust opacity for visibility
+                          // 0.8)
+                          , // Adjust opacity for visibility
                           blurRadius:
                               15.0, // Reduced blur radius for sharper shadow
                           spreadRadius:
@@ -393,14 +395,12 @@ class _MusicScreenState extends State<MusicScreen> {
   }
 
   Widget _buildNewsItem(NewsItemModel item) {
-    return 
-
-      NewsItem(
-        key: Key(item.id),
-        hideDescription: true,
-        item: item,
-        onTap: () => _navigateToVideoScreen(item),
-        onEnterPress: _handleEnterPress,
+    return NewsItem(
+      key: Key(item.id),
+      hideDescription: true,
+      item: item,
+      onTap: () => _navigateToVideoScreen(item),
+      onEnterPress: _handleEnterPress,
     );
   }
 
@@ -414,93 +414,91 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
+  Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
 
+    bool shouldPlayVideo = true;
+    bool shouldPop = true;
 
+    // Show loading indicator while video is loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            shouldPlayVideo = false;
+            shouldPop = false;
+            return true;
+          },
+          child: LoadingIndicator(),
+        );
+      },
+    );
 
-Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
-  if (_isNavigating) return;
-  _isNavigating = true;
+    Timer(Duration(seconds: 10), () {
+      _isNavigating = false;
+    });
 
-  bool shouldPlayVideo = true;
-  bool shouldPop = true;
-
-  // Show loading indicator while video is loading
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return WillPopScope(
-        onWillPop: () async {
-          shouldPlayVideo = false;
-          shouldPop = false;
-          return true;
-        },
-        child: LoadingIndicator(),
-      );
-    },
-  );
-
-  Timer(Duration(seconds: 10), () {
-    _isNavigating = false;
-  });
-
-  try {
-    if (newsItem.streamType == 'YoutubeLive') {
-      // Retry fetching the updated URL if stream type is YouTube Live
-      for (int i = 0; i < _maxRetries; i++) {
-        try {
-          String updatedUrl = await _socketService.getUpdatedUrl(newsItem.url);
-          newsItem = NewsItemModel(
-            id: newsItem.id,
-            name: newsItem.name,
-            description: newsItem.description,
-            banner: newsItem.banner,
-            url: updatedUrl,
-            streamType: 'M3u8',
-            genres: newsItem.genres,
-            status: newsItem.status,
-          );
-          break; // Exit loop when URL is successfully updated
-        } catch (e) {
-          if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
-          await Future.delayed(Duration(seconds: _retryDelay)); // Delay before next retry
+    try {
+      if (newsItem.streamType == 'YoutubeLive') {
+        // Retry fetching the updated URL if stream type is YouTube Live
+        for (int i = 0; i < _maxRetries; i++) {
+          try {
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(newsItem.url);
+            newsItem = NewsItemModel(
+              id: newsItem.id,
+              name: newsItem.name,
+              description: newsItem.description,
+              banner: newsItem.banner,
+              url: updatedUrl,
+              streamType: 'M3u8',
+              genres: newsItem.genres,
+              status: newsItem.status,
+            );
+            break; // Exit loop when URL is successfully updated
+          } catch (e) {
+            if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
+            await Future.delayed(
+                Duration(seconds: _retryDelay)); // Delay before next retry
+          }
         }
       }
-    }
 
-    if (shouldPop) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
+      if (shouldPop) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
-    if (shouldPlayVideo) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoScreen(
-            videoUrl: newsItem.url,
-            videoTitle: newsItem.name,
-            channelList: _entertainmentList,
-            genres: newsItem.genres,
-            channels: [],
-            initialIndex: 1,
-            bannerImageUrl: newsItem.banner,
-            startAtPosition: Duration.zero,
+      if (shouldPlayVideo) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: newsItem.url,
+              videoTitle: newsItem.name,
+              channelList: _entertainmentList,
+              genres: newsItem.genres,
+              channels: [],
+              initialIndex: 1,
+              bannerImageUrl: newsItem.banner,
+              startAtPosition: Duration.zero,
+            ),
           ),
-        ),
+        );
+      }
+    } catch (e) {
+      if (shouldPop) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
       );
+    } finally {
+      _isNavigating = false;
     }
-  } catch (e) {
-    if (shouldPop) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Something Went Wrong')),
-    );
-  } finally {
-    _isNavigating = false;
   }
-}
-
 
   void _navigateToViewAllScreen() {
     Navigator.push(
@@ -519,6 +517,7 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     super.dispose();
   }
 }
+
 
 
 

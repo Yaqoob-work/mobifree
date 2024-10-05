@@ -168,10 +168,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                 
-                    Container(
-                      height: 0,
-                      child: Text(''),
-                    ),
+                    // Container(
+                    //   height: 0,
+                    //   child: Text(''),
+                    // ),
                     if (_isLoading)
                       // ...[
                       // const Padding(
