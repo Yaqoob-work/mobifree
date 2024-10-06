@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import '../../services/socket_service.dart';
+import '../../video_widget/socket_service.dart';
 import '../../video_widget/video_movie_screen.dart';
 import '../../widgets/utils/color_service.dart';
 

@@ -397,7 +397,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/notification': (context) => NotificationScreen(),
-        '/category': (context) => HomeScreen(),
+        '/mainscreen': (context) => HomeScreen(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
         '/': (context) => MyHome(),
@@ -410,7 +410,7 @@ class MyApp extends StatelessWidget {
 class UpdateChecker {
   static const String LAST_UPDATE_CHECK_KEY = 'last_update_check';
   static const String FORCE_UPDATE_TIME_KEY = 'force_update_time';
-  static const Duration CHECK_INTERVAL = Duration(seconds: 30); // Changed to 30 seconds for testing
+  static const Duration CHECK_INTERVAL = Duration(minutes: 2); // Changed to 30 seconds for testing
 
   late BuildContext context;
   Timer? _timer;

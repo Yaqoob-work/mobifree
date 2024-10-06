@@ -8,6 +8,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 // import 'package:palette_generator/palette_generator.dart';
 import '../services/socket_service.dart';
+import '../video_widget/socket_service.dart';
 import '../video_widget/video_movie_screen.dart';
 import '../widgets/utils/color_service.dart'; // Make sure this path is correct
 
@@ -381,61 +382,63 @@ class _VODState extends State<VOD> {
     _networksFuture = fetchNetworks();
   }
 
+
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: cardColor,
-      body: FutureBuilder<List<NetworkApi>>(
-        future: _networksFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: SpinKitFadingCircle(
-                color: borderColor,
-                size: 50.0,
-              ),
-            );
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No Networks Available'));
-          } else {
-            final networks = snapshot.data!;
-            return Container(
-              // margin: EdgeInsets.only(top: screenhgt * 0.1),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: screenwdt * 0.03,
-                ),
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    // crossAxisSpacing: 10,
-                    // mainAxisSpacing: 10,
-                    childAspectRatio: 0.8,
+    return  Scaffold(
+          backgroundColor: cardColor,
+          body: FutureBuilder<List<NetworkApi>>(
+            future: _networksFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: SpinKitFadingCircle(
+                    color: borderColor,
+                    size: 50.0,
                   ),
-                  itemCount: networks.length,
-                  itemBuilder: (context, index) {
-                    return FocusableGridItem(
-                      network: networks[index],
-                      onTap: () async {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ContentScreen(networkId: networks[index].id),
-                          ),
+                );
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No Networks Available'));
+              } else {
+                final networks = snapshot.data!;
+                return Container(
+                  // margin: EdgeInsets.only(top: screenhgt * 0.1),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenwdt * 0.03,
+                    ),
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        // crossAxisSpacing: 10,
+                        // mainAxisSpacing: 10,
+                        childAspectRatio: 0.8,
+                      ),
+                      itemCount: networks.length,
+                      itemBuilder: (context, index) {
+                        return FocusableGridItem(
+                          network: networks[index],
+                          onTap: () async {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ContentScreen(
+                                    networkId: networks[index].id),
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-              ),
-            );
-          }
-        },
-      ),
-    );
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        );
   }
 }
 
@@ -511,9 +514,6 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
-
-
-
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
 
@@ -584,7 +584,6 @@ class _DetailsPageState extends State<DetailsPage> {
       }
     }
   }
-  
 
   Future<bool> _onWillPop() async {
     if (_isLoading) {

@@ -98,7 +98,7 @@
 // }
 
 
-import 'dart:async';
+import 'dart:async';     //video_vidget
 
 import 'package:socket_io_client/socket_io_client.dart ' as IO;
 
@@ -115,7 +115,7 @@ class SocketService {
   SocketService._internal();
 
   void initSocket() {
-    socket = IO.io('https://65.2.6.179:3000', <String, dynamic>{
+    socket = IO.io('https://78.46.212.202:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

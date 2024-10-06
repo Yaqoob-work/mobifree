@@ -1,18 +1,10 @@
 
-import 'dart:math';
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
-
-// Helper function to generate random light colors
-Color generateRandomLightColor() {
-  Random random = Random();
-  int red = random.nextInt(156) + 100;   // Red values between 100 and 255
-  int green = random.nextInt(156) + 100; // Green values between 100 and 255
-  int blue = random.nextInt(156) + 100;  // Blue values between 100 and 255
-
-  return Color.fromRGBO(red, green, blue, 1.0); // Full opacity for vibrant colors
-}
+import '../widgets/utils/random_light_color_widget.dart';
 
 class TopNavigationBar extends StatefulWidget {
   final int selectedPage;
@@ -28,15 +20,14 @@ class TopNavigationBar extends StatefulWidget {
   @override
   _TopNavigationBarState createState() => _TopNavigationBarState();
 }
+
 class _TopNavigationBarState extends State<TopNavigationBar> {
   late List<FocusNode> _focusNodes;
-  late List<Color?> _randomColors; // Store random colors for each item
 
   @override
   void initState() {
     super.initState();
     _focusNodes = List.generate(4, (index) => FocusNode());
-    _randomColors = List.filled(4, null); // Initialize with null
 
     // Set initial focus to the first menu item
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -71,10 +62,8 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
           Row(
             children: [
               _buildNavigationItem('Vod', 1, _focusNodes[1]),
-              // _buildNavigationItem('Web Series', 2, _focusNodes[2]),
               _buildNavigationItem('Live TV', 2, _focusNodes[2]),
               _buildNavigationItem('Search', 3, _focusNodes[3]),
-              // _buildNavigationItem('Notification', 5, _focusNodes[5]),
             ],
           ),
         ],
@@ -89,14 +78,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
         child: Focus(
           focusNode: focusNode,
           onFocusChange: (hasFocus) {
-            if (hasFocus && _randomColors[index] == null) {
-              // Generate the random color only once when focused
-              _randomColors[index] = generateRandomLightColor();
-            } else if (!hasFocus) {
-              // Reset color when focus is lost
-              _randomColors[index] = null;
-            }
-            setState(() {});
+            setState(() {}); // Trigger UI update on focus change
           },
           onKeyEvent: (node, event) {
             if (event is KeyDownEvent) {
@@ -118,63 +100,28 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
               widget.onPageSelected(index);
               focusNode.requestFocus();
             },
-            child: Container(
-              decoration: BoxDecoration(
-                color: focusNode.hasFocus ? Colors.black : Colors.transparent,
-                boxShadow: focusNode.hasFocus
-                    ? [
-                        BoxShadow(
-                          color: _randomColors[index] ?? Colors.transparent, // Use the stored color
-                          blurRadius: 15.0,
-                          spreadRadius: 5.0,
-                        ),
-                      ]
-                    : [],
-                border: focusNode.hasFocus
-                    ? Border.all(
-                        color: _randomColors[index] ?? Colors.transparent, // Use the stored color
-                        width: 2.0,
-                      )
-                    : Border.all(
-                        color: Colors.transparent,
-                        width: 2.0,
-                      ),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: 15),
-                child: index == 0
-                    ? Image.asset(
-                        'assets/logo3.png',
-                        height: screenhgt * 0.05,
-                      )
-                    : index == 4
-                        ? Icon(
-                            Icons.search,
+            child: RandomLightColorWidget(
+              hasFocus: focusNode.hasFocus,
+              childBuilder: (Color randomColor) {
+                return Container(
+                  padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt*0.01),
+                  child: index == 0
+                      ? Image.asset(
+                          'assets/logo3.png',
+                          height: screenhgt * 0.05,
+                        )
+                      : Text(
+                          title,
+                          style: TextStyle(
                             color: focusNode.hasFocus
-                                ? _randomColors[index] ?? hintColor // Use the stored color
+                                ? randomColor // Use the random color for the text when focused
                                 : hintColor,
-                            size: screenwdt * 0.025,
-                          )
-                        : index == 5
-                            ? Icon(
-                                Icons.notifications,
-                                color: focusNode.hasFocus
-                                    ? _randomColors[index] ?? hintColor // Use the stored color
-                                    : hintColor,
-                                size: screenwdt * 0.025,
-                              )
-                            : Text(
-                                title,
-                                style: TextStyle(
-                                  color: focusNode.hasFocus
-                                      ? _randomColors[index] ?? hintColor // Use the stored color
-                                      : hintColor,
-                                  fontSize: menutextsz,
-                                  fontWeight: focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-              ),
+                            fontSize: menutextsz,
+                            fontWeight: focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                );
+              },
             ),
           ),
         ),
