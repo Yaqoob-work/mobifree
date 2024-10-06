@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
-    flutterVersionCode = "13"
+    flutterVersionCode = "17"
 }
 
 def flutterVersionName = localProperties.getProperty("flutter.versionName")
@@ -33,25 +33,33 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    signingConfigs {
-        release {
-            keyAlias 'ekamflix'
-            keyPassword 'ekamflix'
-            storeFile file('ekamflix-keystore.jks')
-            storePassword 'ekamflix'
-        }
-    }
     // signingConfigs {
     //     release {
-    //         keyAlias 'mobiltv'
-    //         keyPassword 'mobiltv'
-    //         storeFile file('mobiltv.jks')
-    //         storePassword 'mobiltv'
+    //         keyAlias 'ekamflix'
+    //         keyPassword 'ekamflix'
+    //         storeFile file('ekamflix-keystore.jks')
+    //         storePassword 'ekamflix'
     //     }
     // }
+    signingConfigs {
+        release {
+            keyAlias 'mobiltv'
+            keyPassword 'mobiltv'
+            storeFile file('mobiltv.jks')
+            storePassword 'mobiltv'
+        }
+    }
+
+     packagingOptions {
+       // Fixes duplicate libraries build issue, 
+       // when your project uses more than one plugin that depend on C++ libs.
+        pickFirst 'lib/**/libc++_shared.so'
+    }
+   
+
 
     defaultConfig {
-        applicationId "com.ekamflixtv.cti"
+        applicationId "com.ecomflixandroidtv.cti"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()
@@ -62,6 +70,10 @@ android {
         release {
             signingConfig signingConfigs.release
             // Additional release configuration options can be added here
+                      minifyEnabled true
+            proguardFiles getDefaultProguardFile(
+                    'proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
         }
     }
 }

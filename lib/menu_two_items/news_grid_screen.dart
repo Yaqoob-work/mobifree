@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
@@ -8,6 +9,8 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
+
+import '../video_widget/vlc_player_screen.dart';
 
 class NewsGridScreen extends StatefulWidget {
   final List<NewsItemModel> newsList;
@@ -98,64 +101,190 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     _navigateToVideoScreen(selectedItem);
   }
 
-  Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
 
-    bool shouldPlayVideo = true;
-    bool shouldPop = true;
 
-    // Show loading indicator while video is loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async {
-            shouldPlayVideo = false;
-            shouldPop = false;
-            return true;
-          },
-          child: LoadingIndicator(),
-        );
-      },
-    );
 
-    Timer(Duration(seconds: 10), () {
-      _isNavigating = false;
-    });
+//   Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
+//     if (_isNavigating) return;
+//     _isNavigating = true;
 
-    try {
-      if (newsItem.streamType == 'YoutubeLive') {
-        // Retry fetching the updated URL if stream type is YouTube Live
-        for (int i = 0; i < _maxRetries; i++) {
-          try {
-            String updatedUrl =
-                await _socketService.getUpdatedUrl(newsItem.url);
-            newsItem = NewsItemModel(
-              id: newsItem.id,
-              name: newsItem.name,
-              description: newsItem.description,
-              banner: newsItem.banner,
-              url: updatedUrl,
-              streamType: 'M3u8',
-              genres: newsItem.genres,
-              status: newsItem.status,
-            );
-            break; // Exit loop when URL is successfully updated
-          } catch (e) {
-            if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
-            await Future.delayed(
-                Duration(seconds: _retryDelay)); // Delay before next retry
-          }
+//     bool shouldPlayVideo = true;
+//     bool shouldPop = true;
+
+//     // Show loading indicator while video is loading
+//     showDialog(
+//       context: context,
+//       barrierDismissible: false,
+//       builder: (BuildContext context) {
+//         return WillPopScope(
+//           onWillPop: () async {
+//             shouldPlayVideo = false;
+//             shouldPop = false;
+//             return true;
+//           },
+//           child: LoadingIndicator(),
+//         );
+//       },
+//     );
+
+//     Timer(Duration(seconds: 10), () {
+//       _isNavigating = false;
+//     });
+
+//     try {
+//       if (newsItem.streamType == 'YoutubeLive') {
+//         // Retry fetching the updated URL if stream type is YouTube Live
+//         for (int i = 0; i < _maxRetries; i++) {
+//           try {
+//             String updatedUrl =
+//                 await _socketService.getUpdatedUrl(newsItem.url);
+//             newsItem = NewsItemModel(
+//               id: newsItem.id,
+//               name: newsItem.name,
+//               description: newsItem.description,
+//               banner: newsItem.banner,
+//               url: updatedUrl,
+//               streamType: 'M3u8',
+//               genres: newsItem.genres,
+//               status: newsItem.status,
+//             );
+//             break; // Exit loop when URL is successfully updated
+//           } catch (e) {
+//             if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
+//             await Future.delayed(
+//                 Duration(seconds: _retryDelay)); // Delay before next retry
+//           }
+//         }
+//       }
+
+//       if (shouldPop) {
+//         Navigator.of(context, rootNavigator: true).pop();
+//       }
+
+//       if (shouldPlayVideo) {
+//         await Navigator.push(
+//           context,
+//           MaterialPageRoute(
+//             builder: (context) => VideoScreen(
+//               videoUrl: newsItem.url,
+//               videoTitle: newsItem.name,
+//               channelList: _entertainmentList,
+//               genres: newsItem.genres,
+//               channels: [],
+//               initialIndex: 1,
+//               bannerImageUrl: newsItem.banner,
+//               startAtPosition: Duration.zero,
+//             ),
+//           ),
+//         );
+//       }
+//     } catch (e) {
+//       if (shouldPop) {
+//         Navigator.of(context, rootNavigator: true).pop();
+//       }
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Something Went Wrong')),
+//       );
+//     } finally {
+//       _isNavigating = false;
+//     }
+//   }
+// }
+
+
+
+
+
+Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
+  if (_isNavigating) return;
+  _isNavigating = true;
+
+  bool shouldPlayVideo = true;
+  bool shouldPop = true;
+
+  // Show loading indicator while video is loading
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return WillPopScope(
+        onWillPop: () async {
+          shouldPlayVideo = false;
+          shouldPop = false;
+          return true;
+        },
+        child: LoadingIndicator(),
+      );
+    },
+  );
+
+  Timer(Duration(seconds: 10), () {
+    _isNavigating = false;
+  });
+
+  try {
+    if (newsItem.streamType == 'YoutubeLive') {
+      // Retry fetching the updated URL if stream type is YouTube Live
+      for (int i = 0; i < _maxRetries; i++) {
+        try {
+          String updatedUrl =
+              await _socketService.getUpdatedUrl(newsItem.url);
+          newsItem = NewsItemModel(
+            id: newsItem.id,
+            name: newsItem.name,
+            description: newsItem.description,
+            banner: newsItem.banner,
+            url: updatedUrl,
+            streamType: 'M3u8',
+            genres: newsItem.genres,
+            status: newsItem.status,
+          );
+          break; // Exit loop when URL is successfully updated
+        } catch (e) {
+          if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
+          await Future.delayed(
+              Duration(seconds: _retryDelay)); // Delay before next retry
         }
       }
+    }
 
-      if (shouldPop) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
+    if (shouldPop) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
 
-      if (shouldPlayVideo) {
+    if (shouldPlayVideo) {
+      // if (newsItem.streamType == 'VLC') {
+      //   // Navigate to VLC Player screen when stream type is VLC
+      //   await Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (context) => Scaffold(
+      //         body: VlcPlayer(
+      //           controller: VlcPlayerController.network(
+      //             newsItem.url,
+      //             autoPlay: true,
+      //           ),
+      //           aspectRatio: 16 / 9,
+      //           placeholder: Center(child: CircularProgressIndicator()),
+      //         ),
+      //       ),
+      //     ),
+          //  context,
+          // MaterialPageRoute(
+          //   builder: (context) => VlcPlayerScreen(
+          //     videoUrl: newsItem.url,
+          //     videoTitle: newsItem.name,
+          //     channelList: _entertainmentList,
+          //     genres: newsItem.genres,
+          //     channels: [],
+          //     initialIndex: 1,
+          //     bannerImageUrl: newsItem.banner,
+          //     startAtPosition: Duration.zero, onFabFocusChanged: (bool) {  },
+          //   ),
+          // ),
+        // );
+      // } else {
+        // Default case for other stream types
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -172,15 +301,16 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
           ),
         );
       }
-    } catch (e) {
-      if (shouldPop) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Something Went Wrong')),
-      );
-    } finally {
-      _isNavigating = false;
+    // }
+  } catch (e) {
+    if (shouldPop) {
+      Navigator.of(context, rootNavigator: true).pop();
     }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Something Went Wrong')),
+    );
+  } finally {
+    _isNavigating = false;
   }
+}
 }

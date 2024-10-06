@@ -9,6 +9,7 @@ import 'package:http/http.dart' as https;
 import '../../main.dart';
 import '../../video_widget/video_movie_screen.dart';
 import '../../video_widget/socket_service.dart';
+import '../../widgets/utils/random_light_color_widget.dart';
 
 // Helper function to generate random light colors
 Color generateRandomLightColor() {
@@ -17,7 +18,8 @@ Color generateRandomLightColor() {
   int green = random.nextInt(156) + 100; // Green values between 100 and 255
   int blue = random.nextInt(156) + 100; // Blue values between 100 and 255
 
-  return Color.fromRGBO(red, green, blue, 1.0); // Full opacity for vibrant colors
+  return Color.fromRGBO(
+      red, green, blue, 1.0); // Full opacity for vibrant colors
 }
 
 class BannerSlider extends StatefulWidget {
@@ -63,7 +65,8 @@ class _BannerSliderState extends State<BannerSlider> {
     setState(() {
       _isButtonFocused = _buttonFocusNode.hasFocus;
       if (_isButtonFocused) {
-        _currentFocusColor = generateRandomLightColor(); // Generate the color once when focused
+        _currentFocusColor =
+            generateRandomLightColor(); // Generate the color once when focused
       }
     });
   }
@@ -178,14 +181,17 @@ class _BannerSliderState extends State<BannerSlider> {
                 filteredData['stream_type'] = "M3u8";
                 break; // Exit loop when URL is successfully updated
               } catch (e) {
-                if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
-                await Future.delayed(Duration(seconds: _retryDelay)); // Delay before next retry
+                if (i == _maxRetries - 1)
+                  rethrow; // Rethrow error on last retry
+                await Future.delayed(
+                    Duration(seconds: _retryDelay)); // Delay before next retry
               }
             }
           }
 
           if (shouldPop) {
-            Navigator.of(context, rootNavigator: true).pop(); // Close the loading dialog
+            Navigator.of(context, rootNavigator: true)
+                .pop(); // Close the loading dialog
           }
 
           if (shouldPlayVideo) {
@@ -254,7 +260,8 @@ class _BannerSliderState extends State<BannerSlider> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('Something Went Wrong', style: TextStyle(fontSize: 20)),
+                    Text('Something Went Wrong',
+                        style: TextStyle(fontSize: 20)),
                   ],
                 )
               : bannerList.isEmpty
@@ -290,10 +297,11 @@ class _BannerSliderState extends State<BannerSlider> {
                           },
                         ),
                         // Watch Now button positioned at the left with some top spacing
+                        // Left alignment
                         Positioned(
-                          top: screenhgt * 0.01, // Space from the top of the image
+                          top: screenhgt *
+                              0.01, // Space from the top of the image
                           left: screenwdt * 0.02, // Left alignment
-
                           child: Container(
                             width: _isButtonFocused
                                 ? null
@@ -325,49 +333,55 @@ class _BannerSliderState extends State<BannerSlider> {
                                   }
                                 },
                                 child: Align(
-                                  alignment:
-                                      Alignment.centerLeft, // Align button to the left
+                                  alignment: Alignment
+                                      .centerLeft, // Align button to the left
                                   child: Column(
                                     children: [
                                       SizedBox(
                                         height: screenhgt * 0.1,
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 12, horizontal: 20),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          border: _isButtonFocused
-                                              ? Border.all(
-                                                  color: _currentFocusColor!,
-                                                  width: 2.0,
-                                                )
-                                              : Border.all(
-                                                  color: Colors.transparent,
-                                                  width: 2.0,
-                                                ),
-                                          boxShadow: _isButtonFocused
-                                              ? [
-                                                  BoxShadow(
-                                                    color: _currentFocusColor!,
-                                                    blurRadius: 15.0,
-                                                    spreadRadius: 5.0,
-                                                  ),
-                                                ]
-                                              : [],
-                                        ),
-                                        child: Text(
-                                          'Watch Now',
-                                          style: TextStyle(
-                                            fontSize: menutextsz,
-                                            color: _isButtonFocused
-                                                ? _currentFocusColor!
-                                                : hintColor,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                      RandomLightColorWidget(
+                                        hasFocus: _isButtonFocused,
+                                        childBuilder: (Color randomColor) {
+                                          return Container(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: screenhgt * 0.02,
+                                                horizontal: screenwdt * 0.02),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: _isButtonFocused
+                                                  ? Border.all(
+                                                      color: randomColor,
+                                                      width: 2.0,
+                                                    )
+                                                  : Border.all(
+                                                      color: Colors.transparent,
+                                                      width: 2.0,
+                                                    ),
+                                              boxShadow: _isButtonFocused
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: randomColor,
+                                                        blurRadius: 15.0,
+                                                        spreadRadius: 5.0,
+                                                      ),
+                                                    ]
+                                                  : [],
+                                            ),
+                                            child: Text(
+                                              'Watch Now',
+                                              style: TextStyle(
+                                                fontSize: menutextsz,
+                                                color: _isButtonFocused
+                                                    ? randomColor
+                                                    : hintColor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),
@@ -381,7 +395,3 @@ class _BannerSliderState extends State<BannerSlider> {
     );
   }
 }
-
-
-
-

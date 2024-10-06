@@ -8,6 +8,7 @@ import 'package:http/http.dart' as https;
 import '../../services/socket_service.dart';
 import '../../video_widget/socket_service.dart';
 import '../../video_widget/video_movie_screen.dart';
+import '../../widgets/small_widgets/loading_indicator.dart';
 import '../../widgets/utils/color_service.dart';
 
 void main() {
@@ -166,13 +167,7 @@ class _FocusableGridItemState extends State<FocusableGridItem> {
     _updateSecondaryColor();
   }
 
-  // // Fetch palette color using ColorUtils and update paletcolor
-  // Future<void> _loadPaletteColor() async {
-  //   Color paletteColor = await ColorUtils.getPaletteColor(widget.network.logo);
-  //   setState(() {
-  //     paletcolor = paletteColor; // Update palette color with fetched color
-  //   });
-  // }
+
 
   Future<void> _updateSecondaryColor() async {
     // if (widget.channel.status == '1') {
@@ -294,15 +289,7 @@ class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
     _updateSecondaryColor();
   }
 
-  // Fetch palette color using ColorUtils and update paletcolor
-  // Future<void> _loadPaletteColor() async {
-  //   Color paletteColor =
-  //       await ColorUtils.getPaletteColor(widget.content.banner);
-  //   setState(() {
-  //     paletcolor =
-  //         paletteColor; // Update border color with fetched palette color
-  //   });
-  // }
+
 
   Future<void> _updateSecondaryColor() async {
     // if (widget.channel.status == '1') {
@@ -427,10 +414,7 @@ class _SubVodState extends State<SubVod> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: SpinKitFadingCircle(
-                      color: borderColor,
-                      size: 50.0,
-                    ),
+                    child: LoadingIndicator(),
                   );
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
@@ -493,10 +477,7 @@ class _ContentScreenState extends State<ContentScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: SpinKitFadingCircle(
-                color: borderColor,
-                size: 50.0,
-              ),
+              child: LoadingIndicator(),
             );
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -633,7 +614,7 @@ class _DetailsPageState extends State<DetailsPage> {
         body: Stack(
           children: [
             _movieDetails == null
-                ? Center(child: CircularProgressIndicator())
+                ? Center(child: LoadingIndicator())
                 : Padding(
                     padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
                     child: _buildMovieDetailsUI(context, _movieDetails!),

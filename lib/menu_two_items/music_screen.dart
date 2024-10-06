@@ -55,8 +55,6 @@ class _MusicScreenState extends State<MusicScreen> {
       categoryFocusNodes[category] = FocusNode();
     }
     moreFocusNode = FocusNode();
-
-
   }
 
   void checkServerStatus() {
@@ -130,234 +128,115 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
-// Helper function to generate random light colors
-  Color generateRandomLightColor() {
-    Random random = Random();
-    int red = random.nextInt(156) + 100; // Red values between 100 and 255
-    int green = random.nextInt(156) + 100; // Green values between 100 and 255
-    int blue = random.nextInt(156) + 100; // Blue values between 100 and 255
-
-    return Color.fromRGBO(red, green, blue, 1.0); // Full opacity
-  }
-
-  // Widget _buildCategoryButtons() {
-  //   return Container(
-  //     margin: EdgeInsets.symmetric(vertical: screenhgt * 0.015),
-  //     height: screenhgt * 0.085, // Parent container height
-  //     child: ListView(
-  //       scrollDirection: Axis.horizontal,
-  //       children: [
-  //         ...categories.asMap().entries.map((entry) {
-  //           int index = entry.key;
-  //           String category = entry.value;
-
-  //           return Focus(
-  //             focusNode: categoryFocusNodes[category],
-  //             onKey: (FocusNode node, RawKeyEvent event) {
-  //               if (event is RawKeyDownEvent) {
-  //                 if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-  //                   if (index == categories.length - 1) {
-  //                     FocusScope.of(context).requestFocus(moreFocusNode);
-  //                   } else {
-  //                     FocusScope.of(context).requestFocus(
-  //                         categoryFocusNodes[categories[index + 1]]);
-  //                   }
-  //                   return KeyEventResult.handled;
-  //                 } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-  //                   if (index == 0) {
-  //                     FocusScope.of(context).requestFocus(moreFocusNode);
-  //                   } else {
-  //                     FocusScope.of(context).requestFocus(
-  //                         categoryFocusNodes[categories[index - 1]]);
-  //                   }
-  //                   return KeyEventResult.handled;
-  //                 } else if (event.logicalKey == LogicalKeyboardKey.enter ||
-  //                     event.logicalKey == LogicalKeyboardKey.select) {
-  //                   _selectCategory(category);
-  //                   return KeyEventResult.handled;
-  //                 }
-  //               }
-  //               return KeyEventResult.ignored;
-  //             },
-  //             child: Builder(
-  //               builder: (BuildContext context) {
-  //                 final bool hasFocus = Focus.of(context).hasFocus;
-
-  //                 // Generate a random light color for the shadow and border when focused
-  //                 Color randomBorderColor = hasFocus
-  //                     ? generateRandomLightColor()
-  //                     : Colors.transparent;
-
-  //                 return Container(
-  //                   margin: EdgeInsets.symmetric(horizontal: screenwdt * 0.02),
-  //                   decoration: BoxDecoration(
-  //                     color: hasFocus ? Colors.black : Colors.transparent,
-  //                     boxShadow: [
-  //                       if (hasFocus)
-  //                         BoxShadow(
-  //                           color: randomBorderColor
-  //                           // .withOpacity(
-  //                           // 0.8)
-  //                           , // Adjust opacity for visibility
-  //                           blurRadius:
-  //                               15.0, // Reduced blur radius for sharper shadow
-  //                           spreadRadius:
-  //                               5.0, // Increased spread radius for more prominent shadow
-  //                         ),
-  //                     ],
-  //                     borderRadius: BorderRadius.circular(8.0),
-  //                     border: hasFocus
-  //                         ? Border.all(
-  //                             color:
-  //                                 randomBorderColor, // Same color as the shadow
-  //                             width: 2.0, // Adjust border width as needed
-  //                           )
-  //                         : null, // No border when not focused
-  //                   ),
-  //                   child: SizedBox(
-  //                     height: screenhgt *
-  //                         0.01, // Adjust height to control button size
-  //                     child: Center(
-  //                       child: TextButton(
-  //                         onPressed: () => _selectCategory(category),
-  //                         child: Text(
-  //                           category,
-  //                           style: TextStyle(
-  //                             fontSize: menutextsz,
-  //                             color: _selectedCategory == category
-  //                                 ? borderColor
-  //                                 : (hasFocus ? randomBorderColor : hintColor),
-  //                             fontWeight:
-  //                                 _selectedCategory == category || hasFocus
-  //                                     ? FontWeight.bold
-  //                                     : FontWeight.normal,
-  //                           ),
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 );
-  //               },
-  //             ),
-  //           );
-  //         }).toList(),
-  //         Focus(
-  //           focusNode: moreFocusNode,
-  //           onKey: (FocusNode node, RawKeyEvent event) {
-  //             if (event is RawKeyDownEvent) {
-  //               if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-  //                 FocusScope.of(context)
-  //                     .requestFocus(categoryFocusNodes[categories.first]);
-  //                 return KeyEventResult.handled;
-  //               } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-  //                 FocusScope.of(context)
-  //                     .requestFocus(categoryFocusNodes[categories.last]);
-
-  //                 return KeyEventResult.handled;
-  //               } else if (event.logicalKey == LogicalKeyboardKey.enter ||
-  //                   event.logicalKey == LogicalKeyboardKey.select) {
-  //                 _navigateToChannelsCategory();
-  //                 return KeyEventResult.handled;
-  //               }
-  //             }
-  //             return KeyEventResult.ignored;
-  //           },
-  //           child: Builder(
-  //             builder: (BuildContext context) {
-  //               final bool hasFocus = Focus.of(context).hasFocus;
-
-  //               // Generate a random light shadow color for the "More" button when focused
-  //               Color randomBorderColor =
-  //                   hasFocus ? generateRandomLightColor() : Colors.transparent;
-
-  //               return Container(
-  //                 margin: EdgeInsets.symmetric(horizontal: screenwdt * 0.02),
-  //                 decoration: BoxDecoration(
-  //                   color: hasFocus ? Colors.black : Colors.transparent,
-  //                   boxShadow: [
-  //                     if (hasFocus)
-  //                       BoxShadow(
-  //                         color: randomBorderColor
-  //                         // .withOpacity(
-  //                         // 0.8)
-  //                         , // Adjust opacity for visibility
-  //                         blurRadius:
-  //                             15.0, // Reduced blur radius for sharper shadow
-  //                         spreadRadius:
-  //                             5.0, // Increased spread radius for more prominent shadow
-  //                       ),
-  //                   ],
-  //                   borderRadius: BorderRadius.circular(8.0),
-  //                   border: hasFocus
-  //                       ? Border.all(
-  //                           color:
-  //                               randomBorderColor, // Same color as the shadow
-  //                           width: 2.0, // Adjust border width as needed
-  //                         )
-  //                       : null, // No border when not focused
-  //                 ),
-  //                 child: SizedBox(
-  //                   height: 40, // Adjust height to control button size
-  //                   child: Center(
-  //                     child: TextButton(
-  //                       onPressed: _navigateToChannelsCategory,
-  //                       child: Text(
-  //                         'More',
-  //                         style: TextStyle(
-  //                           fontSize: menutextsz,
-  //                           color: hasFocus ? randomBorderColor : hintColor,
-  //                           fontWeight:
-  //                               hasFocus ? FontWeight.bold : FontWeight.normal,
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ),
-  //               );
-  //             },
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
 
 
 Widget _buildCategoryButtons() {
   return Container(
-    // margin: EdgeInsets.symmetric(vertical: screenhgt * 0.015),
+    padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01),
     height: screenhgt * 0.1, // Parent container height
-    child: ListView(
-      scrollDirection: Axis.horizontal,
+    child: Row(
       children: [
         ...categories.asMap().entries.map((entry) {
           int index = entry.key;
           String category = entry.value;
-
-          return Focus(
-            focusNode: categoryFocusNodes[category],
+        
+          return Expanded(
+            child: Focus(
+              focusNode: categoryFocusNodes[category],
+              onKey: (FocusNode node, RawKeyEvent event) {
+                if (event is RawKeyDownEvent) {
+                  if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                    if (index == categories.length - 1) {
+                      FocusScope.of(context).requestFocus(moreFocusNode);
+                    } else {
+                      FocusScope.of(context).requestFocus(
+                          categoryFocusNodes[categories[index + 1]]);
+                    }
+                    return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                    if (index == 0) {
+                      FocusScope.of(context).requestFocus(moreFocusNode);
+                    } else {
+                      FocusScope.of(context).requestFocus(
+                          categoryFocusNodes[categories[index - 1]]);
+                    }
+                    return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.enter ||
+                      event.logicalKey == LogicalKeyboardKey.select) {
+                    _selectCategory(category);
+                    return KeyEventResult.handled;
+                  }
+                }
+                return KeyEventResult.ignored;
+              },
+              child: Builder(
+                builder: (BuildContext context) {
+                  final bool hasFocus = Focus.of(context).hasFocus;
+        
+                  return RandomLightColorWidget(
+                    hasFocus: hasFocus,
+                    childBuilder: (Color randomColor) {
+                      return Container(
+                        margin: EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent
+                          // _selectedCategory == category
+                          //     ? borderColor.withOpacity(0.3)
+                          //     : (hasFocus ? randomColor.withOpacity(0.2) : Colors.transparent)
+                              ,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: hasFocus ? randomColor : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: TextButton(
+                          onPressed: () => _selectCategory(category),
+                          style: ButtonStyle(
+                            padding: MaterialStateProperty.all(EdgeInsets.zero),
+                          ),
+                          child: Center(
+                            child: Text(
+                              category,
+                              style: TextStyle(
+                                fontSize: menutextsz,
+                                color: _selectedCategory == category
+                                    ? borderColor
+                                    : (hasFocus ? randomColor : hintColor),
+                                fontWeight: _selectedCategory == category || hasFocus
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          );
+        }).toList(),
+        
+        // Add the "More" button
+        Expanded(
+          child: Focus(
+            focusNode: moreFocusNode,
             onKey: (FocusNode node, RawKeyEvent event) {
               if (event is RawKeyDownEvent) {
                 if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                  if (index == categories.length - 1) {
-                    FocusScope.of(context).requestFocus(moreFocusNode);
-                  } else {
-                    FocusScope.of(context).requestFocus(
-                        categoryFocusNodes[categories[index + 1]]);
-                  }
+                  FocusScope.of(context)
+                      .requestFocus(categoryFocusNodes[categories.first]);
                   return KeyEventResult.handled;
                 } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                  if (index == 0) {
-                    FocusScope.of(context).requestFocus(moreFocusNode);
-                  } else {
-                    FocusScope.of(context).requestFocus(
-                        categoryFocusNodes[categories[index - 1]]);
-                  }
+                  FocusScope.of(context)
+                      .requestFocus(categoryFocusNodes[categories.last]);
                   return KeyEventResult.handled;
                 } else if (event.logicalKey == LogicalKeyboardKey.enter ||
                     event.logicalKey == LogicalKeyboardKey.select) {
-                  _selectCategory(category);
+                  _navigateToChannelsCategory();
                   return KeyEventResult.handled;
                 }
               }
@@ -366,99 +245,41 @@ Widget _buildCategoryButtons() {
             child: Builder(
               builder: (BuildContext context) {
                 final bool hasFocus = Focus.of(context).hasFocus;
-
-                return Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: screenwdt * 0.019,
-                    vertical: screenhgt * 0.015, // Add vertical margin for shadow space
-                  ),
-                  child: RandomLightColorWidget(
-                    hasFocus: hasFocus,
-                    childBuilder: (Color randomColor) {
-                      return SizedBox(
-                        height: screenhgt * 0.05, // Increase height to give space for shadow
-                        child: Center(
-                          child: TextButton(
-                            onPressed: () => _selectCategory(category),
-                            child: Text(
-                              category,
-                              style: TextStyle(
-                                fontSize: menutextsz,
-                                color: _selectedCategory == category
-                                    ? borderColor
-                                    : (hasFocus ? randomColor : hintColor),
-                                fontWeight:
-                                    _selectedCategory == category || hasFocus
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          );
-        }).toList(),
-
-        // Add the "More" button back
-        Focus(
-          focusNode: moreFocusNode,
-          onKey: (FocusNode node, RawKeyEvent event) {
-            if (event is RawKeyDownEvent) {
-              if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                FocusScope.of(context)
-                    .requestFocus(categoryFocusNodes[categories.first]);
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                FocusScope.of(context)
-                    .requestFocus(categoryFocusNodes[categories.last]);
-
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.enter ||
-                  event.logicalKey == LogicalKeyboardKey.select) {
-                _navigateToChannelsCategory();
-                return KeyEventResult.handled;
-              }
-            }
-            return KeyEventResult.ignored;
-          },
-          child: Builder(
-            builder: (BuildContext context) {
-              final bool hasFocus = Focus.of(context).hasFocus;
-
-              return Container(
-                margin: EdgeInsets.symmetric(
-                  horizontal: screenwdt * 0.019,
-                  vertical: screenhgt * 0.015, // Add vertical margin for shadow space
-                ),
-                child: RandomLightColorWidget(
+        
+                return RandomLightColorWidget(
                   hasFocus: hasFocus,
                   childBuilder: (Color randomColor) {
-                    return SizedBox(
-                      height: 40, // Adjust height to control button size
-                      child: Center(
-                        child: TextButton(
-                          onPressed: _navigateToChannelsCategory,
+                    return Container(
+                      margin: EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: hasFocus ? randomColor.withOpacity(0.2) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: hasFocus ? randomColor : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: TextButton(
+                        onPressed: _navigateToChannelsCategory,
+                        style: ButtonStyle(
+                          padding: MaterialStateProperty.all(EdgeInsets.zero),
+                        ),
+                        child: Center(
                           child: Text(
                             'More',
                             style: TextStyle(
                               fontSize: menutextsz,
                               color: hasFocus ? randomColor : hintColor,
-                              fontWeight:
-                                  hasFocus ? FontWeight.bold : FontWeight.normal,
+                              fontWeight: hasFocus ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
                       ),
                     );
                   },
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -467,6 +288,7 @@ Widget _buildCategoryButtons() {
 }
 
 
+  
 
   void _navigateToChannelsCategory() {
     Navigator.push(
@@ -664,8 +486,3 @@ Widget _buildCategoryButtons() {
     super.dispose();
   }
 }
-
-
-
-
-

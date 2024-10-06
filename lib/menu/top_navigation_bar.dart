@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../widgets/utils/random_light_color_widget.dart';
 
+
+
 class TopNavigationBar extends StatefulWidget {
   final int selectedPage;
   final ValueChanged<int> onPageSelected;
@@ -104,20 +106,31 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
               hasFocus: focusNode.hasFocus,
               childBuilder: (Color randomColor) {
                 return Container(
-                  padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt*0.01),
+                  margin: EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: focusNode.hasFocus ? randomColor.withOpacity(0.2) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: focusNode.hasFocus ? randomColor : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt * 0.01),
                   child: index == 0
                       ? Image.asset(
                           'assets/logo3.png',
                           height: screenhgt * 0.05,
                         )
-                      : Text(
-                          title,
-                          style: TextStyle(
-                            color: focusNode.hasFocus
-                                ? randomColor // Use the random color for the text when focused
-                                : hintColor,
-                            fontSize: menutextsz,
-                            fontWeight: focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+                      : Center(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              color: focusNode.hasFocus
+                                  ? randomColor // Use the random color for the text when focused
+                                  : hintColor,
+                              fontSize: menutextsz,
+                              fontWeight: focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+                            ),
                           ),
                         ),
                 );

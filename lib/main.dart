@@ -410,7 +410,7 @@ class MyApp extends StatelessWidget {
 class UpdateChecker {
   static const String LAST_UPDATE_CHECK_KEY = 'last_update_check';
   static const String FORCE_UPDATE_TIME_KEY = 'force_update_time';
-  static const Duration CHECK_INTERVAL = Duration(minutes: 2); // Changed to 30 seconds for testing
+  static const Duration CHECK_INTERVAL = Duration(hours: 8); // Changed to 30 seconds for testing
 
   late BuildContext context;
   Timer? _timer;
@@ -445,21 +445,30 @@ class UpdateChecker {
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
-          String apiVersion = data['playstore_version'];
-          String apkUrl = data['playstore_apkUrl'];
-          String releaseNotes = data['playstore_releaseNotes'];
+
+          // String apiVersion = data['playstore_version'];
+          // String apkUrl = data['playstore_apkUrl'];
+          // String releaseNotes = data['playstore_releaseNotes'];
+          
+          // // Parse the datetime string to milliseconds since epoch
+          // int forceUpdateTime = DateTime.parse(data['playstore_forceUpdateTime']).millisecondsSinceEpoch;
+
+
+          String apiVersion = data['amazonstore_version'];
+          String apkUrl = data['amazonstore_apkUrl'];
+          String releaseNotes = data['amazonstore_releaseNotes'];
           
           // Parse the datetime string to milliseconds since epoch
-          // int forceUpdateTime = DateTime.parse(data['playstore_forceUpdateTime']).millisecondsSinceEpoch;
+          int forceUpdateTime = DateTime.parse(data['amazonstore_forceUpdateTime']).millisecondsSinceEpoch;
 
           PackageInfo packageInfo = await PackageInfo.fromPlatform();
           String appVersion = packageInfo.version;
 
           if (_isVersionGreater(apiVersion, appVersion)) {
-            // if (forceUpdateTime > 0 && now >= forceUpdateTime) {
-            //   _forceUpdate = true;
-            //   await prefs.setInt(FORCE_UPDATE_TIME_KEY, forceUpdateTime);
-            // }
+            if (forceUpdateTime > 0 && now >= forceUpdateTime) {
+              _forceUpdate = true;
+              await prefs.setInt(FORCE_UPDATE_TIME_KEY, forceUpdateTime);
+            }
             if (!_isDialogShowing) {
               _showUpdateDialog(apkUrl, releaseNotes, appVersion, apiVersion);
             }
@@ -588,7 +597,7 @@ class _MyHomeState extends State<MyHome> {
         print('Failed to load settings');
       }
     } catch (e) {
-      print('Error: $e');
+      print('Error: ');
     }
   }
 
