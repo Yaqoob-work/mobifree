@@ -27,7 +27,7 @@ class VideoMovieScreen extends StatefulWidget {
 }
 
 class _VideoMovieScreenState extends State<VideoMovieScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver  {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
@@ -107,6 +107,31 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     }
   }
 
+
+
+  @override
+void didChangeAppLifecycleState(AppLifecycleState state) {
+  if (state == AppLifecycleState.paused) {
+    // ऐप बैकग्राउंड में जाने पर वीडियो पॉज़ करें
+    if (_controller.value.isInitialized && _controller.value.isPlaying) {
+      _lastKnownPosition = _controller.value.position;
+      _wasPlayingBeforeDisconnection = true; // इस लाइन को जोड़ें
+      _controller.pause();
+    } else {
+      _wasPlayingBeforeDisconnection = false; // इस लाइन को जोड़ें
+    }
+  } else if (state == AppLifecycleState.resumed) {
+    // ऐप फोरग्राउंड में वापस आने पर वीडियो रीज्यूम करें
+    if (_controller.value.isInitialized) {
+      _controller.seekTo(_lastKnownPosition);
+      if (_wasPlayingBeforeDisconnection) { // इस चेक को जोड़ें
+        _controller.play();
+      }
+    }
+  }
+}
+
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -126,40 +151,47 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _lastKnownPosition = _controller.value.position;
-      _controller.pause();
-    } else if (state == AppLifecycleState.resumed) {
-      _controller.seekTo(_lastKnownPosition);
-      _controller.play();
-    }
-  }
+
+
 
   void _videoListener() {
-    setState(() {
-      _isBuffering = _controller.value.isBuffering;
-      if (!_isBuffering) {
-        _lastKnownPosition = _controller.value.position;
-      }
-    });
-
-    if (!_isBuffering &&
-        _controller.value.isInitialized &&
-        !_controller.value.isPlaying) {
-      Future.delayed(Duration(seconds: 2), () {
-        if (!_controller.value.isPlaying) {
-          _controller.play();
-        }
-      });
+  setState(() {
+    _isBuffering = _controller.value.isBuffering;
+    if (!_isBuffering) {
+      _lastKnownPosition = _controller.value.position;
     }
+  });
 
-    if (_controller.value.hasError) {
-      print('Video error: ${_controller.value.errorDescription}');
-      _handleNetworkError();
-    }
+  if (_controller.value.hasError) {
+    print('Video error: ${_controller.value.errorDescription}');
+    _handleNetworkError();
   }
+}
+
+
+  // void _videoListener() {
+  //   setState(() {
+  //     _isBuffering = _controller.value.isBuffering;
+  //     if (!_isBuffering) {
+  //       _lastKnownPosition = _controller.value.position;
+  //     }
+  //   });
+
+  //   if (!_isBuffering &&
+  //       _controller.value.isInitialized &&
+  //       !_controller.value.isPlaying) {
+  //     Future.delayed(Duration(seconds: 2), () {
+  //       if (!_controller.value.isPlaying) {
+  //         _controller.play();
+  //       }
+  //     });
+  //   }
+
+  //   if (_controller.value.hasError) {
+  //     print('Video error: ${_controller.value.errorDescription}');
+  //     _handleNetworkError();
+  //   }
+  // }
 
   void _startHideControlsTimer() {
     _hideControlsTimer = Timer(Duration(seconds: 10), () {
@@ -265,16 +297,16 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
                         //     child: VideoPlayer(_controller),
                         //   )
                         AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: screenwdt,
-                              height: screenhgt,
-                              child: VideoPlayer(_controller),
+                            aspectRatio: 16 / 9,
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: screenwdt,
+                                height: screenhgt,
+                                child: VideoPlayer(_controller),
+                              ),
                             ),
-                          ),
-                        )
+                          )
                         : SpinKitFadingCircle(
                             color: borderColor,
                             size: 50.0,

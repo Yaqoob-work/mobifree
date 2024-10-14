@@ -1,34 +1,36 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
 import '../../video_widget/video_movie_screen.dart';
 import '../../video_widget/socket_service.dart';
+import '../../video_widget/vlc_player_screen.dart';
+import '../../widgets/utils/color_service.dart';
 import '../../widgets/utils/random_light_color_widget.dart';
 
-// Helper function to generate random light colors
-Color generateRandomLightColor() {
-  Random random = Random();
-  int red = random.nextInt(156) + 100; // Red values between 100 and 255
-  int green = random.nextInt(156) + 100; // Green values between 100 and 255
-  int blue = random.nextInt(156) + 100; // Blue values between 100 and 255
-
-  return Color.fromRGBO(
-      red, green, blue, 1.0); // Full opacity for vibrant colors
-}
-
 class BannerSlider extends StatefulWidget {
+  final double initialHeight;
+  final double initialWidth;
+  final Function(double) onHeightChange; // Add a callback for height change
+  final Function(double) onWidthChange; // Add a callback for height change
+
+  BannerSlider(
+      {required this.initialHeight,
+      required this.onHeightChange,
+      required this.initialWidth,
+      required this.onWidthChange}); // Modify constructor
   @override
   _BannerSliderState createState() => _BannerSliderState();
 }
 
 class _BannerSliderState extends State<BannerSlider> {
   List<dynamic> bannerList = [];
+  Map<String, Color> bannerColors = {};
   bool isLoading = true;
   String errorMessage = '';
   late PageController _pageController;
@@ -41,6 +43,10 @@ class _BannerSliderState extends State<BannerSlider> {
   final SocketService _socketService = SocketService();
   final int _maxRetries = 3;
   final int _retryDelay = 5; // seconds
+  final PaletteColorService _paletteColorService =
+      PaletteColorService(); // PaletteColorService instance
+  late double _currentHeight; // Initial height
+  late double _currentWidth; // Initial height
 
   @override
   void initState() {
@@ -48,7 +54,10 @@ class _BannerSliderState extends State<BannerSlider> {
     _pageController = PageController();
     _socketService.initSocket(); // Initialize SocketService
     fetchBanners();
+    _startBackgroundApiFetch(); // Start periodic background fetch
     _startAutoSlide();
+    _currentHeight = widget.initialHeight; // Set initial height
+    _currentHeight = widget.initialWidth; // Set initial width
     _buttonFocusNode.addListener(_onButtonFocusNode);
   }
 
@@ -61,15 +70,45 @@ class _BannerSliderState extends State<BannerSlider> {
     super.dispose();
   }
 
+  Future<void> _fetchBannerColors() async {
+    for (var banner in bannerList) {
+      final imageUrl = banner['banner'] ?? localImage;
+      final secondaryColor =
+          await _paletteColorService.getSecondaryColor(imageUrl);
+      setState(() {
+        bannerColors[banner['content_id']] = secondaryColor;
+      });
+    }
+  }
+
+
+
   void _onButtonFocusNode() {
     setState(() {
       _isButtonFocused = _buttonFocusNode.hasFocus;
       if (_isButtonFocused) {
-        _currentFocusColor =
-            generateRandomLightColor(); // Generate the color once when focused
+        _currentFocusColor = bannerColors[selectedContentId!];
+
+        _currentHeight = widget.initialHeight * 1.6; // Increase height
+        _currentWidth = widget.initialWidth * 1.6;
+      } else {
+        _currentHeight = widget.initialHeight; // Reset to original height
+        _currentWidth = widget.initialWidth;
       }
+      widget.onHeightChange(
+        _currentHeight,
+      ); // Call the callback to update HomeScreen height
+
+      widget.onWidthChange(
+          _currentWidth); // Call the callback to update HomeScreen height
     });
   }
+
+  void _startBackgroundApiFetch() {
+  Timer.periodic(Duration(minutes: 10), (Timer timer) async {
+    await fetchBanners(isBackgroundFetch: true);
+  });
+}
 
   void _startAutoSlide() {
     if (bannerList.isNotEmpty) {
@@ -86,46 +125,108 @@ class _BannerSliderState extends State<BannerSlider> {
     }
   }
 
-  Future<void> fetchBanners() async {
-    try {
-      final response = await https.get(
-        Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
 
-        setState(() {
-          bannerList = responseData
-              .where((banner) => banner['status'] == "1")
-              .map((banner) {
-            return {
-              'content_id': banner['content_id'] ?? '',
-              'banner': banner['banner'] ?? localImage,
-              'title': banner['title'] ?? 'No Title',
-            };
-          }).toList();
+Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final cachedBanners = prefs.getString('banners');
 
-          selectedContentId = bannerList.isNotEmpty
-              ? bannerList[0]['content_id'].toString()
-              : null;
-          isLoading = false;
-        });
+  if (cachedBanners != null && !isBackgroundFetch) {
+    // Load banners from cache (only if not in background fetch)
+    final List<dynamic> responseData = json.decode(cachedBanners);
+    setState(() {
+      bannerList = responseData
+          .where((banner) => banner['status'] == "1")
+          .map((banner) {
+        return {
+          'content_id': banner['content_id'] ?? '',
+          'banner': banner['banner'] ?? localImage,
+          'title': banner['title'] ?? 'No Title',
+        };
+      }).toList();
 
-        _startAutoSlide();
-      } else {
-        throw Exception('Failed to load banners');
+      selectedContentId = bannerList.isNotEmpty
+          ? bannerList[0]['content_id'].toString()
+          : null;
+      isLoading = false;
+    });
+
+    _fetchBannerColors();
+    _startAutoSlide();
+
+    // Preload cached banner images
+    _precacheBannerImages();
+  }
+
+  // Fetch banners from API
+  try {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
+      headers: {
+        'x-api-key': 'vLQTuPZUxktl5mVW',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+
+      if (cachedBanners != null) {
+        final cachedData = json.decode(cachedBanners);
+        if (json.encode(cachedData) == json.encode(responseData)) {
+          // No change in API data, skip UI update
+          return;
+        }
       }
-    } catch (e) {
+
       setState(() {
-        errorMessage = e.toString();
+        bannerList = responseData
+            .where((banner) => banner['status'] == "1")
+            .map((banner) {
+          return {
+            'content_id': banner['content_id'] ?? '',
+            'banner': banner['banner'] ?? localImage,
+            'title': banner['title'] ?? 'No Title',
+          };
+        }).toList();
+
+        selectedContentId = bannerList.isNotEmpty
+            ? bannerList[0]['content_id'].toString()
+            : null;
         isLoading = false;
       });
+
+      // Cache the new data
+      prefs.setString('banners', response.body);
+
+      _fetchBannerColors();
+      _startAutoSlide();
+
+      // Preload new banner images
+      _precacheBannerImages();
+    } else {
+      throw Exception('Failed to load banners');
+    }
+  } catch (e) {
+    setState(() {
+      errorMessage = e.toString();
+      isLoading = false;
+    });
+  }
+}
+
+
+void _precacheBannerImages() {
+  for (var banner in bannerList) {
+    if (banner['banner'] != null && banner['banner'].isNotEmpty) {
+      precacheImage(
+        CachedNetworkImageProvider(banner['banner']), // Preload the banner image
+        context,
+      );
     }
   }
+}
+
+
 
   Future<void> fetchAndPlayVideo(String contentId) async {
     if (_isNavigating) return; // Prevent duplicate navigation
@@ -196,24 +297,47 @@ class _BannerSliderState extends State<BannerSlider> {
 
           if (shouldPlayVideo) {
             // Navigate to VideoPlayer Screen
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VideoMovieScreen(
-                  videoUrl: filteredData['url'],
-                  videoTitle: filteredData['title'] ?? 'No Title',
-                  channelList: [],
-                  videoType: '',
-                  videoBanner: '',
-                  onFabFocusChanged: (bool focused) {},
-                  genres: '',
-                  url: '',
-                  type: '',
+
+            if (filteredData['stream_type'] == 'VLC' ||
+                filteredData['type'] == 'VLC') {
+              //   // Navigate to VLC Player screen when stream type is VLC
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VlcPlayerScreen(
+                    videoUrl: filteredData['url'],
+                    // videoTitle: filteredData['title'] ?? 'No Title',
+                    channelList: [],
+                    genres: '',
+                    // channels: [],
+                    // initialIndex: 1,
+                    bannerImageUrl: filteredData['banner'],
+                    startAtPosition: Duration.zero,
+                    // onFabFocusChanged: (bool) {},
+                    isLive: true,
+                  ),
                 ),
-              ),
-            ).then((_) {
-              _isNavigating = false;
-            });
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoMovieScreen(
+                    videoUrl: filteredData['url'],
+                    videoTitle: filteredData['title'] ?? 'No Title',
+                    channelList: [],
+                    videoType: '',
+                    videoBanner: '',
+                    onFabFocusChanged: (bool focused) {},
+                    genres: '',
+                    url: '',
+                    type: '',
+                  ),
+                ),
+              ).then((_) {
+                _isNavigating = false;
+              });
+            }
           }
         } else {
           throw Exception('Video not found');
@@ -286,10 +410,26 @@ class _BannerSliderState extends State<BannerSlider> {
                                   margin: const EdgeInsets.only(top: 1),
                                   width: screenwdt,
                                   height: screenhgt,
-                                  child: CachedNetworkImage(
+                                  child:
+                                      // CachedNetworkImage(
+                                      //   imageUrl: banner['banner'] ?? localImage,
+                                      //   fit: BoxFit.fill,
+                                      //   placeholder: (context, url) => localImage,
+                                      // ),
+                                      CachedNetworkImage(
                                     imageUrl: banner['banner'] ?? localImage,
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.fill,
                                     placeholder: (context, url) => localImage,
+                                    errorWidget: (context, url, error) =>
+                                        Icon(Icons.error),
+                                    cacheKey: banner[
+                                        'content_id'], // Ensure cache key is unique per banner
+                                    fadeInDuration: Duration(
+                                        milliseconds:
+                                            500), // Reduce fade-in time
+                                    memCacheHeight:
+                                        800, // Limit the memory cache to save resources
+                                    memCacheWidth: 1200,
                                   ),
                                 ),
                               ],
@@ -311,8 +451,8 @@ class _BannerSliderState extends State<BannerSlider> {
                               onFocusChange: (hasFocus) {
                                 setState(() {
                                   _isButtonFocused = hasFocus;
-                                  _currentFocusColor =
-                                      generateRandomLightColor();
+                                  // _currentFocusColor =
+                                  _currentFocusColor;
                                 });
                               },
                               onKeyEvent: (node, event) {
@@ -344,6 +484,9 @@ class _BannerSliderState extends State<BannerSlider> {
                                         hasFocus: _isButtonFocused,
                                         childBuilder: (Color randomColor) {
                                           return Container(
+                                            margin: EdgeInsets.all(screenwdt *
+                                                0.001), // Reduced padding
+
                                             padding: EdgeInsets.symmetric(
                                                 vertical: screenhgt * 0.02,
                                                 horizontal: screenwdt * 0.02),
@@ -395,3 +538,8 @@ class _BannerSliderState extends State<BannerSlider> {
     );
   }
 }
+
+
+
+
+

@@ -35,6 +35,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     super.initState();
     _socketService.initSocket();
     checkServerStatus();
+    
     _entertainmentList.addAll(widget.newsList);
   }
 
@@ -253,55 +254,44 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     }
 
     if (shouldPlayVideo) {
-      // if (newsItem.streamType == 'VLC') {
+      if (newsItem.streamType == 'VLC') {
       //   // Navigate to VLC Player screen when stream type is VLC
-      //   await Navigator.push(
-      //     context,
-      //     MaterialPageRoute(
-      //       builder: (context) => Scaffold(
-      //         body: VlcPlayer(
-      //           controller: VlcPlayerController.network(
-      //             newsItem.url,
-      //             autoPlay: true,
-      //           ),
-      //           aspectRatio: 16 / 9,
-      //           placeholder: Center(child: CircularProgressIndicator()),
-      //         ),
-      //       ),
-      //     ),
-          //  context,
-          // MaterialPageRoute(
-          //   builder: (context) => VlcPlayerScreen(
-          //     videoUrl: newsItem.url,
-          //     videoTitle: newsItem.name,
-          //     channelList: _entertainmentList,
-          //     genres: newsItem.genres,
-          //     channels: [],
-          //     initialIndex: 1,
-          //     bannerImageUrl: newsItem.banner,
-          //     startAtPosition: Duration.zero, onFabFocusChanged: (bool) {  },
-          //   ),
-          // ),
-        // );
-      // } else {
+        await Navigator.push(
+           context,
+          MaterialPageRoute(
+            builder: (context) => VlcPlayerScreen(
+              videoUrl: newsItem.url,
+              // videoTitle: newsItem.name,
+              channelList: _entertainmentList,
+              genres: newsItem.genres,
+              // channels: [],
+              // initialIndex: 1,
+              bannerImageUrl: newsItem.banner,
+              startAtPosition: Duration.zero, 
+              // onFabFocusChanged: (bool) {  }, 
+              isLive: true,
+            ),
+          ),
+        );
+      } else {
         // Default case for other stream types
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => VideoScreen(
               videoUrl: newsItem.url,
-              videoTitle: newsItem.name,
-              channelList: _entertainmentList,
-              genres: newsItem.genres,
-              channels: [],
-              initialIndex: 1,
+              // videoTitle: newsItem.name,
+              // channelList: _entertainmentList,
+              // genres: newsItem.genres,
+              // channels: [],
+              // initialIndex: 1,
               bannerImageUrl: newsItem.banner,
               startAtPosition: Duration.zero,
             ),
           ),
         );
       }
-    // }
+    }
   } catch (e) {
     if (shouldPop) {
       Navigator.of(context, rootNavigator: true).pop();

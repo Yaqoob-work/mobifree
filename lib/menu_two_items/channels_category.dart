@@ -1,3 +1,5 @@
+
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/main.dart';
@@ -10,6 +12,8 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 
+import '../video_widget/vlc_player_screen.dart';
+
 class ChannelsCategory extends StatefulWidget {
   @override
   _ChannelsCategoryState createState() => _ChannelsCategoryState();
@@ -18,7 +22,7 @@ class ChannelsCategory extends StatefulWidget {
 class _ChannelsCategoryState extends State<ChannelsCategory> {
   final List<NewsItemModel> _entertainmentList = [];
   final Map<String, List<NewsItemModel>> _groupedByGenre =
-      {}; // New map to group by genres
+      {}; // Group by genres
   final SocketService _socketService = SocketService();
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
@@ -26,6 +30,8 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
   bool _isNavigating = false;
   int _maxRetries = 3;
   int _retryDelay = 5; // seconds
+  bool _isAttemptingReconnect =
+      false; // To avoid repeated reconnection attempts
 
   @override
   void initState() {
@@ -33,14 +39,28 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
     _socketService.initSocket();
     checkServerStatus();
     fetchData();
+        // Update cache when the page is entered
+    _apiService.updateCacheOnPageEnter();
+    // Listen to updates from the ApiService stream
+    _apiService.updateStream.listen((hasChanges) {
+      if (hasChanges) {
+        setState(() {
+          _isLoading = true;
+        });
+        fetchData(); // Refetch the data only when changes occur
+      }
+    });
+
   }
 
   void checkServerStatus() {
     Timer.periodic(Duration(seconds: 10), (timer) {
       // Check if the socket is connected, otherwise attempt to reconnect
-      if (!_socketService.socket.connected) {
+      if (!_socketService.socket.connected && !_isAttemptingReconnect) {
+        _isAttemptingReconnect = true;
         print('YouTube server down, retrying...');
         _socketService.initSocket(); // Re-establish the socket connection
+        _isAttemptingReconnect = false;
       }
     });
   }
@@ -78,11 +98,16 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
   void _groupByGenre(List<NewsItemModel> items) {
     _groupedByGenre.clear();
     for (var item in items) {
-      if (item.genres.isNotEmpty) {
-        if (!_groupedByGenre.containsKey(item.genres)) {
-          _groupedByGenre[item.genres] = [];
+      final genres =
+          item.genres.split(','); // Split by comma if multiple genres exist
+      for (var genre in genres) {
+        genre = genre.trim();
+        if (genre.isNotEmpty) {
+          if (!_groupedByGenre.containsKey(genre)) {
+            _groupedByGenre[genre] = [];
+          }
+          _groupedByGenre[genre]?.add(item);
         }
-        _groupedByGenre[item.genres]?.add(item);
       }
     }
   }
@@ -106,7 +131,16 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
     if (_isLoading) {
       return Center(child: LoadingIndicator());
     } else if (_errorMessage.isNotEmpty) {
-      return ErrorMessage(message: _errorMessage);
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ErrorMessage(message: _errorMessage),
+          ElevatedButton(
+            onPressed: fetchData, // Retry fetching data on button press
+            child: Text('Retry'),
+          ),
+        ],
+      );
     } else if (_groupedByGenre.isEmpty) {
       return EmptyState(message: 'No items found');
     } else {
@@ -189,7 +223,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
             shouldPop = false;
             return true;
           },
-          child: Center(child: LoadingIndicator(),) ,
+          child: Center(child: LoadingIndicator()),
         );
       },
     );
@@ -229,21 +263,37 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
       }
 
       if (shouldPlayVideo) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoScreen(
-              videoUrl: newsItem.url,
-              videoTitle: newsItem.name,
-              channelList: _entertainmentList,
-              genres: newsItem.genres,
-              channels: [],
-              initialIndex: 1,
-              bannerImageUrl: newsItem.banner,
-              startAtPosition: Duration.zero,
+        if (newsItem.streamType == 'VLC') {
+          //   // Navigate to VLC Player screen when stream type is VLC
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VlcPlayerScreen(
+                videoUrl: newsItem.url,
+                // videoTitle: newsItem.name,
+                channelList: _entertainmentList,
+                genres: newsItem.genres,
+                // channels: [],
+                // initialIndex: 1,
+                bannerImageUrl: newsItem.banner,
+                startAtPosition: Duration.zero,
+                // onFabFocusChanged: (bool) {  },
+                isLive: true,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoScreen(
+                videoUrl: newsItem.url,
+                bannerImageUrl: newsItem.banner,
+                startAtPosition: Duration.zero,
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (shouldPop) {
@@ -255,5 +305,11 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
     } finally {
       _isNavigating = false;
     }
+  }
+
+  @override
+  void dispose() {
+    _socketService.dispose();
+    super.dispose();
   }
 }

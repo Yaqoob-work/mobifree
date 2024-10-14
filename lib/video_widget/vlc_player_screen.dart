@@ -4,21 +4,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
-import 'package:mobi_tv_entertainment/main.dart';
 
 class VlcPlayerScreen extends StatefulWidget {
   final String videoUrl;
-  final String videoTitle;
+  // final String videoTitle;
+  final bool isLive; // New property to differentiate between Live and VOD
 
   const VlcPlayerScreen({
     Key? key,
     required this.videoUrl,
-    required this.videoTitle,
+    // required this.videoTitle,
     required List channelList,
-    required Null Function(dynamic bool) onFabFocusChanged,
+    // required Null Function(dynamic bool) onFabFocusChanged,
     required String genres,
-    required List channels,
-    required int initialIndex, required String bannerImageUrl, required Duration startAtPosition,
+    // required List channels,
+    // required int initialIndex,
+    required String bannerImageUrl,
+    required Duration startAtPosition,
+    required this.isLive, // Pass whether the content is live or VOD
   }) : super(key: key);
 
   @override
@@ -56,8 +59,8 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
           });
         }
 
-        // Update progress bar
-        if (_vlcPlayerController.value.duration != null) {
+        // Update progress bar for VOD only
+        if (!widget.isLive && _vlcPlayerController.value.duration != null) {
           setState(() {
             _progress = _vlcPlayerController.value.position.inSeconds /
                 _vlcPlayerController.value.duration!.inSeconds;
@@ -104,14 +107,16 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
       setState(() {
         _controlsVisible = false;
       });
+      debugPrint("Controls hidden after 10 seconds");
     });
   }
 
   void _resetHideControlsTimer() {
     _hideControlsTimer.cancel();
     setState(() {
-      _controlsVisible = true;
+      _controlsVisible = true; // Ensure the controls are visible
     });
+    debugPrint("Controls are now visible");
     _startHideControlsTimer();
   }
 
@@ -124,132 +129,156 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
     _resetHideControlsTimer();
   }
 
+  void _seekForward() {
+    final currentPosition = _vlcPlayerController.value.position;
+    final duration = _vlcPlayerController.value.duration;
+
+    if (duration != null) {
+      final newPosition = currentPosition + Duration(minutes: 1);
+      if (newPosition < duration) {
+        _vlcPlayerController.seekTo(newPosition);
+      } else {
+        _vlcPlayerController
+            .seekTo(duration); // Seek to the end if exceeding duration
+      }
+    }
+  }
+
+  void _seekBackward() {
+    final currentPosition = _vlcPlayerController.value.position;
+
+    if (currentPosition - Duration(minutes: 1) > Duration.zero) {
+      _vlcPlayerController.seekTo(currentPosition - Duration(minutes: 1));
+    } else {
+      _vlcPlayerController
+          .seekTo(Duration.zero); // Seek to the start if going below zero
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Focus(
-        focusNode: screenFocusNode,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.select ||
-                event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
-              _togglePlayPause();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              // Handle rewind if needed
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              // Handle forward if needed
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              _resetHideControlsTimer();
-              return KeyEventResult.handled;
-            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              // Handle back navigation if needed
-              return KeyEventResult.handled;
-            }
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onTap: _resetHideControlsTimer,
-          child: Stack(
-            children: [
-              Center(
-                child: VlcPlayer(
-                  controller: _vlcPlayerController,
-                  aspectRatio: 16 / 9,
-                  placeholder: Center(
-                    child: SpinKitFadingCircle(
-                      color: borderColor,
-                      size: 50.0,
-                    ),
+      body: Stack(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque, // Ensures all taps are captured
+            onTap: () {
+              debugPrint("Screen tapped - showing controls");
+              _resetHideControlsTimer(); // Show controls on tap and reset the timer
+            },
+            child: Focus(
+              focusNode: screenFocusNode,
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent) {
+                  if (event.logicalKey == LogicalKeyboardKey.select ||
+                      event.logicalKey == LogicalKeyboardKey.enter ||
+                      event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
+                    _togglePlayPause();
+                    return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft &&
+                      !widget.isLive) {
+                    _seekBackward(); // Call the backward seek method
+                    return KeyEventResult.handled;
+                  } else if (event.logicalKey ==
+                          LogicalKeyboardKey.arrowRight &&
+                      !widget.isLive) {
+                    _seekForward(); // Call the forward seek method
+                    return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                      event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    _resetHideControlsTimer();
+                    return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+                    // Handle back navigation if needed
+                    return KeyEventResult.handled;
+                  }
+                }
+                return KeyEventResult.ignored;
+              },
+              child: VlcPlayer(
+                controller: _vlcPlayerController,
+                aspectRatio: 16 / 9,
+                placeholder: Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.white, // Adjusted borderColor to white
+                    size: 50.0,
                   ),
                 ),
               ),
-              if (_controlsVisible)
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  // child: Column(
-                  //   children: [
-
-                  child: Container(
-                    color: Colors.black.withOpacity(0.5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Focus(
-                              focusNode: playPauseFocusNode,
-                              onFocusChange: (hasFocus) {
-                                setState(() {
-                                  // Change button color on focus
-                                });
-                              },
-                              child: IconButton(
-                                icon: Icon(
-                                  _vlcPlayerController.value.isPlaying
-                                      ? Icons.pause
-                                      : Icons.play_arrow,
-                                  color: Colors.white,
-                                ),
-                                onPressed: _togglePlayPause,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 20,
-                          child: LinearProgressIndicator(
-                            value: _progress.isNaN ? 0 : _progress,
-                            color: borderColor,
-                            backgroundColor: Colors.green,
-                          ),
-                        ),
-                        SizedBox(width: 20),
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.circle,
-                                  color: Colors.red,
-                                  size: 15,
-                                ),
-                                SizedBox(width: 5),
-                                Text(
-                                  'Live',
-                                  style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 20),
-                      ],
-                    ),
-                  ),
-                  // ],
-                  // ),
-                ),
-            ],
+            ),
           ),
-        ),
+          if (_controlsVisible)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: Focus(
+                          focusNode: playPauseFocusNode,
+                          onFocusChange: (hasFocus) {
+                            setState(() {
+                              // Change button color on focus
+                            });
+                          },
+                          child: IconButton(
+                            icon: Icon(
+                              _vlcPlayerController.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: Colors.white,
+                            ),
+                            onPressed: _togglePlayPause,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 20,
+                      child: LinearProgressIndicator(
+                        value: _progress.isNaN ? 0 : _progress,
+                        color: Colors.white, // Adjusted borderColor to white
+                        backgroundColor: Colors.green,
+                      ),
+                    ),
+                    SizedBox(width: 20),
+                    if (widget.isLive)
+                      Expanded(
+                        flex: 2,
+                        child: Center(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                color: Colors.red,
+                                size: 15,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                'Live',
+                                style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    SizedBox(width: 20),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
-
-
-

@@ -5,26 +5,26 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:video_player/video_player.dart';
-  import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
-  final String videoTitle;
-  final List<dynamic> channelList;
+  // final String videoTitle;
+  // final List<dynamic> channelList;
   final String bannerImageUrl;
   final Duration startAtPosition;
   // final Function(bool) onFabFocusChanged;
 
   VideoScreen({
     required this.videoUrl,
-    required this.videoTitle,
-    required this.channelList,
+    // required this.videoTitle,
+    // required this.channelList,
     // required this.onFabFocusChanged,
-    required String genres,
-    required List channels,
-    required int initialIndex, 
-    required this.bannerImageUrl, 
+    // required String genres,
+    // required List channels,
+    // required int initialIndex,
+    required this.bannerImageUrl,
     required this.startAtPosition,
   });
 
@@ -54,7 +54,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-        KeepScreenOn.turnOn();
+    KeepScreenOn.turnOn();
     _controller = VideoPlayerController.network(widget.videoUrl)
       ..initialize().then((_) {
         setState(() {
@@ -64,13 +64,12 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         });
         // final Duration startAtPosition;
         _controller.play();
-        _saveLastPlayedVideo(widget.videoUrl, _controller.value.position,  widget.bannerImageUrl);
+        _saveLastPlayedVideo(
+            widget.videoUrl, _controller.value.position, widget.bannerImageUrl);
         _startPositionUpdater();
         _startConnectivityCheck();
         KeepScreenOn.turnOn();
       });
-
-
 
     _controller.addListener(() {
       if (_controller.value.isBuffering != _isBuffering) {
@@ -111,39 +110,57 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     // You can implement your own method to check connectivity status here.
   }
 
+  void _saveLastPlayedVideo(
+      String videoUrl, Duration position, String bannerImageUrl) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
+    List<String>? lastPlayedVideos =
+        prefs.getStringList('last_played_videos') ?? [];
 
-void _saveLastPlayedVideo(String videoUrl, Duration position, String bannerImageUrl) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+    // Debugging - Check if the URL is correct
+    print("Saving video URL: $videoUrl");
+    print("Saving banner image URL: $bannerImageUrl");
 
-  List<String>? lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
+    // Create a new entry for the current video
+    String newVideoEntry =
+        "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
 
-  // Debugging - Check if the URL is correct
-  print("Saving video URL: $videoUrl");
-  print("Saving banner image URL: $bannerImageUrl");
+    // Insert the new entry at the beginning of the list
+    lastPlayedVideos.insert(0, newVideoEntry);
 
-  // Create a new entry for the current video
-  String newVideoEntry = "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
+    // Keep only the last 12 videos
+    if (lastPlayedVideos.length > 12) {
+      lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+    }
 
-  // Insert the new entry at the beginning of the list
-  lastPlayedVideos.insert(0, newVideoEntry);
-
-  // Keep only the last 12 videos
-  if (lastPlayedVideos.length > 12) {
-    lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+    // Save the updated list back to SharedPreferences
+    await prefs.setStringList('last_played_videos', lastPlayedVideos);
   }
 
-  // Save the updated list back to SharedPreferences
-  await prefs.setStringList('last_played_videos', lastPlayedVideos);
-}
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
+        _controller.play();
+      }
+    } else if (state == AppLifecycleState.paused) {
+      _controller.pause();
+    }
+  }
 
-
-
+  void _startHideControlsTimer() {
+    _hideControlsTimer = Timer(Duration(seconds: 10), () {
+      setState(() {
+        _controlsVisible = false;
+      });
+    });
+  }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _saveLastPlayedVideo(widget.videoUrl, _controller.value.position,widget.bannerImageUrl);
+    _saveLastPlayedVideo(
+        widget.videoUrl, _controller.value.position, widget.bannerImageUrl);
     _controller.dispose();
     _hideControlsTimer.cancel();
     screenFocusNode.dispose();
@@ -184,25 +201,6 @@ void _saveLastPlayedVideo(String videoUrl, Duration position, String bannerImage
         _controller.play();
       }
     }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      if (!_controller.value.isPlaying && !_controller.value.isBuffering) {
-        _controller.play();
-      }
-    } else if (state == AppLifecycleState.paused) {
-      _controller.pause();
-    }
-  }
-
-  void _startHideControlsTimer() {
-    _hideControlsTimer = Timer(Duration(seconds: 10), () {
-      setState(() {
-        _controlsVisible = false;
-      });
-    });
   }
 
   void _resetHideControlsTimer() {
@@ -275,16 +273,16 @@ void _saveLastPlayedVideo(String videoUrl, Duration position, String bannerImage
                 Center(
                   child: _controller.value.isInitialized
                       ? AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: screenwdt,
-                            height: screenhgt,
-                            child: VideoPlayer(_controller),
+                          aspectRatio: 16 / 9,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: screenwdt,
+                              height: screenhgt,
+                              child: VideoPlayer(_controller),
+                            ),
                           ),
-                        ),
-                      )
+                        )
                       //  AspectRatio(
                       //     aspectRatio: 16 / 9,
                       //     child: VideoPlayer(_controller),

@@ -59,7 +59,7 @@ android {
 
 
     defaultConfig {
-        applicationId "com.ecomflixandroidtv.cti"
+        applicationId "com.ekom.twelve"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()

@@ -1,12 +1,7 @@
-
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 import '../widgets/utils/random_light_color_widget.dart';
-
-
 
 class TopNavigationBar extends StatefulWidget {
   final int selectedPage;
@@ -48,7 +43,8 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt * 0.04),
+      padding: EdgeInsets.symmetric(
+          vertical: screenhgt * 0.01, horizontal: screenwdt * 0.04),
       color: cardColor,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -75,7 +71,10 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
 
   Widget _buildNavigationItem(String title, int index, FocusNode focusNode) {
     return Padding(
-      padding: EdgeInsets.only(top: screenwdt * 0.007, left: screenwdt * 0.013, right: screenwdt * 0.013),
+      padding: EdgeInsets.only(
+          top: screenwdt * 0.007,
+          left: screenwdt * 0.013,
+          right: screenwdt * 0.013),
       child: IntrinsicWidth(
         child: Focus(
           focusNode: focusNode,
@@ -88,9 +87,12 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                 _focusNodes[(index + 1) % _focusNodes.length].requestFocus();
                 return KeyEventResult.handled;
               } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                _focusNodes[(index - 1 + _focusNodes.length) % _focusNodes.length].requestFocus();
+                _focusNodes[
+                        (index - 1 + _focusNodes.length) % _focusNodes.length]
+                    .requestFocus();
                 return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter) {
+              } else if (event.logicalKey == LogicalKeyboardKey.select ||
+                  event.logicalKey == LogicalKeyboardKey.enter) {
                 widget.onPageSelected(index);
                 return KeyEventResult.handled;
               }
@@ -106,16 +108,19 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
               hasFocus: focusNode.hasFocus,
               childBuilder: (Color randomColor) {
                 return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 2),
+                  margin: EdgeInsets.all(screenwdt * 0.001),
                   decoration: BoxDecoration(
-                    color: focusNode.hasFocus ? randomColor.withOpacity(0.2) : Colors.transparent,
+                    color:
+                        focusNode.hasFocus ? Colors.black : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: focusNode.hasFocus ? randomColor : Colors.transparent,
+                      color:
+                          focusNode.hasFocus ? randomColor : Colors.transparent,
                       width: 2,
                     ),
                   ),
-                  padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01, horizontal: screenwdt * 0.01),
+                  padding: EdgeInsets.symmetric(
+                      vertical: screenhgt * 0.01, horizontal: screenwdt * 0.01),
                   child: index == 0
                       ? Image.asset(
                           'assets/logo3.png',
@@ -129,7 +134,9 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                                   ? randomColor // Use the random color for the text when focused
                                   : hintColor,
                               fontSize: menutextsz,
-                              fontWeight: focusNode.hasFocus ? FontWeight.bold : FontWeight.normal,
+                              fontWeight: focusNode.hasFocus
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         ),

@@ -5,30 +5,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+import 'package:mobi_tv_entertainment/video_widget/vlc_player_screen.dart';
 import '../main.dart';
 import '../video_widget/socket_service.dart';
 import '../video_widget/video_screen.dart';
 import '../widgets/utils/color_service.dart';
 
+
 Map<String, dynamic> settings = {};
 
-// Function to fetch settings
+// Function to fetch settings with caching
 Future<void> fetchSettings() async {
-  try {
-    final response = await https.get(
-      Uri.parse('https://api.ekomflix.com/android/getSettings'),
-      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    );
+  // final prefs = await SharedPreferences.getInstance();
+  // final cachedSettings = prefs.getString('settings');
 
-    if (response.statusCode == 200) {
-      settings = json.decode(response.body);
-    } else {
-      throw Exception('Failed to load settings');
+  // if (cachedSettings != null) {
+  //   settings = json.decode(cachedSettings);
+  // } else {
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getSettings'),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
+
+      if (response.statusCode == 200) {
+        settings = json.decode(response.body);
+        // prefs.setString('settings', response.body); // Cache settings
+      } else {
+        throw Exception('Failed to load settings');
+      }
+    } catch (e) {
+      print('Error fetching settings');
     }
-  } catch (e) {
-    print('Error fetching settings: $e');
   }
-}
+// }
 
 void main() {
   runApp(MaterialApp(home: SearchScreen()));
@@ -98,93 +108,170 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {});
   }
 
+
+  // Fetch search results with caching
   Future<List<dynamic>> _fetchFromApi1(String searchTerm) async {
-    try {
-      final response = await https.get(
-        Uri.parse(
-            'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
-        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      );
+    // final prefs = await SharedPreferences.getInstance();
+    // final cachedSearch = prefs.getString('search_$searchTerm');
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
+    // if (cachedSearch != null) {
+    //   // Return cached results
+    //   return json.decode(cachedSearch);
+    // } else {
+      try {
+        final response = await https.get(
+          Uri.parse(
+              'https://acomtv.com/android/searchContent/${Uri.encodeComponent(searchTerm)}/0'),
+          headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+        );
 
-        if (settings['tvenableAll'] == 0) {
-          final enabledChannels =
-              settings['channels']?.map((id) => id.toString()).toSet() ?? {};
+        if (response.statusCode == 200) {
+          final List<dynamic> responseData = json.decode(response.body);
 
-          return responseData
-              .where((channel) =>
-                  channel['name'] != null &&
-                  channel['name']
-                      .toString()
-                      .toLowerCase()
-                      .contains(searchTerm.toLowerCase()) &&
-                  enabledChannels.contains(channel['id'].toString()))
-              .toList();
+          if (settings['tvenableAll'] == 0) {
+            final enabledChannels =
+                settings['channels']?.map((id) => id.toString()).toSet() ?? {};
+
+            final filteredResults = responseData
+                .where((channel) =>
+                    channel['name'] != null &&
+                    channel['name']
+                        .toString()
+                        .toLowerCase()
+                        .contains(searchTerm.toLowerCase()) &&
+                    enabledChannels.contains(channel['id'].toString()))
+                .toList();
+
+            // prefs.setString('search_$searchTerm', json.encode(filteredResults));
+            return filteredResults;
+          } else {
+            final filteredResults = responseData
+                .where((channel) =>
+                    channel['name'] != null &&
+                    channel['name']
+                        .toString()
+                        .toLowerCase()
+                        .contains(searchTerm.toLowerCase()))
+                .toList();
+
+            // prefs.setString('search_$searchTerm', json.encode(filteredResults));
+            return filteredResults;
+          }
         } else {
-          return responseData
-              .where((channel) =>
-                  channel['name'] != null &&
-                  channel['name']
-                      .toString()
-                      .toLowerCase()
-                      .contains(searchTerm.toLowerCase()))
-              .toList();
+          throw Exception('Failed to load data from API 1');
         }
-      } else {
-        throw Exception('Failed to load data from API 1');
+      } catch (e) {
+        print('Error fetching from API 1');
+        return [];
       }
-    } catch (e) {
-      print('Error fetching from API 1: $e');
-      return [];
-    }
+    // }
   }
+
+  // void _performSearch(String searchTerm) {
+  //   if (_debounce?.isActive ?? false) _debounce?.cancel();
+
+  //   if (searchTerm.trim().isEmpty) {
+  //     setState(() {
+  //       isLoading = false;
+  //       searchResults.clear();
+  //       _itemFocusNodes.clear();
+  //     });
+  //     return;
+  //   }
+
+  //   _debounce = Timer(const Duration(milliseconds: 300), () async {
+  //     setState(() {
+  //       isLoading = true;
+  //       searchResults.clear();
+  //       _itemFocusNodes.clear();
+  //     });
+
+  //     try {
+  //       final api1Results = await _fetchFromApi1(searchTerm);
+
+  //       setState(() {
+  //         searchResults = api1Results;
+  //         _itemFocusNodes.addAll(List.generate(
+  //           searchResults.length,
+  //           (index) => FocusNode(),
+  //         ));
+  //         isLoading = false;
+  //       });
+
+  //       WidgetsBinding.instance.addPostFrameCallback((_) {
+  //         if (_itemFocusNodes.isNotEmpty &&
+  //             _itemFocusNodes[0].context != null) {
+  //           FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
+  //         }
+  //       });
+  //     } catch (e) {
+  //       setState(() {
+  //         isLoading = false;
+  //       });
+  //     }
+  //   });
+  // }
 
   void _performSearch(String searchTerm) {
-    if (_debounce?.isActive ?? false) _debounce?.cancel();
+  if (_debounce?.isActive ?? false) _debounce?.cancel();
 
-    if (searchTerm.trim().isEmpty) {
+  if (searchTerm.trim().isEmpty) {
+    setState(() {
+      isLoading = false;
+      searchResults.clear();
+      _itemFocusNodes.clear();
+    });
+    return;
+  }
+
+  _debounce = Timer(const Duration(milliseconds: 300), () async {
+    setState(() {
+      isLoading = true;
+      searchResults.clear();
+      _itemFocusNodes.clear();
+    });
+
+    try {
+      final api1Results = await _fetchFromApi1(searchTerm);
+
+      setState(() {
+        searchResults = api1Results;
+        _itemFocusNodes.addAll(List.generate(
+          searchResults.length,
+          (index) => FocusNode(),
+        ));
+        isLoading = false;
+      });
+
+
+
+            // Preload images before updating the UI
+      await _preloadImages(searchResults);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
+          FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
+        }
+      });
+    } catch (e) {
       setState(() {
         isLoading = false;
-        searchResults.clear();
-        _itemFocusNodes.clear();
       });
-      return;
     }
+  });
+}
 
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
-      setState(() {
-        isLoading = true;
-        searchResults.clear();
-        _itemFocusNodes.clear();
-      });
+Future<void> _preloadImages(List<dynamic> results) async {
+  for (var result in results) {
+    final imageUrl = result['banner'] ?? localImage;
 
-      try {
-        final api1Results = await _fetchFromApi1(searchTerm);
-
-        setState(() {
-          searchResults = api1Results;
-          _itemFocusNodes.addAll(List.generate(
-            searchResults.length,
-            (index) => FocusNode(),
-          ));
-          isLoading = false;
-        });
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_itemFocusNodes.isNotEmpty &&
-              _itemFocusNodes[0].context != null) {
-            FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
-          }
-        });
-      } catch (e) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    });
+    if (imageUrl.isNotEmpty) {
+      await precacheImage(CachedNetworkImageProvider(imageUrl), context);
+    }
   }
+}
+
+
 
   Future<void> _updatePaletteColor(String imageUrl) async {
     try {
@@ -193,7 +280,7 @@ class _SearchScreenState extends State<SearchScreen> {
         paletteColor = color;
       });
     } catch (e) {
-      print('Error updating palette color: $e');
+      print('Error updating palette color: ');
       // Set a default color in case of an error
       setState(() {
         paletteColor = Colors.grey;
@@ -452,28 +539,56 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _navigateToVideoScreen(
       BuildContext context, List<dynamic> channels, int index) async {
     if (_shouldContinueLoading) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PopScope(
-            canPop: false,
-            onPopInvoked: (didPop) {
-              if (didPop) return;
-              Navigator.of(context).pop();
-            },
-            child: VideoScreen(
-              videoUrl: channels[index]['url'] ?? '',
-              videoTitle: channels[index]['name'] ?? '',
-              channelList: channels,
-              genres: channels[index]['genres'] ?? '',
-              channels: channels,
-              initialIndex: index,
-              bannerImageUrl: '',
-              startAtPosition: Duration.zero,
+      if (channels[index]['stream_type'] == 'VLC' ||
+          channels[index]['stream_type'] == 'VLC') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PopScope(
+              canPop: false,
+              onPopInvoked: (didPop) {
+                if (didPop) return;
+                Navigator.of(context).pop();
+              },
+              child: VlcPlayerScreen(
+                videoUrl: channels[index]['url'] ?? '',
+                // videoTitle: channels[index]['name'] ?? '',
+                channelList: channels,
+                genres: channels[index]['genres'] ?? '',
+                // channels: channels,
+                // initialIndex: index,
+                bannerImageUrl: '',
+                startAtPosition: Duration.zero, 
+                // onFabFocusChanged: (bool) {  }, 
+                isLive: false,
+              ),
             ),
           ),
-        ),
-      );
+        );
+      } else {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PopScope(
+              canPop: false,
+              onPopInvoked: (didPop) {
+                if (didPop) return;
+                Navigator.of(context).pop();
+              },
+              child: VideoScreen(
+                videoUrl: channels[index]['url'] ?? '',
+                // videoTitle: channels[index]['name'] ?? '',
+                // channelList: channels,
+                // genres: channels[index]['genres'] ?? '',
+                // channels: channels,
+                // initialIndex: index,
+                bannerImageUrl: '',
+                startAtPosition: Duration.zero,
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 

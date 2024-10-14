@@ -27,39 +27,32 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   bool _tvenableAll = false; // Add a variable to track tvenableAll status
   bool _isSplashVisible = true;
+  double _bannerHeight = screenhgt * 0.5; // Initial height
+  double _bannerWidth = screenwdt ; // Initial height
+
+
+
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
-    _fetchData();
-    _checkIfSplashNeeded();
-    _resetSplashFlag();
+    // _fetchData();
+    // _checkIfSplashNeeded();
+    // _resetSplashFlag();
   }
 
-  // Har baar app start hone par splash ko dikhana hai to flag reset karein
-  Future<void> _resetSplashFlag() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('splashShown', false); // Reset splash flag
+    // This function will be passed to BannerSlider and called when the height changes
+  void _onBannerHeightChange(double newHeight) {
+    setState(() {
+      _bannerHeight = newHeight; // Update the banner height in HomeScreen
+    });
   }
 
-  // Yeh function check karega agar splash pehle dikha chuka hai ya nahi
-  Future<void> _checkIfSplashNeeded() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool splashShown = prefs.getBool('splashShown') ?? false;
-
-    if (splashShown) {
-      setState(() {
-        _isSplashVisible = false; // Splash ko hide kar dega
-      });
-    } else {
-      // Splash ko 2 seconds ke liye dikhao, aur fir next steps lo
-      Timer(Duration(seconds: 5), () {
-        setState(() {
-          _isSplashVisible = false;
-          prefs.setBool('splashShown', true); // Splash ko mark karo as shown
-        });
-      });
-    }
+  void _onBannerWidthChange(double newWidth) {
+    setState(() {
+      _bannerWidth = newWidth; // Update the banner width in HomeScreen
+    });
   }
 
   @override
@@ -68,46 +61,48 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
-    if (_isLoading) return;
-    setState(() {
-      _isLoading = true;
-    });
 
-    // Simulate network request delay
-    await Future.delayed(const Duration(seconds: 1));
 
-    try {
-      final response = await https.get(
-        Uri.parse('https://api.ekomflix.com/android/getSettings'),
-        headers: {
-          'x-api-key': 'vLQTuPZUxktl5mVW',
-        },
-      );
+  // Future<void> _fetchData() async {
+  //   if (_isLoading) return;
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _tvenableAll = data['tvenableAll'] == 1;
-        });
-      } else {
-        // Handle errors or non-200 responses
-        print('Failed to load settings');
-      }
-    } catch (e) {
-      // Handle network errors or JSON parsing errors
-      print('Error: $e');
-    }
+  //   // Simulate network request delay
+  //   await Future.delayed(const Duration(seconds: 1));
 
-    setState(() {
-      _isLoading = false;
-    });
-  }
+  //   try {
+  //     final response = await https.get(
+  //       Uri.parse('https://api.ekomflix.com/android/getSettings'),
+  //       headers: {
+  //         'x-api-key': 'vLQTuPZUxktl5mVW',
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final data = jsonDecode(response.body);
+  //       setState(() {
+  //         _tvenableAll = data['tvenableAll'] == 1;
+  //       });
+  //     } else {
+  //       // Handle errors or non-200 responses
+  //       print('Failed to load settings');
+  //     }
+  //   } catch (e) {
+  //     // Handle network errors or JSON parsing errors
+  //     print('Error: $e');
+  //   }
+
+  //   setState(() {
+  //     _isLoading = false;
+  //   });
+  // }
 
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      _fetchData();
+      // _fetchData();
     }
   }
 
@@ -134,8 +129,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     // if (_tvenableAll) // Conditionally display SubVod
                     Container(
                       color: cardColor,
-                      height: screenhgt *0.65,
-                      child: BannerSlider(),
+                      height: _bannerHeight,
+                      width: _bannerWidth,
+                      child: BannerSlider(
+                        initialHeight: screenhgt * 0.5,
+                        onHeightChange: _onBannerHeightChange, 
+                        initialWidth: screenwdt , 
+                        onWidthChange: _onBannerWidthChange,
+                        ),
                     ),
                     // if (_tvenableAll) // Conditionally display SubVod
                     Container(

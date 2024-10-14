@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -12,51 +6,119 @@ import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
 import '../../video_widget/socket_service.dart';
 import '../../video_widget/video_screen.dart';
+import '../../video_widget/vlc_player_screen.dart';
+import '../../widgets/focussable_item_widget.dart';
 import '../../widgets/utils/color_service.dart';
 
-Map<String, dynamic> settings = {};
+// Map<String, dynamic> settings = {};
+class CategoryService {
+  List<Category> categories = [];
+  Map<String, dynamic> settings = {};
 
-Future<void> fetchSettings() async {
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getSettings'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
+  final _updateController = StreamController<bool>.broadcast();
+  Stream<bool> get updateStream => _updateController.stream;
 
-  if (response.statusCode == 200) {
-    settings = json.decode(response.body);
-  } else {
-    throw Exception('Failed to load settings');
+
+
+  Future<void> fetchSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedSettings = prefs.getString('settings');
+
+    if (cachedSettings != null) {
+      settings = json.decode(cachedSettings);
+    } else {
+      await _fetchAndCacheSettings();
+    }
   }
-}
 
-Future<List<Category>> fetchCategories() async {
-  await fetchSettings();
+  Future<void> _fetchAndCacheSettings() async {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getSettings'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
 
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
+    if (response.statusCode == 200) {
+      settings = json.decode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString('settings', response.body);
+    } else {
+      throw Exception('Failed to load settings');
+    }
+  }
 
-  if (response.statusCode == 200) {
-    List jsonResponse = json.decode(response.body);
-    List<Category> categories =
-        jsonResponse.map((category) => Category.fromJson(category)).toList();
+  Future<List<Category>> fetchCategories() async {
+    await fetchSettings();
+    
+    final prefs = await SharedPreferences.getInstance();
+    final cachedCategories = prefs.getString('categories');
 
+    if (cachedCategories != null) {
+      categories = _processCategories(json.decode(cachedCategories));
+      return categories;
+    } else {
+      await _fetchAndCacheCategories();
+      return categories;
+    }
+  }
+
+  Future<void> _fetchAndCacheCategories() async {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
+
+    if (response.statusCode == 200) {
+      categories = _processCategories(json.decode(response.body));
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString('categories', response.body);
+    } else {
+      throw Exception('Failed to load categories');
+    }
+  }
+
+  List<Category> _processCategories(List<dynamic> jsonResponse) {
+    List<Category> categories = jsonResponse.map((category) => Category.fromJson(category)).toList();
     if (settings['tvenableAll'] == 0) {
       for (var category in categories) {
         category.channels.retainWhere(
-            (channel) => settings['channels'].contains(int.parse(channel.id)));
+          (channel) => settings['channels'].contains(int.parse(channel.id)),
+        );
       }
     }
-
     return categories;
-  } else {
-    throw Exception('Failed to load categories');
+  }
+
+  Future<void> _updateCacheInBackground() async {
+    try {
+      bool hasChanges = false;
+
+      final oldSettings = await SharedPreferences.getInstance().then((prefs) => prefs.getString('settings'));
+      await _fetchAndCacheSettings();
+      final newSettings = await SharedPreferences.getInstance().then((prefs) => prefs.getString('settings'));
+      if (oldSettings != newSettings) hasChanges = true;
+
+      final oldCategories = await SharedPreferences.getInstance().then((prefs) => prefs.getString('categories'));
+      await _fetchAndCacheCategories();
+      final newCategories = await SharedPreferences.getInstance().then((prefs) => prefs.getString('categories'));
+      if (oldCategories != newCategories) hasChanges = true;
+
+      if (hasChanges) {
+        _updateController.add(true);
+      }
+    } catch (e) {
+      print('Error updating cache in background: $e');
+    }
+  }
+
+  void dispose() {
+    _updateController.close();
   }
 }
+
 
 class HomeCategory extends StatefulWidget {
   @override
@@ -65,11 +127,23 @@ class HomeCategory extends StatefulWidget {
 
 class _HomeCategoryState extends State<HomeCategory> {
   late Future<List<Category>> _categories;
+  late CategoryService _categoryService;
 
   @override
   void initState() {
     super.initState();
-    _categories = fetchCategories();
+    // _categories = fetchCategories(context);
+        _categoryService = CategoryService();  // Initialize the service here
+        _categories = _categoryService.fetchCategories();
+          // Trigger cache update when the page is entered
+  _categoryService._updateCacheInBackground();
+    _categoryService.updateStream.listen((hasChanges) {
+      if (hasChanges) {
+        setState(() {
+          _categories = _categoryService.fetchCategories();
+        });
+      }
+    });
     checkServerStatus(); // Check server status for reconnection
   }
 
@@ -81,6 +155,12 @@ class _HomeCategoryState extends State<HomeCategory> {
         SocketService().initSocket(); // Re-establish the socket connection
       }
     });
+  }
+
+    @override
+  void dispose() {
+    _categoryService.dispose();
+    super.dispose();
   }
 
   @override
@@ -99,7 +179,7 @@ class _HomeCategoryState extends State<HomeCategory> {
               },
             );
           } else if (snapshot.hasError) {
-            return Center(child: Text("${snapshot.error}"));
+            return Center(child: Text("Something went Wrong"));
           }
 
           return Container(
@@ -165,13 +245,13 @@ class Channel {
     return Channel(
       id: json['id'],
       name: json['name'],
-      banner: json['banner'],
+      banner: json['banner']??localImage,
       genres: json['genres'],
       url: json['url'] ?? '',
       streamType: json['stream_type'] ?? '',
       type: json['Type'] ?? '',
       status: json['status'] ?? '',
-      description: json['description'] ?? 'no description',
+      description: json['description'] ?? '',
     );
   }
 }
@@ -192,12 +272,22 @@ class _CategoryWidgetState extends State<CategoryWidget> {
   int _retryDelay = 5; // seconds
   final int timeoutDuration = 10; // seconds
   bool _shouldContinueLoading = true;
+    late Future<List<Category>> _categories;
+  late CategoryService _categoryService;
 
   @override
   void initState() {
     super.initState();
     _socketService.initSocket();
-    fetchSettings();
+            _categoryService = CategoryService();  // Initialize the service here
+        _categories = _categoryService.fetchCategories();
+    _categoryService.updateStream.listen((hasChanges) {
+      if (hasChanges) {
+        setState(() {
+          _categories = _categoryService.fetchCategories();
+        });
+      }
+    });
   }
 
   @override
@@ -285,11 +375,16 @@ class _CategoryWidgetState extends State<CategoryWidget> {
                       }
                       return Padding(
                         padding: EdgeInsets.symmetric(horizontal: 0),
-                        child: ChannelWidget(
-                          channel: filteredChannels[index],
+                        child: FocusableItemWidget(
+                          imageUrl: filteredChannels[index].banner,
+                          name: filteredChannels[index].name,
                           onTap: () async {
                             _showLoadingIndicator(context);
                             await _playVideo(context, filteredChannels, index);
+                          },
+                          fetchPaletteColor: (String imageUrl) {
+                            return PaletteColorService()
+                                .getSecondaryColor(imageUrl);
                           },
                         ),
                       );
@@ -315,7 +410,6 @@ class _CategoryWidgetState extends State<CategoryWidget> {
         await _navigateToVideoScreen(context, channels, index);
       }
     } catch (e) {
-      print("Error playing video: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Something Went Wrong')),
       );
@@ -352,32 +446,52 @@ class _CategoryWidgetState extends State<CategoryWidget> {
   Future<void> _navigateToVideoScreen(
       BuildContext context, List<Channel> channels, int index) async {
     if (_shouldContinueLoading) {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PopScope(
-            canPop: false,
-            onPopInvoked: (didPop) {
-              if (didPop) return;
-              Navigator.of(context).pop();
-            },
-            child: VideoScreen(
-              channels: channels,
-              initialIndex: index,
-              videoTitle: channels[index].name,
+      if (channels[index].streamType == 'VLC') {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VlcPlayerScreen(
+              // videoTitle: channels[index].name,
               videoUrl: channels[index].url,
-              genres: channels[index].genres,
               channelList: [],
-              bannerImageUrl: '',
+              genres: channels[index].genres,
+              // channels: channels,
+              // initialIndex: index,
+              bannerImageUrl: channels[index].banner,
               startAtPosition: Duration.zero,
+              // onFabFocusChanged: (bool) {},
+              isLive: true,
             ),
           ),
-        ),
-      );
+        );
+      } else {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PopScope(
+              canPop: false,
+              onPopInvoked: (didPop) {
+                if (didPop) return;
+                Navigator.of(context).pop();
+              },
+              child: VideoScreen(
+                // channels: channels,
+                // initialIndex: index,
+                // videoTitle: channels[index].name,
+                videoUrl: channels[index].url,
+                // genres: channels[index].genres,
+                // channelList: [],
+                bannerImageUrl: '',
+                startAtPosition: Duration.zero,
+              ),
+            ),
+          ),
+        );
 
-      // Handle any result returned from VideoScreen if needed
-      if (result != null) {
-        // Process the result
+        // Handle any result returned from VideoScreen if needed
+        if (result != null) {
+          // Process the result
+        }
       }
     }
   }
@@ -449,8 +563,10 @@ class _CategoryGridViewState extends State<CategoryGridView> {
               ),
               itemCount: widget.filteredChannels.length,
               itemBuilder: (context, index) {
-                return ChannelWidget(
-                  channel: widget.filteredChannels[index],
+                return FocusableItemWidget(
+                  imageUrl: widget
+                      .filteredChannels[index].banner, // Extract banner URL
+                  name: widget.filteredChannels[index].name, // Extract name
                   onTap: () async {
                     setState(() {
                       _isLoading = true; // Show loading indicator
@@ -458,20 +574,22 @@ class _CategoryGridViewState extends State<CategoryGridView> {
                     _shouldContinueLoading = true;
 
                     await _updateChannelUrlIfNeeded(
-                        widget.filteredChannels, index);
+                        widget.filteredChannels, index); // Handle URL update
                     if (_shouldContinueLoading) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => VideoScreen(
-                            channels: widget.filteredChannels,
-                            initialIndex: index,
-                            videoUrl: widget.filteredChannels[index].url,
-                            videoTitle: widget.filteredChannels[index].name,
-                            channelList: [],
-                            genres: widget.filteredChannels[index].genres,
-                            bannerImageUrl: '',
-                            startAtPosition: Duration.zero,
+                            // channels: widget.filteredChannels,
+                            // initialIndex: index,
+                            videoUrl: widget.filteredChannels[index]
+                                .url, // Pass the video URL
+                            // videoTitle: widget.filteredChannels[index].name, // Pass the video title
+                            // channelList: [], // Your channel list logic here
+                            // genres: widget.filteredChannels[index].genres, // Pass genres
+                            bannerImageUrl: '', // Banner image URL (optional)
+                            startAtPosition:
+                                Duration.zero, // Start video at the beginning
                           ),
                         ),
                       ).then((_) {
@@ -481,6 +599,10 @@ class _CategoryGridViewState extends State<CategoryGridView> {
                         });
                       });
                     }
+                  },
+                  fetchPaletteColor: (String imageUrl) {
+                    return PaletteColorService()
+                        .getSecondaryColor(imageUrl); // Fetch the palette color
                   },
                 );
               },
@@ -492,140 +614,6 @@ class _CategoryGridViewState extends State<CategoryGridView> {
                   size: 50.0,
                 ), // Circular loading indicator
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ChannelWidget extends StatefulWidget {
-  final Channel channel;
-  final VoidCallback onTap;
-
-  ChannelWidget({required this.channel, required this.onTap});
-
-  @override
-  _ChannelWidgetState createState() => _ChannelWidgetState();
-}
-
-class _ChannelWidgetState extends State<ChannelWidget> {
-  bool isFocused = false;
-  Color secondaryColor = Colors.grey; // Default color
-  final PaletteColorService _paletteColorService = PaletteColorService();
-  @override
-  void initState() {
-    super.initState();
-    _updateSecondaryColor();
-  }
-
-  Future<void> _updateSecondaryColor() async {
-    // if (widget.channel.status == '1') {
-    Color color =
-        await _paletteColorService.getSecondaryColor(widget.channel.banner);
-    setState(() {
-      secondaryColor = color;
-    });
-    // }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    bool showBanner = widget.channel.status == '1';
-
-    return FocusableActionDetector(
-      onFocusChange: (hasFocus) {
-        setState(() {
-          isFocused = hasFocus;
-        });
-      },
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (ActivateIntent intent) {
-            widget.onTap();
-            return null;
-          },
-        ),
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (showBanner)
-              Stack(
-                children: [
-                  AnimatedContainer(
-                    width: screenwdt * 0.19,
-                    height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-                    duration: const Duration(milliseconds: 300),
-                    decoration: BoxDecoration(
-                      border: isFocused
-                          ? Border.all(
-                              color: secondaryColor,
-                              width: 4.0,
-                            )
-                          : Border.all(
-                              color: Colors.transparent,
-                              width: 4.0,
-                            ),
-                      borderRadius: BorderRadius.circular(0),
-                      boxShadow: isFocused
-                          ? [
-                              BoxShadow(
-                                color: secondaryColor
-                                // .withOpacity(0.5)
-                                ,
-                                blurRadius: 25,
-                                spreadRadius: 10,
-                              )
-                            ]
-                          : [],
-                    ),
-                    child: CachedNetworkImage(
-                      imageUrl: widget.channel.banner,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          Container(color: Colors.grey),
-                      width: screenwdt * 0.19,
-                      height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-                    ),
-                  ),
-                ],
-              ),
-            SizedBox(height: 10),
-            Container(
-              width: screenwdt * 0.19,
-              // height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-              // height: screenhgt * 0.15,
-
-              child: Column(
-                children: [
-                  Text(
-                    (widget.channel.name).toUpperCase(),
-                    style: TextStyle(
-                      color: isFocused ? secondaryColor : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: nametextsz,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                  ),
-                  // Text(
-                  //   widget.channel.description,
-                  //   style: TextStyle(
-                  //     color: isFocused ? secondaryColor : Colors.grey,
-                  //     fontWeight: FontWeight.bold,
-                  //   ),
-                  //   overflow: TextOverflow.ellipsis,
-                  //   maxLines: 1,
-                  //   textAlign: TextAlign.center,
-                  // ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -650,23 +638,9 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
   @override
   void initState() {
     super.initState();
-    _updateFocusColor();
   }
 
-  Future<void> _updateFocusColor() async {
-    // Generate a random color
-    Random random = Random();
-    Color randomColor = Color.fromARGB(
-      255, // Alpha value
-      random.nextInt(256), // Red
-      random.nextInt(256), // Green
-      random.nextInt(256), // Blue
-    );
 
-    setState(() {
-      focusColor = randomColor; // Use the random color
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -784,3 +758,8 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
     );
   }
 }
+
+
+
+
+

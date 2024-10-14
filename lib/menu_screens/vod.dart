@@ -3,18 +3,22 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
-// import 'package:palette_generator/palette_generator.dart';
-import '../services/socket_service.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import '../video_widget/socket_service.dart';
 import '../video_widget/video_movie_screen.dart';
+import '../video_widget/vlc_player_screen.dart';
+import '../widgets/focussable_item_widget.dart';
 import '../widgets/small_widgets/loading_indicator.dart';
-import '../widgets/utils/color_service.dart'; // Make sure this path is correct
+import '../widgets/utils/color_service.dart'; 
 
 void main() {
   runApp(VOD());
+}
+
+Future<Color> fetchPaletteColor(String imageUrl) async {
+  return await PaletteColorService().getSecondaryColor(imageUrl);
 }
 
 // Models
@@ -85,48 +89,76 @@ class MovieDetailsApi {
   }
 }
 
-// Fetch Functions
-Future<List<NetworkApi>> fetchNetworks() async {
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getNetworks'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
 
-  if (response.statusCode == 200) {
-    List<dynamic> body = json.decode(response.body);
-    return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
-  } else {
-    throw Exception('Failed to load networks');
-  }
+
+// Fetch Functions with Caching
+Future<List<NetworkApi>> fetchNetworks() async {
+  // final prefs = await SharedPreferences.getInstance();
+  // final cachedNetworks = prefs.getString('networks');
+
+  // if (cachedNetworks != null) {
+  //   List<dynamic> body = json.decode(cachedNetworks);
+  //   return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
+  // } else {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getNetworks'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      // prefs.setString('networks', response.body); // Cache the networks
+      return body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load networks');
+    }
+  // }
 }
 
 Future<List<ContentApi>> fetchContent(int networkId) async {
-  final response = await https.get(
-    Uri.parse(
-        'https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
+  // final prefs = await SharedPreferences.getInstance();
+  // final cachedContent = prefs.getString('content_$networkId');
 
-  if (response.statusCode == 200) {
-    List<dynamic> body = json.decode(response.body);
-    return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
-  } else {
-    throw Exception('Failed to load content');
-  }
+  // if (cachedContent != null) {
+  //   List<dynamic> body = json.decode(cachedContent);
+  //   return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
+  // } else {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      // prefs.setString('content_$networkId', response.body); // Cache the content
+      return body.map((dynamic item) => ContentApi.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load content');
+    }
+  // }
 }
 
 Future<MovieDetailsApi> fetchMovieDetails(int contentId) async {
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getMovieDetails/$contentId'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
+  // final prefs = await SharedPreferences.getInstance();
+  // final cachedMovieDetails = prefs.getString('movie_details_$contentId');
 
-  if (response.statusCode == 200) {
-    final Map<String, dynamic> body = json.decode(response.body);
-    return MovieDetailsApi.fromJson(body);
-  } else {
-    throw Exception('Failed to load movie details');
-  }
+  // if (cachedMovieDetails != null) {
+  //   final Map<String, dynamic> body = json.decode(cachedMovieDetails);
+  //   return MovieDetailsApi.fromJson(body);
+  // } else {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getMovieDetails/$contentId'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> body = json.decode(response.body);
+      // prefs.setString('movie_details_$contentId', response.body); // Cache the movie details
+      return MovieDetailsApi.fromJson(body);
+    } else {
+      throw Exception('Failed to load movie details');
+    }
+  // }
 }
 
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
@@ -147,227 +179,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   }
 }
 
-class FocusableGridItem extends StatefulWidget {
-  final NetworkApi network;
-  final VoidCallback onTap;
 
-  FocusableGridItem({required this.network, required this.onTap});
-
-  @override
-  _FocusableGridItemState createState() => _FocusableGridItemState();
-}
-
-class _FocusableGridItemState extends State<FocusableGridItem> {
-  bool isFocused = false;
-  Color paletcolor = Colors.grey; // Default color
-  final PaletteColorService _paletteColorService = PaletteColorService();
-
-  @override
-  void initState() {
-    super.initState();
-    _updateSecondaryColor();
-  }
-
-  Future<void> _updateSecondaryColor() async {
-    // if (widget.channel.status == '1') {
-    Color color =
-        await _paletteColorService.getSecondaryColor(widget.network.logo);
-    setState(() {
-      paletcolor = color;
-    });
-    // }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FocusableActionDetector(
-      onFocusChange: (hasFocus) {
-        setState(() {
-          isFocused = hasFocus;
-        });
-      },
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (ActivateIntent intent) {
-            widget.onTap();
-            return null;
-          },
-        ),
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
-                AnimatedContainer(
-                  width: screenwdt * 0.19,
-                  height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-                  duration: const Duration(milliseconds: 300),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isFocused ? paletcolor : Colors.transparent,
-                      width: 4.0,
-                    ),
-                    borderRadius: BorderRadius.circular(0),
-                    boxShadow: isFocused
-                        ? [
-                            BoxShadow(
-                              color: paletcolor,
-                              blurRadius: 25,
-                              spreadRadius: 10,
-                            )
-                          ]
-                        : [],
-                  ),
-                  child: CachedNetworkImage(
-                    imageUrl: widget.network.logo,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => localImage,
-                    width: screenwdt * 0.19,
-                    height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            Container(
-              width: screenwdt * 0.17,
-              child: Column(
-                children: [
-                  Text(
-                    widget.network.name.toUpperCase(),
-                    style: TextStyle(
-                      color: isFocused ? paletcolor : Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: nametextsz,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FocusableGridItemContent extends StatefulWidget {
-  final ContentApi content;
-  final VoidCallback onTap;
-
-  FocusableGridItemContent({required this.content, required this.onTap});
-
-  @override
-  _FocusableGridItemContentState createState() =>
-      _FocusableGridItemContentState();
-}
-
-class _FocusableGridItemContentState extends State<FocusableGridItemContent> {
-  bool isFocused = false;
-  Color dominantColor = Colors.grey; // Default border color
-
-  final PaletteColorService _paletteColorService = PaletteColorService();
-
-  @override
-  void initState() {
-    super.initState();
-    // _loadPaletteColor();
-    _updateSecondaryColor();
-  }
-
-  Future<void> _updateSecondaryColor() async {
-    // if (widget.channel.status == '1') {
-    Color color =
-        await _paletteColorService.getSecondaryColor(widget.content.banner);
-    setState(() {
-      dominantColor = color;
-    });
-    // }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FocusableActionDetector(
-      onFocusChange: (hasFocus) {
-        setState(() {
-          isFocused = hasFocus;
-        });
-      },
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (ActivateIntent intent) {
-            widget.onTap();
-            return null;
-          },
-        ),
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              // width: screenwdt * 0.15,
-              // height: isFocused ? screenhgt * 0.22 : screenhgt * 0.2,
-
-              width: screenwdt * 0.19,
-              height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isFocused ? dominantColor : Colors.transparent,
-                  width: 4.0,
-                ),
-                boxShadow: isFocused
-                    ? [
-                        BoxShadow(
-                          color: dominantColor,
-                          blurRadius: 25,
-                          spreadRadius: 10,
-                        )
-                      ]
-                    : [],
-              ),
-              child: CachedNetworkImage(
-                imageUrl: widget.content.banner,
-                placeholder: (context, url) => localImage,
-                fit: BoxFit.cover,
-                // width: screenwdt * 0.15,
-                // height: screenhgt * 0.2,
-
-                width: screenwdt * 0.19,
-                height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
-              ),
-            ),
-            SizedBox(height: 10),
-            Container(
-              width: screenwdt * 0.17,
-              child: Text(
-                widget.content.name,
-                style: TextStyle(
-                  color: isFocused ? dominantColor : Colors.grey,
-                  fontWeight: FontWeight.bold,
-                  fontSize: nametextsz,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class VOD extends StatefulWidget {
   @override
@@ -415,18 +227,21 @@ class _VODState extends State<VOD> {
                   ),
                   itemCount: networks.length,
                   itemBuilder: (context, index) {
-                    return FocusableGridItem(
-                      network: networks[index],
-                      onTap: () async {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ContentScreen(networkId: networks[index].id),
-                          ),
-                        );
-                      },
-                    );
+                    return FocusableItemWidget(
+                        imageUrl: networks[index].logo,
+                        name: networks[index].name,
+                        onTap: () async {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ContentScreen(networkId: networks[index].id),
+                            ),
+                          );
+                          
+                        },
+                        fetchPaletteColor: fetchPaletteColor,
+                      );
                   },
                 ),
               ),
@@ -437,6 +252,9 @@ class _VODState extends State<VOD> {
     );
   }
 }
+
+
+
 
 class ContentScreen extends StatefulWidget {
   final int networkId;
@@ -478,15 +296,15 @@ class _ContentScreenState extends State<ContentScreen> {
                   horizontal: screenwdt * 0.03, vertical: screenhgt * 0.01),
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  // crossAxisSpacing: 10,
-                  // mainAxisSpacing: 10,
-                  childAspectRatio: 0.8,
-                ),
+                    crossAxisCount: 5,
+                    // crossAxisSpacing: 10,
+                    // mainAxisSpacing: 10,
+                    childAspectRatio: 0.8),
                 itemCount: content.length,
                 itemBuilder: (context, index) {
-                  return FocusableGridItemContent(
-                    content: content[index],
+                  return FocusableItemWidget(
+                    imageUrl: content[index].banner,
+                    name: content[index].name,
                     onTap: () async {
                       Navigator.push(
                         context,
@@ -494,8 +312,10 @@ class _ContentScreenState extends State<ContentScreen> {
                           builder: (context) =>
                               DetailsPage(content: content[index]),
                         ),
+                        
                       );
-                    },
+                    }, 
+                    fetchPaletteColor: fetchPaletteColor,
                   );
                 },
               ),
@@ -506,6 +326,10 @@ class _ContentScreenState extends State<ContentScreen> {
     );
   }
 }
+
+
+
+
 
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
@@ -629,7 +453,7 @@ class _DetailsPageState extends State<DetailsPage> {
               placeholder: (context, url) => localImage,
               fit: BoxFit.cover,
               width: screenwdt * 0.7,
-              height: screenhgt * 0.5,
+              height: screenhgt * 0.55,
             ),
           Text(movieDetails.name,
               style: TextStyle(color: Colors.white, fontSize: nametextsz)),
@@ -639,9 +463,12 @@ class _DetailsPageState extends State<DetailsPage> {
               scrollDirection: Axis.horizontal,
               itemCount: 1,
               itemBuilder: (context, index) {
-                return FocusableGridItemContent(
-                  content: widget.content,
+                return FocusableItemWidget(
+                  imageUrl: widget.content
+                      .banner, // Replace with actual image URL if available
+                  name: '',
                   onTap: () => _playVideo(movieDetails),
+                  fetchPaletteColor: fetchPaletteColor,
                 );
               },
             ),
@@ -662,22 +489,43 @@ class _DetailsPageState extends State<DetailsPage> {
       await _updateUrlIfNeeded(playLink);
 
       if (_shouldContinueLoading) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VideoMovieScreen(
-              videoUrl: playLink['url']!,
-              videoTitle: movieDetails.name,
-              channelList: [],
-              videoBanner: movieDetails.banner,
-              onFabFocusChanged: (bool focused) {},
-              genres: movieDetails.genres,
-              videoType: playLink['type']!,
-              url: playLink['url']!,
-              type: playLink['type']!,
+        if (playLink['type'] == 'VLC' || playLink['type'] == 'VLC') {
+          //   // Navigate to VLC Player screen when stream type is VLC
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VlcPlayerScreen(
+                videoUrl: playLink['url']!,
+                // videoTitle: movieDetails.name,
+                channelList: [],
+                genres: movieDetails.genres,
+                // channels: [],
+                // initialIndex: 1,
+                bannerImageUrl: movieDetails.banner,
+                startAtPosition: Duration.zero,
+                // onFabFocusChanged: (bool) {},
+                isLive: false,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoMovieScreen(
+                videoUrl: playLink['url']!,
+                videoTitle: movieDetails.name,
+                channelList: [],
+                videoBanner: movieDetails.banner,
+                onFabFocusChanged: (bool focused) {},
+                genres: movieDetails.genres,
+                videoType: playLink['type']!,
+                url: playLink['url']!,
+                type: playLink['type']!,
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       _handleVideoError(context);
