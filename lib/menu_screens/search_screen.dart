@@ -85,20 +85,133 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.dispose();
     _debounce?.cancel();
     _itemFocusNodes.forEach((node) => node.dispose());
+      _searchController.dispose();
     _socketService.dispose();
     super.dispose();
   }
 
-  // Server status check method
-  void checkServerStatus() {
-    Timer.periodic(Duration(seconds: 10), (timer) {
-      // Check if the socket is connected, otherwise attempt to reconnect
-      if (!_socketService.socket.connected) {
-        print('YouTube server down, retrying...');
-        _socketService.initSocket(); // Re-establish the socket connection
+
+
+  Future<void> _updateChannelUrlIfNeeded(List<dynamic> result, int index) async {
+    if (result[index]['stream_type'] == 'YoutubeLive' || result[index]['stream_type'] == 'Youtube') {
+      for (int i = 0; i < _maxRetries; i++) {
+        if (!_shouldContinueLoading) break;
+        try {
+          String updatedUrl = await _socketService.getUpdatedUrl(result[index]['url']);
+          result[index]['url'] = updatedUrl;
+          result[index]['stream_type'] = 'M3u8';
+          break;
+        } catch (e) {
+          if (i == _maxRetries - 1) rethrow;
+          await Future.delayed(Duration(seconds: _retryDelay));
+        }
       }
-    });
+    }
   }
+
+
+  Future<void> _onItemTap(BuildContext context, int index) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
+    _showLoadingIndicator(context);
+
+    try {
+      await _updateChannelUrlIfNeeded(searchResults, index);
+      if (_shouldContinueLoading) {
+        await _navigateToVideoScreen(context, searchResults, index);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      _isNavigating = false;
+      _shouldContinueLoading = true;
+      _dismissLoadingIndicator();
+    }
+  }
+
+  Future<void> _navigateToVideoScreen(BuildContext context, List<dynamic> channels, int index) async {
+    if (_shouldContinueLoading) {
+      if (channels[index]['stream_type'] == 'VLC') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VlcPlayerScreen(
+              videoUrl: channels[index]['url'] ?? '',
+              channelList: channels,
+              genres: channels[index]['genres'] ?? '',
+              bannerImageUrl: '',
+              startAtPosition: Duration.zero,
+              isLive: false,
+            ),
+          ),
+        );
+      } else {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: channels[index]['url'] ?? '',
+              startAtPosition: Duration.zero, bannerImageUrl: '',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showLoadingIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            _shouldContinueLoading = false;
+            _dismissLoadingIndicator();
+            return Future.value(false);
+          },
+          child: Center(
+            child: SpinKitFadingCircle(
+              color: Colors.white,
+              size: 50.0,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _dismissLoadingIndicator() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  // // Server status check method
+  // void checkServerStatus() {
+  //   Timer.periodic(Duration(seconds: 10), (timer) {
+  //     // Check if the socket is connected, otherwise attempt to reconnect
+  //     if (!_socketService.socket.connected) {
+  //       // print('YouTube server down, retrying...');
+  //       _socketService.initSocket(); // Re-establish the socket connection
+  //     }
+  //   });
+  // }
+
+  void checkServerStatus() {
+  int retryCount = 0;
+  Timer.periodic(Duration(seconds: 10), (timer) {
+    if (!_socketService.socket.connected && retryCount < _maxRetries) {
+      retryCount++;
+      _socketService.initSocket();
+    } else {
+      timer.cancel();
+    }
+  });
+}
+
 
   void _onSearchFieldFocusChanged() {
     setState(() {});
@@ -212,7 +325,57 @@ class _SearchScreenState extends State<SearchScreen> {
   //   });
   // }
 
-  void _performSearch(String searchTerm) {
+//   void _performSearch(String searchTerm) {
+//   if (_debounce?.isActive ?? false) _debounce?.cancel();
+
+//   if (searchTerm.trim().isEmpty) {
+//     setState(() {
+//       isLoading = false;
+//       searchResults.clear();
+//       _itemFocusNodes.clear();
+//     });
+//     return;
+//   }
+
+//   _debounce = Timer(const Duration(milliseconds: 300), () async {
+//     setState(() {
+//       isLoading = true;
+//       searchResults.clear();
+//       _itemFocusNodes.clear();
+//     });
+
+//     try {
+//       final api1Results = await _fetchFromApi1(searchTerm);
+
+//       setState(() {
+//         searchResults = api1Results;
+//         _itemFocusNodes.addAll(List.generate(
+//           searchResults.length,
+//           (index) => FocusNode(),
+//         ));
+//         isLoading = false;
+//       });
+
+
+
+//             // Preload images before updating the UI
+//       await _preloadImages(searchResults);
+
+//       WidgetsBinding.instance.addPostFrameCallback((_) {
+//         if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
+//           FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
+//         }
+//       });
+//     } catch (e) {
+//       setState(() {
+//         isLoading = false;
+//       });
+//     }
+//   });
+// }
+
+
+void _performSearch(String searchTerm) {
   if (_debounce?.isActive ?? false) _debounce?.cancel();
 
   if (searchTerm.trim().isEmpty) {
@@ -225,6 +388,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   _debounce = Timer(const Duration(milliseconds: 300), () async {
+    if (!mounted) return; // Add this check
     setState(() {
       isLoading = true;
       searchResults.clear();
@@ -234,6 +398,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final api1Results = await _fetchFromApi1(searchTerm);
 
+      if (!mounted) return; // Add this check
       setState(() {
         searchResults = api1Results;
         _itemFocusNodes.addAll(List.generate(
@@ -243,23 +408,26 @@ class _SearchScreenState extends State<SearchScreen> {
         isLoading = false;
       });
 
-
-
-            // Preload images before updating the UI
+      // Preload images before updating the UI
       await _preloadImages(searchResults);
 
+      if (!mounted) return; // Add this check
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null) {
+        if (_itemFocusNodes.isNotEmpty &&
+            _itemFocusNodes[0].context != null &&
+            mounted) { // Ensure widget is still mounted
           FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
         }
       });
     } catch (e) {
+      if (!mounted) return; // Add this check
       setState(() {
         isLoading = false;
       });
     }
   });
 }
+
 
 Future<void> _preloadImages(List<dynamic> results) async {
   for (var result in results) {
@@ -272,21 +440,24 @@ Future<void> _preloadImages(List<dynamic> results) async {
 }
 
 
-
-  Future<void> _updatePaletteColor(String imageUrl) async {
-    try {
-      Color color = await _paletteColorService.getSecondaryColor(imageUrl);
-      setState(() {
-        paletteColor = color;
-      });
-    } catch (e) {
-      print('Error updating palette color: ');
-      // Set a default color in case of an error
-      setState(() {
-        paletteColor = Colors.grey;
-      });
-    }
+Future<void> _updatePaletteColor(String imageUrl) async {
+  try {
+    Color color = await _paletteColorService.getSecondaryColor(imageUrl);
+    if (!mounted) return; // Add this check
+    setState(() {
+      paletteColor = color;
+    });
+  } catch (e) {
+    print('Error updating palette color: ');
+    if (!mounted) return; // Add this check
+    // Set a default color in case of an error
+    setState(() {
+      paletteColor = Colors.grey;
+    });
   }
+}
+
+
 
   void _toggleSearchField() {
     setState(() {
@@ -493,135 +664,137 @@ Future<void> _preloadImages(List<dynamic> results) async {
     );
   }
 
-  void _onItemTap(BuildContext context, int index) async {
-    if (_isNavigating) return;
-    _isNavigating = true;
-    _showLoadingIndicator(context);
 
-    try {
-      await _updateChannelUrlIfNeeded(searchResults, index);
-      if (_shouldContinueLoading) {
-        await _navigateToVideoScreen(context, searchResults, index);
-      }
-    } catch (e) {
-      print("Error playing video: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Something Went Wrong')),
-      );
-    } finally {
-      // Always reset these states regardless of success or failure
-      _isNavigating = false;
-      _shouldContinueLoading = true;
-      _dismissLoadingIndicator();
-    }
-  }
 
-  Future<void> _updateChannelUrlIfNeeded(
-      List<dynamic> channels, int index) async {
-    if (channels[index]['stream_type'] == 'YoutubeLive' ||
-        channels[index]['stream_type'] == 'Youtube') {
-      for (int i = 0; i < _maxRetries; i++) {
-        if (!_shouldContinueLoading) break;
-        try {
-          String updatedUrl =
-              await _socketService.getUpdatedUrl(channels[index]['url']);
-          channels[index]['url'] = updatedUrl;
-          channels[index]['stream_type'] = 'M3u8';
-          break;
-        } catch (e) {
-          if (i == _maxRetries - 1) rethrow;
-          await Future.delayed(Duration(seconds: _retryDelay));
-        }
-      }
-    }
-  }
+// void _onItemTap(BuildContext context, int index) async {
+//     if (_isNavigating) return;
+//     _isNavigating = true;
+//     _showLoadingIndicator(context);
 
-  Future<void> _navigateToVideoScreen(
-      BuildContext context, List<dynamic> channels, int index) async {
-    if (_shouldContinueLoading) {
-      if (channels[index]['stream_type'] == 'VLC' ||
-          channels[index]['stream_type'] == 'VLC') {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PopScope(
-              canPop: false,
-              onPopInvoked: (didPop) {
-                if (didPop) return;
-                Navigator.of(context).pop();
-              },
-              child: VlcPlayerScreen(
-                videoUrl: channels[index]['url'] ?? '',
-                // videoTitle: channels[index]['name'] ?? '',
-                channelList: channels,
-                genres: channels[index]['genres'] ?? '',
-                // channels: channels,
-                // initialIndex: index,
-                bannerImageUrl: '',
-                startAtPosition: Duration.zero, 
-                // onFabFocusChanged: (bool) {  }, 
-                isLive: false,
-              ),
-            ),
-          ),
-        );
-      } else {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PopScope(
-              canPop: false,
-              onPopInvoked: (didPop) {
-                if (didPop) return;
-                Navigator.of(context).pop();
-              },
-              child: VideoScreen(
-                videoUrl: channels[index]['url'] ?? '',
-                // videoTitle: channels[index]['name'] ?? '',
-                // channelList: channels,
-                // genres: channels[index]['genres'] ?? '',
-                // channels: channels,
-                // initialIndex: index,
-                bannerImageUrl: '',
-                startAtPosition: Duration.zero,
-              ),
-            ),
-          ),
-        );
-      }
-    }
-  }
+//     try {
+//       await _updateChannelUrlIfNeeded(searchResults, index);
+//       if (_shouldContinueLoading) {
+//         await _navigateToVideoScreen(context, searchResults, index);
+//       }
+//     } catch (e) {
+//       print("Error playing video: $e");
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Something Went Wrong')),
+//       );
+//     } finally {
+//       // Always reset these states regardless of success or failure
+//       _isNavigating = false;
+//       _shouldContinueLoading = true;
+//       _dismissLoadingIndicator();
+//     }
+//   }
 
-  void _showLoadingIndicator(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async {
-            _shouldContinueLoading = false;
-            _dismissLoadingIndicator(); // Adjust the method if needed
-            return Future.value(
-                false); // Prevent dialog from closing automatically
-          },
-          child: Center(
-            child: SpinKitFadingCircle(
-              color: borderColor,
-              size: 50.0,
-            ),
-          ),
-        );
-      },
-    );
-  }
+//   Future<void> _updateChannelUrlIfNeeded(
+//       List<dynamic> channels, int index) async {
+//     if (channels[index]['stream_type'] == 'YoutubeLive' ||
+//         channels[index]['stream_type'] == 'Youtube') {
+//       for (int i = 0; i < _maxRetries; i++) {
+//         if (!_shouldContinueLoading) break;
+//         try {
+//           String updatedUrl =
+//               await _socketService.getUpdatedUrl(channels[index]['url']);
+//           channels[index]['url'] = updatedUrl;
+//           channels[index]['stream_type'] = 'M3u8';
+//           break;
+//         } catch (e) {
+//           if (i == _maxRetries - 1) rethrow;
+//           await Future.delayed(Duration(seconds: _retryDelay));
+//         }
+//       }
+//     }
+//   }
 
-  void _dismissLoadingIndicator() {
-    if (Navigator.of(context).canPop()) {
-      // Reset the state before popping the navigator
-      _isNavigating = false;
-      // _shouldContinueLoading = true;
+//   Future<void> _navigateToVideoScreen(
+//       BuildContext context, List<dynamic> channels, int index) async {
+//     if (_shouldContinueLoading) {
+//       if (channels[index]['stream_type'] == 'VLC' ||
+//           channels[index]['stream_type'] == 'VLC') {
+//         await Navigator.push(
+//           context,
+//           MaterialPageRoute(
+//             builder: (context) => PopScope(
+//               canPop: false,
+//               onPopInvoked: (didPop) {
+//                 if (didPop) return;
+//                 Navigator.of(context).pop();
+//               },
+//               child: VlcPlayerScreen(
+//                 videoUrl: channels[index]['url'] ?? '',
+//                 // videoTitle: channels[index]['name'] ?? '',
+//                 channelList: channels,
+//                 genres: channels[index]['genres'] ?? '',
+//                 // channels: channels,
+//                 // initialIndex: index,
+//                 bannerImageUrl: '',
+//                 startAtPosition: Duration.zero, 
+//                 // onFabFocusChanged: (bool) {  }, 
+//                 isLive: false,
+//               ),
+//             ),
+//           ),
+//         );
+//       } else {
+//         await Navigator.push(
+//           context,
+//           MaterialPageRoute(
+//             builder: (context) => PopScope(
+//               canPop: false,
+//               onPopInvoked: (didPop) {
+//                 if (didPop) return;
+//                 Navigator.of(context).pop();
+//               },
+//               child: VideoScreen(
+//                 videoUrl: channels[index]['url'] ?? '',
+//                 // videoTitle: channels[index]['name'] ?? '',
+//                 // channelList: channels,
+//                 // genres: channels[index]['genres'] ?? '',
+//                 // channels: channels,
+//                 // initialIndex: index,
+//                 bannerImageUrl: '',
+//                 startAtPosition: Duration.zero,
+//               ),
+//             ),
+//           ),
+//         );
+//       }
+//     }
+//   }
 
-      Navigator.of(context).pop();
-    }
-  }
+//   void _showLoadingIndicator(BuildContext context) {
+//     showDialog(
+//       context: context,
+//       barrierDismissible: false,
+//       builder: (BuildContext context) {
+//         return WillPopScope(
+//           onWillPop: () async {
+//             _shouldContinueLoading = false;
+//             _dismissLoadingIndicator(); // Adjust the method if needed
+//             return Future.value(
+//                 false); // Prevent dialog from closing automatically
+//           },
+//           child: Center(
+//             child: SpinKitFadingCircle(
+//               color: borderColor,
+//               size: 50.0,
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   void _dismissLoadingIndicator() {
+//     if (Navigator.of(context).canPop()) {
+//       // Reset the state before popping the navigator
+//       _isNavigating = false;
+//       // _shouldContinueLoading = true;
+
+//       Navigator.of(context).pop();
+//     }
+//   }
 }

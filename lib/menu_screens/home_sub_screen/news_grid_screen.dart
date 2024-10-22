@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
+import 'dart:convert';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
@@ -9,21 +9,25 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
-
-import '../video_widget/vlc_player_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../video_widget/vlc_player_screen.dart';
+import '../../widgets/services/api_service.dart';
 
 class NewsGridScreen extends StatefulWidget {
-  final List<NewsItemModel> newsList;
+  final List<NewsItemModel> musicList;
 
-  const NewsGridScreen({Key? key, required this.newsList}) : super(key: key);
+  const NewsGridScreen({Key? key, required this.musicList}) : super(key: key);
 
   @override
   _NewsGridScreenState createState() => _NewsGridScreenState();
 }
 
 class _NewsGridScreenState extends State<NewsGridScreen> {
-  final List<NewsItemModel> _entertainmentList = [];
+  // final List<NewsItemModel> _musicList = [];
+  List<NewsItemModel> _musicList = [];
+
   final SocketService _socketService = SocketService();
+  final ApiService _apiService = ApiService();
   bool _isLoading = false;
   String _errorMessage = '';
   bool _isNavigating = false;
@@ -36,18 +40,140 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     _socketService.initSocket();
     checkServerStatus();
     
-    _entertainmentList.addAll(widget.newsList);
+    // _musicList.addAll(widget.newsList);
+        _loadCachedDataAndFetchMusic();
+    _apiService.updateStream.listen((hasChanges) {
+      if (hasChanges) {
+        _loadCachedDataAndFetchMusic(); // Refetch data if changes occur
+      }
+    }); // Fetch updated news data in background
   }
 
   void checkServerStatus() {
     Timer.periodic(Duration(seconds: 10), (timer) {
       // Check if the socket is connected, otherwise attempt to reconnect
       if (!_socketService.socket.connected) {
-        print('YouTube server down, retrying...');
+        // print('YouTube server down, retrying...');
         _socketService.initSocket(); // Re-establish the socket connection
       }
     });
   }
+
+
+   Future<void> _loadCachedDataAndFetchMusic() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      // Step 1: Load cached music data first
+      await _loadCachedMusicData();
+
+      // Step 2: Fetch new data in the background and update UI if needed
+      await _fetchMusicInBackground();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load music data';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadCachedMusicData() async {
+    try {
+      // Fetch cached music data from SharedPreferences (similar to VOD)
+      final prefs = await SharedPreferences.getInstance();
+      final cachedMusic = prefs.getString('music_list');
+
+      if (cachedMusic != null) {
+        // Parse and load cached data
+        final List<dynamic> cachedData = json.decode(cachedMusic);
+        setState(() {
+          _musicList = cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+          _isLoading = false; // Show cached data immediately
+        });
+      }
+    } catch (e) {
+      print('Error loading cached music data: $e');
+    }
+  }
+
+  Future<void> _fetchMusicInBackground() async {
+    try {
+      // Fetch new music data from API and cache it (similar to VOD)
+      final newMusicList = await _apiService.fetchMusicData();
+
+      // Compare cached data with new data
+      final prefs = await SharedPreferences.getInstance();
+      final cachedMusic = prefs.getString('music_list');
+      if (cachedMusic != json.encode(newMusicList)) {
+        // Update cache if data is different
+        prefs.setString('music_list', json.encode(newMusicList));
+
+        // Update UI with new data
+        setState(() {
+          _musicList = newMusicList;
+        });
+      }
+    } catch (e) {
+      print('Error fetching music data: $e');
+    }
+  }
+
+// Future<void> _loadCachedNewsData() async {
+//     setState(() {
+//       _isLoading = true;
+//     });
+
+//     try {
+//       // Step 1: Load cached news data
+//       final prefs = await SharedPreferences.getInstance();
+//       final cachedNews = prefs.getString('news_list');
+
+//       if (cachedNews != null) {
+//         final List<dynamic> cachedData = json.decode(cachedNews);
+//         setState(() {
+//           _musicList = cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+//           _isLoading = false;  // Stop loading once cache is shown
+//         });
+//       } else {
+//         // No cached data, just keep loading state
+//         setState(() {
+//           _isLoading = true;
+//         });
+//       }
+//     } catch (e) {
+//       print('Error loading cached news data: $e');
+//     }
+//   }
+
+//   Future<void> _fetchNewsInBackground() async {
+//     try {
+//       // Step 2: Fetch new news data from the API
+//       final newNewsList = await _apiService.fetchNewsData();
+
+//       // Compare cached data with new data
+//       final prefs = await SharedPreferences.getInstance();
+//       final cachedNews = prefs.getString('news_list');
+//       if (cachedNews != json.encode(newNewsList)) {
+//         // If data is different, update cache and UI
+//         prefs.setString('news_list', json.encode(newNewsList));
+
+//         // Update UI with new data
+//         setState(() {
+//           _musicList = newNewsList;
+//           _isLoading = false;
+//         });
+//       }
+//     } catch (e) {
+//       print('Error fetching news data: $e');
+//       setState(() {
+//         _errorMessage = 'Failed to load news data';
+//         _isLoading = false;
+//       });
+//     }
+//   }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +188,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
       return LoadingIndicator();
     } else if (_errorMessage.isNotEmpty) {
       return ErrorMessage(message: _errorMessage);
-    } else if (_entertainmentList.isEmpty) {
+    } else if (_musicList.isEmpty) {
       return EmptyState(message: 'No news items available');
     } else {
       return _buildNewsList();
@@ -77,9 +203,9 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
             crossAxisCount: 5,
             // childAspectRatio: 0.7,
           ),
-          itemCount: _entertainmentList.length,
+          itemCount: _musicList.length,
           itemBuilder: (context, index) {
-            return _buildNewsItem(_entertainmentList[index]);
+            return _buildNewsItem(_musicList[index]);
           },
         ),
       ],
@@ -98,7 +224,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
 
   void _handleEnterPress(String itemId) {
     final selectedItem =
-        _entertainmentList.firstWhere((item) => item.id == itemId);
+        _musicList.firstWhere((item) => item.id == itemId);
     _navigateToVideoScreen(selectedItem);
   }
 
@@ -169,7 +295,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
 //             builder: (context) => VideoScreen(
 //               videoUrl: newsItem.url,
 //               videoTitle: newsItem.name,
-//               channelList: _entertainmentList,
+//               channelList: _musicList,
 //               genres: newsItem.genres,
 //               channels: [],
 //               initialIndex: 1,
@@ -262,7 +388,7 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
             builder: (context) => VlcPlayerScreen(
               videoUrl: newsItem.url,
               // videoTitle: newsItem.name,
-              channelList: _entertainmentList,
+              channelList: _musicList,
               genres: newsItem.genres,
               // channels: [],
               // initialIndex: 1,
@@ -281,7 +407,7 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
             builder: (context) => VideoScreen(
               videoUrl: newsItem.url,
               // videoTitle: newsItem.name,
-              // channelList: _entertainmentList,
+              // channelList: _musicList,
               // genres: newsItem.genres,
               // channels: [],
               // initialIndex: 1,

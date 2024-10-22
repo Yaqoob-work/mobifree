@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
+import 'package:mobi_tv_entertainment/main.dart';
+import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 
 class VlcPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -36,6 +38,7 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
   bool _isBuffering = false;
   bool _isConnected = true;
   double _progress = 0.0;
+  bool _loadingVisible = true;
 
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseFocusNode = FocusNode();
@@ -64,6 +67,13 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
           setState(() {
             _progress = _vlcPlayerController.value.position.inSeconds /
                 _vlcPlayerController.value.duration!.inSeconds;
+          });
+        }
+        // Hide loading indicator when the video starts playing and is not buffering
+        if (!_vlcPlayerController.value.isBuffering &&
+            _vlcPlayerController.value.isPlaying) {
+          setState(() {
+            _loadingVisible = false; // Hide the loading indicator
           });
         }
       });
@@ -158,7 +168,7 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cardColor,
       body: Stack(
         children: [
           GestureDetector(
@@ -199,14 +209,23 @@ class VlcPlayerScreenState extends State<VlcPlayerScreen>
               child: VlcPlayer(
                 controller: _vlcPlayerController,
                 aspectRatio: 16 / 9,
-                placeholder: Center(
-                  child: SpinKitFadingCircle(
-                    color: Colors.white, // Adjusted borderColor to white
-                    size: 50.0,
-                  ),
-                ),
+                // placeholder: Center(child: LoadingIndicator()),
               ),
             ),
+          ),
+          // //  Show loading indicator until the video starts playing and is not buffering
+          //   if (_isBuffering || !_vlcPlayerController.value.isPlaying)
+          //     Center(
+          //       child: LoadingIndicator()
+          //     ),
+
+          // Fade out loading indicator over 3 seconds
+          AnimatedOpacity(
+            opacity: _loadingVisible
+                ? 1.0
+                : 0.0, // 1.0 when visible, 0.0 when invisible
+            duration: Duration(seconds: 4), // Fade duration
+            child: Center(child: LoadingIndicator()),
           ),
           if (_controlsVisible)
             Positioned(

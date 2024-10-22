@@ -8,7 +8,7 @@
 
 
     <application
-        android:label="Ekom Tweleve"
+        android:label="Ekom Flix - TV"
         android:name="${applicationName}"
         android:banner="@drawable/banner"
         android:icon="@mipmap/ic_launcher"

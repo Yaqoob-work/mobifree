@@ -1,6 +1,7 @@
 
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
@@ -11,8 +12,9 @@ import 'package:mobi_tv_entertainment/widgets/services/api_service.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../video_widget/vlc_player_screen.dart';
+import '../../video_widget/vlc_player_screen.dart';
 
 class ChannelsCategory extends StatefulWidget {
   @override
@@ -20,7 +22,9 @@ class ChannelsCategory extends StatefulWidget {
 }
 
 class _ChannelsCategoryState extends State<ChannelsCategory> {
-  final List<NewsItemModel> _entertainmentList = [];
+  // final List<NewsItemModel> _musicList = [];
+  List<NewsItemModel> _musicList = [];
+
   final Map<String, List<NewsItemModel>> _groupedByGenre =
       {}; // Group by genres
   final SocketService _socketService = SocketService();
@@ -38,19 +42,93 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
     super.initState();
     _socketService.initSocket();
     checkServerStatus();
-    fetchData();
+    // fetchData();
         // Update cache when the page is entered
-    _apiService.updateCacheOnPageEnter();
-    // Listen to updates from the ApiService stream
-    _apiService.updateStream.listen((hasChanges) {
+    // _apiService.updateCacheOnPageEnter();
+    // // Listen to updates from the ApiService stream
+    // _apiService.updateStream.listen((hasChanges) {
+    //   if (hasChanges) {
+    //     setState(() {
+    //       _isLoading = true;
+    //     });
+    //     fetchData(); // Refetch the data only when changes occur
+    //   }
+    // });
+    _loadCachedData();
+    _fetchDataInBackground();
+        _apiService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         setState(() {
           _isLoading = true;
         });
-        fetchData(); // Refetch the data only when changes occur
+        _fetchDataInBackground();
       }
     });
 
+  }
+
+
+
+  Future<void> _loadCachedData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedEntertainment = prefs.getString('channels_category_data');
+
+      if (cachedEntertainment != null) {
+        final List<dynamic> cachedData = json.decode(cachedEntertainment);
+        setState(() {
+          _musicList.clear();
+          _musicList.addAll(cachedData.map((item) => NewsItemModel.fromJson(item)).toList());
+          _groupByGenre(_musicList);
+          _isLoading = false;
+        });
+        print('Loaded cached data successfully');
+      } else {
+        print('No cached data found');
+        setState(() {
+          _isLoading = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading cached data: $e');
+      setState(() {
+        _errorMessage = 'Error loading cached data';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchDataInBackground() async {
+    try {
+      await _apiService.fetchSettings();
+      await _apiService.fetchEntertainment();
+
+      final prefs = await SharedPreferences.getInstance();
+      final newEntertainmentData = json.encode(_apiService.allChannelList);
+
+      final cachedEntertainment = prefs.getString('channels_category_data');
+      if (cachedEntertainment != newEntertainmentData) {
+        prefs.setString('channels_category_data', newEntertainmentData);
+        setState(() {
+          _musicList.clear();
+          _musicList.addAll(_apiService.allChannelList);
+          _groupByGenre(_musicList);
+          _isLoading = false;
+        });
+        print('Fetched and updated data successfully');
+      }
+    } catch (e) {
+      print('Error fetching new data: $e');
+      setState(() {
+        _errorMessage = 'Failed to load data';
+        _isLoading = false;
+      });
+    }
   }
 
   void checkServerStatus() {
@@ -58,7 +136,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
       // Check if the socket is connected, otherwise attempt to reconnect
       if (!_socketService.socket.connected && !_isAttemptingReconnect) {
         _isAttemptingReconnect = true;
-        print('YouTube server down, retrying...');
+        // print('YouTube server down, retrying...');
         _socketService.initSocket(); // Re-establish the socket connection
         _isAttemptingReconnect = false;
       }
@@ -77,12 +155,12 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
 
       // Grouping by genres
       setState(() {
-        _entertainmentList.clear();
-        _entertainmentList
+        _musicList.clear();
+        _musicList
             .addAll(_apiService.allChannelList); // Add fetched items
 
         // Grouping items by their genres
-        _groupByGenre(_entertainmentList);
+        _groupByGenre(_musicList);
 
         _isLoading = false;
       });
@@ -201,7 +279,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
 
   void _handleEnterPress(String itemId) {
     final selectedItem =
-        _entertainmentList.firstWhere((item) => item.id == itemId);
+        _musicList.firstWhere((item) => item.id == itemId);
     _navigateToVideoScreen(selectedItem);
   }
 
@@ -271,7 +349,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               builder: (context) => VlcPlayerScreen(
                 videoUrl: newsItem.url,
                 // videoTitle: newsItem.name,
-                channelList: _entertainmentList,
+                channelList: _musicList,
                 genres: newsItem.genres,
                 // channels: [],
                 // initialIndex: 1,

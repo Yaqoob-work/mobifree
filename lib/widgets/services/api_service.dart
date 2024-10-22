@@ -29,6 +29,33 @@ class ApiService {
   final _updateController = StreamController<bool>.broadcast();
   Stream<bool> get updateStream => _updateController.stream;
 
+Future<List<NewsItemModel>> fetchMusicData() async {
+  final response = await http.get(
+    Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  );
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = json.decode(response.body);
+    return data.map((item) => NewsItemModel.fromJson(item)).toList();
+  } else {
+    throw Exception('Failed to fetch music data');
+  }
+}
+
+Future<List<NewsItemModel>> fetchNewsData() async {
+  final response = await http.get(
+    Uri.parse('https://api.ekomflix.com/android/getNewsData'),
+    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  );
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = json.decode(response.body);
+    return data.map((item) => NewsItemModel.fromJson(item)).toList();
+  } else {
+    throw Exception('Failed to fetch news data');
+  }
+}
 
 
   Future<void> fetchSettings() async {

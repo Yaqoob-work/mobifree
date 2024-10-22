@@ -14,15 +14,12 @@ import '../../video_widget/vlc_player_screen.dart';
 import '../../widgets/focussable_item_widget.dart';
 import '../../widgets/utils/color_service.dart';
 
-// Map<String, dynamic> settings = {};
 class CategoryService {
   List<Category> categories = [];
   Map<String, dynamic> settings = {};
 
   final _updateController = StreamController<bool>.broadcast();
   Stream<bool> get updateStream => _updateController.stream;
-
-
 
   Future<void> fetchSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -52,7 +49,7 @@ class CategoryService {
 
   Future<List<Category>> fetchCategories() async {
     await fetchSettings();
-    
+
     final prefs = await SharedPreferences.getInstance();
     final cachedCategories = prefs.getString('categories');
 
@@ -81,7 +78,8 @@ class CategoryService {
   }
 
   List<Category> _processCategories(List<dynamic> jsonResponse) {
-    List<Category> categories = jsonResponse.map((category) => Category.fromJson(category)).toList();
+    List<Category> categories =
+        jsonResponse.map((category) => Category.fromJson(category)).toList();
     if (settings['tvenableAll'] == 0) {
       for (var category in categories) {
         category.channels.retainWhere(
@@ -96,14 +94,18 @@ class CategoryService {
     try {
       bool hasChanges = false;
 
-      final oldSettings = await SharedPreferences.getInstance().then((prefs) => prefs.getString('settings'));
+      final oldSettings = await SharedPreferences.getInstance()
+          .then((prefs) => prefs.getString('settings'));
       await _fetchAndCacheSettings();
-      final newSettings = await SharedPreferences.getInstance().then((prefs) => prefs.getString('settings'));
+      final newSettings = await SharedPreferences.getInstance()
+          .then((prefs) => prefs.getString('settings'));
       if (oldSettings != newSettings) hasChanges = true;
 
-      final oldCategories = await SharedPreferences.getInstance().then((prefs) => prefs.getString('categories'));
+      final oldCategories = await SharedPreferences.getInstance()
+          .then((prefs) => prefs.getString('categories'));
       await _fetchAndCacheCategories();
-      final newCategories = await SharedPreferences.getInstance().then((prefs) => prefs.getString('categories'));
+      final newCategories = await SharedPreferences.getInstance()
+          .then((prefs) => prefs.getString('categories'));
       if (oldCategories != newCategories) hasChanges = true;
 
       if (hasChanges) {
@@ -133,14 +135,28 @@ class _HomeCategoryState extends State<HomeCategory> {
   void initState() {
     super.initState();
     // _categories = fetchCategories(context);
-        _categoryService = CategoryService();  // Initialize the service here
-        _categories = _categoryService.fetchCategories();
+        // _categoryService = CategoryService();  // Initialize the service here
+        // _categories = _categoryService.fetchCategories();
           // Trigger cache update when the page is entered
-  _categoryService._updateCacheInBackground();
+  // _categoryService._updateCacheInBackground();
+    // _categoryService.updateStream.listen((hasChanges) {
+    //   if (hasChanges) {
+    //     setState(() {
+    //       _categories = _categoryService.fetchCategories();
+    //     });
+    //   }
+    // });
+
+
+
+        _categoryService = CategoryService();
+    _loadCachedCategories(); // Load cached categories immediately
+    _fetchCategoriesInBackground(); // Fetch new categories in background
+
     _categoryService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         setState(() {
-          _categories = _categoryService.fetchCategories();
+          _fetchCategoriesInBackground();
         });
       }
     });
@@ -151,10 +167,25 @@ class _HomeCategoryState extends State<HomeCategory> {
     Timer.periodic(Duration(seconds: 10), (timer) {
       // Check if the socket is connected, otherwise attempt to reconnect
       if (!SocketService().socket.connected) {
-        print('YouTube server down, retrying...');
+        // print('YouTube server down, retrying...');
         SocketService().initSocket(); // Re-establish the socket connection
       }
     });
+  }
+
+    Future<void> _loadCachedCategories() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedData = prefs.getString('categories');
+
+    if (cachedData != null) {
+      setState(() {
+        _categories = Future.value(_categoryService._processCategories(json.decode(cachedData)));
+      });
+    }
+  }
+
+  Future<void> _fetchCategoriesInBackground() async {
+    _categories = _categoryService.fetchCategories();
   }
 
     @override

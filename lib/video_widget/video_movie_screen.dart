@@ -74,6 +74,8 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     }
   }
 
+  
+
   void _handleNetworkError() {
     _wasPlayingBeforeDisconnection = _controller.value.isPlaying;
     _lastKnownPosition = _controller.value.position;
