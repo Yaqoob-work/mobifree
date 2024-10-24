@@ -633,6 +633,12 @@
 // }
 
 
+
+
+
+
+
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -784,12 +790,12 @@ class UpdateChecker {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
 
-          String apiVersion = data['amazonstore_version'];
-          String apkUrl = data['amazonstore_apkUrl'];
-          String releaseNotes = data['amazonstore_releaseNotes'];
+          String apiVersion = data['playstore_version'];
+          String apkUrl = data['playstore_apkUrl'];
+          String releaseNotes = data['playstore_releaseNotes'];
 
           int forceUpdateTime =
-              DateTime.parse(data['amazonstore_forceUpdateTime'])
+              DateTime.parse(data['playstore_forceUpdateTime'])
                   .millisecondsSinceEpoch;
 
           PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -974,8 +980,6 @@ class _MyHomeState extends State<MyHome> {
 
 
 
-
-
 // import 'dart:async';
 // import 'dart:convert';
 // import 'dart:io';
@@ -1127,12 +1131,12 @@ class _MyHomeState extends State<MyHome> {
 //         if (response.statusCode == 200) {
 //           final data = jsonDecode(response.body);
 
-//           String apiVersion = data['playstore_version'];
-//           String apkUrl = data['playstore_apkUrl'];
-//           String releaseNotes = data['playstore_releaseNotes'];
+//           String apiVersion = data['amazonstore_version'];
+//           String apkUrl = data['amazonstore_apkUrl'];
+//           String releaseNotes = data['amazonstore_releaseNotes'];
 
 //           int forceUpdateTime =
-//               DateTime.parse(data['playstore_forceUpdateTime'])
+//               DateTime.parse(data['amazonstore_forceUpdateTime'])
 //                   .millisecondsSinceEpoch;
 
 //           PackageInfo packageInfo = await PackageInfo.fromPlatform();

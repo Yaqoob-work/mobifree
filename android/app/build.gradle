@@ -15,12 +15,12 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
-    flutterVersionCode = "18"
+    flutterVersionCode = "23"
 }
 
 def flutterVersionName = localProperties.getProperty("flutter.versionName")
 if (flutterVersionName == null) {
-    flutterVersionName = "1.0.2"
+    flutterVersionName = "1.0.3"
 }
 
 android {
@@ -33,22 +33,22 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    // signingConfigs {
-    //     release {
-    //         keyAlias 'ekamflix'
-    //         keyPassword 'ekamflix'
-    //         storeFile file('ekamflix-keystore.jks')
-    //         storePassword 'ekamflix'
-    //     }
-    // }
     signingConfigs {
         release {
-            keyAlias 'mobiltv'
-            keyPassword 'mobiltv'
-            storeFile file('mobiltv.jks')
-            storePassword 'mobiltv'
+            keyAlias 'ekamflix'
+            keyPassword 'ekamflix'
+            storeFile file('ekamflix-keystore.jks')
+            storePassword 'ekamflix'
         }
     }
+    // signingConfigs {
+    //     release {
+    //         keyAlias 'mobiltv'
+    //         keyPassword 'mobiltv'
+    //         storeFile file('mobiltv.jks')
+    //         storePassword 'mobiltv'
+    //     }
+    // }
 
      packagingOptions {
        // Fixes duplicate libraries build issue, 
@@ -59,7 +59,7 @@ android {
 
 
     defaultConfig {
-        applicationId "com.ecomflixandroidtv.cti"
+        applicationId "com.ekamflixtv.cti"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()

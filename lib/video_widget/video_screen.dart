@@ -24,6 +24,7 @@ class VideoScreen extends StatefulWidget {
     // required String genres,
     // required List channels,
     // required int initialIndex,
+    required String videoType,
     required this.bannerImageUrl,
     required this.startAtPosition,
   });

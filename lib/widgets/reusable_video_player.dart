@@ -96,7 +96,8 @@ class _ReusableVideoPlayerState extends State<ReusableVideoPlayer> {
                     videoTitle: widget.videoTitle,
                     genres: widget.genres,
                     videoBanner: widget.bannerImageUrl,
-                    channelList: [], onFabFocusChanged: (bool focused) {  }, videoType: '', url: '', type: '', // Add if necessary
+                    channelList: [], onFabFocusChanged: (bool focused) {  }, videoType: '', url: '', 
+                    // type: '', // Add if necessary
                   )
                 : VideoScreen( // Play from VideoScreen for other parts of the app
                     videoUrl: widget.videoUrl,
@@ -104,7 +105,8 @@ class _ReusableVideoPlayerState extends State<ReusableVideoPlayer> {
                     // genres: widget.genres,
                     bannerImageUrl: widget.bannerImageUrl,
                     // channelList: [], // Add if necessary
-                    startAtPosition: Duration.zero,
+                    startAtPosition: Duration.zero, 
+                    videoType: widget.videoType,
                     // channels: [], initialIndex: 1,
                   ),
           ),

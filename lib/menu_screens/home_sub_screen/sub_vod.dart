@@ -1489,52 +1489,49 @@ class _SubVodState extends State<SubVod> {
     );
   }
 
-
-
   Widget _buildNetworksList() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
-    children: [
-      Padding(
-        padding: const EdgeInsets.all(8.0), // Add some padding around the text
-        child: Text(
-          'Contents',
-          style: TextStyle(
-            fontSize: 24.0,
-            fontWeight: FontWeight.bold,
-            color: Colors.white, // Adjust this color to match your theme
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
+      children: [
+        Padding(
+          padding:
+              const EdgeInsets.all(8.0), // Add some padding around the text
+          child: Text(
+            'Contents',
+            style: TextStyle(
+              fontSize: 24.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // Adjust this color to match your theme
+            ),
           ),
         ),
-      ),
-      Expanded(
-        child: _networks.isEmpty
-            ? Center(child: Text('No Networks Available'))
-            : ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _networks.length,
-                itemBuilder: (context, index) {
-                  return FocusableItemWidget(
-                    imageUrl: _networks[index].logo,
-                    name: _networks[index].name,
-                    onTap: () async {
-                      
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ContentScreen(networkId: _networks[index].id),
-                        ),
-                      );
-                    },
-                    fetchPaletteColor: fetchPaletteColor,
-                  );
-                },
-              ),
-      ),
-    ],
-  );
-}
-
+        Expanded(
+          child: _networks.isEmpty
+              ? Center(child: Text('No Networks Available'))
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _networks.length,
+                  itemBuilder: (context, index) {
+                    return FocusableItemWidget(
+                      imageUrl: _networks[index].logo,
+                      name: _networks[index].name,
+                      onTap: () async {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ContentScreen(networkId: _networks[index].id),
+                          ),
+                        );
+                      },
+                      fetchPaletteColor: fetchPaletteColor,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
 }
 
 class VOD extends StatefulWidget {
@@ -1563,7 +1560,7 @@ class _VODState extends State<VOD> {
 
     if (cachedNetworks != null) {
       List<dynamic> cachedBody = json.decode(cachedNetworks);
-      
+
       setState(() {
         _networks = cachedBody
             .map((dynamic item) => NetworkApi.fromJson(item))
@@ -1625,20 +1622,18 @@ class _VODState extends State<VOD> {
     );
   }
 
-
   Widget _buildNetworksList() {
     if (_networks.isEmpty) {
       return Center(child: Text('No Networks Available'));
     } else {
-
       return
-      // ListView.builder(
-      //   scrollDirection: Axis.horizontal,
-      GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    childAspectRatio: 0.8,
-                  ),
+          // ListView.builder(
+          //   scrollDirection: Axis.horizontal,
+          GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 5,
+          childAspectRatio: 0.8,
+        ),
         itemCount: _networks.length,
         itemBuilder: (context, index) {
           return FocusableItemWidget(
@@ -1661,8 +1656,6 @@ class _VODState extends State<VOD> {
   }
 }
 
-  
-
 class ContentScreen extends StatefulWidget {
   final int networkId;
 
@@ -1676,13 +1669,15 @@ class _ContentScreenState extends State<ContentScreen> {
   List<ContentApi> _content = [];
   bool _isLoading = true;
   bool _cacheLoaded = false;
+  final FocusNode _firstItemFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    
+    Future.delayed(Duration(milliseconds: 50), () async {
     // Load cached content first
-    _loadCachedContent();
+      _loadCachedContent();
+    });
     // Fetch content from API in the background
     _fetchContentInBackground();
   }
@@ -1693,7 +1688,7 @@ class _ContentScreenState extends State<ContentScreen> {
 
     if (cachedContent != null) {
       List<dynamic> cachedBody = json.decode(cachedContent);
-      await Future.delayed(Duration(milliseconds: 50));
+      // await Future.delayed(Duration(milliseconds: 50));
       setState(() {
         _content = cachedBody
             .map((dynamic item) => ContentApi.fromJson(item))
@@ -1701,6 +1696,11 @@ class _ContentScreenState extends State<ContentScreen> {
         _isLoading = false;
         _cacheLoaded = true;
       });
+      if (_content.isNotEmpty) {
+        Future.delayed(Duration(milliseconds: 100), () {
+          _firstItemFocusNode.requestFocus();
+        });
+      }
     } else {
       print('No cache found for content');
     }
@@ -1713,6 +1713,11 @@ class _ContentScreenState extends State<ContentScreen> {
         setState(() {
           _content = fetchedContent;
         });
+        if (_content.isNotEmpty) {
+          Future.delayed(Duration(milliseconds: 100), () {
+            _firstItemFocusNode.requestFocus();
+          });
+        }
       }
     } catch (e) {
       // print('Error fetching content: $e');
@@ -1736,8 +1741,10 @@ class _ContentScreenState extends State<ContentScreen> {
       backgroundColor: cardColor,
       // body:
       //     _isLoading ? Center(child: Text('...')) : _buildContentList(),
-            body: _isLoading
-          ? !_cacheLoaded?Center(child: Text('...')):Center(child: LoadingIndicator())
+      body: _isLoading
+          ? !_cacheLoaded
+              ? Center(child: Text('...'))
+              : Center(child: LoadingIndicator())
           : _content != null
               ? _buildContentList()
               : Center(child: Text('...')),
@@ -1757,6 +1764,7 @@ class _ContentScreenState extends State<ContentScreen> {
           itemCount: _content.length,
           itemBuilder: (context, index) {
             return FocusableItemWidget(
+              focusNode: index == 0 ? _firstItemFocusNode : null,
               imageUrl: _content[index].banner,
               name: _content[index].name,
               onTap: () async {
@@ -1765,9 +1773,8 @@ class _ContentScreenState extends State<ContentScreen> {
                   MaterialPageRoute(
                     builder: (context) => DetailsPage(content: _content[index]),
                   ),
-                );     
+                );
               },
-              
               fetchPaletteColor: fetchPaletteColor,
             );
           },
@@ -1991,9 +1998,6 @@ class _ContentScreenState extends State<ContentScreen> {
 //   }
 // }
 
-
-
-
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
 
@@ -2012,29 +2016,34 @@ class _DetailsPageState extends State<DetailsPage> {
   bool _isLoading = false;
   bool _isVideoPlaying = false;
   Timer? _timer;
+  bool _isReturningFromVideo = false;
+  final FocusNode _firstBannerFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _socketService.initSocket();
     checkServerStatus();
-    _loadCachedAndFetchMovieDetails();
+    Future.delayed(Duration(milliseconds: 50), () async {
+      _loadCachedAndFetchMovieDetails();
+    });
+    Future.delayed(Duration(milliseconds: 60), () {
+      _firstBannerFocusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _socketService.dispose();
     _timer?.cancel();
+    _firstBannerFocusNode.dispose();
     super.dispose();
   }
-
-
-  
 
   Future<void> _loadCachedAndFetchMovieDetails() async {
     try {
       final cachedDetails = await fetchMovieDetails(context, widget.content.id);
-      await Future.delayed(Duration(milliseconds: 50));
+      // await Future.delayed(Duration(milliseconds: 100));
 
       setState(() {
         _movieDetails = cachedDetails;
@@ -2086,46 +2095,70 @@ class _DetailsPageState extends State<DetailsPage> {
       backgroundColor: cardColor,
       body: _isLoading
           ? Center(child: LoadingIndicator())
-          : _movieDetails != null
-              ? _buildMovieDetailsUI(context, _movieDetails!)
-              : Center(child: Text('...')),
+          : _isReturningFromVideo // Check if returning from video
+              ? Center(
+                  child: Text(
+                    '', // Ya koi aur text jo aap chahte hain
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
+                )
+              : _movieDetails != null
+                  ? _buildMovieDetailsUI(context, _movieDetails!)
+                  : Center(child: Text('...')),
     );
   }
 
   Widget _buildMovieDetailsUI(
       BuildContext context, MovieDetailsApi movieDetails) {
     return Container(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      // padding: const EdgeInsets.all(20.0),
+      child: Stack(
         children: [
           if (movieDetails.status == '1')
             displayImage(
               movieDetails.banner,
-              width: screenwdt * 0.7, // Custom width
-              height: screenhgt * 0.55, // Custom height
+              width: screenwdt , // Custom width
+              height: screenhgt , // Custom height
             ),
-          Text(movieDetails.name,
-              style: TextStyle(color: Colors.white, fontSize: nametextsz)),
-          SizedBox(height: 10),
-          Expanded(
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: 1,
-              itemBuilder: (context, index) {
-                return FocusableItemWidget(
-                  imageUrl: widget.content.banner,
-                  name: '',
-                  onTap: () => _playVideo(movieDetails),
-                  fetchPaletteColor: fetchPaletteColor,
-                );
-              },
+         Padding(
+           padding:  EdgeInsets.symmetric(horizontal:  screenwdt*0.03),
+           child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(height: screenhgt*0.05,),
+             Container(
+              child: Text(movieDetails.name,
+                  style: TextStyle(color: Colors.white, fontSize: Headingtextsz*1.5)),
             ),
-          ),
+            Spacer(),
+            Expanded(
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 1,
+                itemBuilder: (context, index) {
+                  return FocusableItemWidget(
+                    focusNode: _firstBannerFocusNode,
+                    imageUrl: widget.content.banner,
+                    name: '',
+                    onTap: () => _playVideo(movieDetails),
+                    fetchPaletteColor: fetchPaletteColor,
+                  );
+                },
+              ),
+            ),
+           ],),
+         )
         ],
       ),
     );
   }
+
+
+
+
 
   Future<void> _playVideo(MovieDetailsApi movieDetails) async {
     if (_isVideoPlaying) {
@@ -2180,12 +2213,28 @@ class _DetailsPageState extends State<DetailsPage> {
                 genres: movieDetails.genres,
                 videoType: playLink['type']!,
                 url: playLink['url']!,
-                type: playLink['type']!,
+                // type: playLink['type']!,
               ),
             ),
           );
         }
       }
+      setState(() {
+        _isLoading = false;
+        _isReturningFromVideo = true;
+      });
+      // Video screen se wapas aane ke baad 1 second ka delay
+      await Future.delayed(Duration(
+        milliseconds: 100,
+      ));
+
+      setState(() {
+        _isReturningFromVideo = false;
+      });
+
+          Future.delayed(Duration(milliseconds: 60), () {
+      _firstBannerFocusNode.requestFocus();
+    });
     } catch (e) {
       _handleVideoError(
         context,

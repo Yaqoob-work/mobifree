@@ -131,14 +131,18 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+
+
   Future<void> _navigateToVideoScreen(BuildContext context, List<dynamic> channels, int index) async {
+    String videoUrl = channels[index]['url'] ?? '';
+String streamType = channels[index]['stream_type'] ?? '';
     if (_shouldContinueLoading) {
       if (channels[index]['stream_type'] == 'VLC') {
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => VlcPlayerScreen(
-              videoUrl: channels[index]['url'] ?? '',
+              videoUrl: videoUrl,
               channelList: channels,
               genres: channels[index]['genres'] ?? '',
               bannerImageUrl: '',
@@ -152,8 +156,9 @@ class _SearchScreenState extends State<SearchScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => VideoScreen(
-              videoUrl: channels[index]['url'] ?? '',
+              videoUrl: videoUrl,
               startAtPosition: Duration.zero, bannerImageUrl: '',
+              videoType: streamType,
             ),
           ),
         );

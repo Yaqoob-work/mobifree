@@ -513,7 +513,7 @@ class _CategoryWidgetState extends State<CategoryWidget> {
                 // genres: channels[index].genres,
                 // channelList: [],
                 bannerImageUrl: '',
-                startAtPosition: Duration.zero,
+                startAtPosition: Duration.zero, videoType: channels[index].streamType,
               ),
             ),
           ),
@@ -621,6 +621,7 @@ class _CategoryGridViewState extends State<CategoryGridView> {
                             bannerImageUrl: '', // Banner image URL (optional)
                             startAtPosition:
                                 Duration.zero, // Start video at the beginning
+                                videoType: widget.filteredChannels[index].streamType,
                           ),
                         ),
                       ).then((_) {

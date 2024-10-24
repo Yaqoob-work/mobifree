@@ -20,7 +20,8 @@ class VideoMovieScreen extends StatefulWidget {
       required String genres,
       required String videoType,
       required String url,
-      required String type});
+      // required String type
+      });
 
   @override
   _VideoMovieScreenState createState() => _VideoMovieScreenState();

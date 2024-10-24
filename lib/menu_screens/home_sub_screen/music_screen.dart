@@ -539,6 +539,8 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
+  
+
   void _selectCategory(String category) {
     setState(() {
       _selectedCategory = category;
@@ -712,7 +714,7 @@ class _MusicScreenState extends State<MusicScreen> {
                 // channels: [],
                 // initialIndex: 1,
                 bannerImageUrl: newsItem.banner,
-                startAtPosition: Duration.zero,
+                startAtPosition: Duration.zero, videoType: newsItem.streamType,
               ),
             ),
           );
@@ -734,10 +736,12 @@ class _MusicScreenState extends State<MusicScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NewsGridScreen(musicList: _musicList),
+        builder: (context) => NewsGridScreen( newsList: _musicList,),
       ),
     );
   }
+
+  
 
   // @override
   // void dispose() {

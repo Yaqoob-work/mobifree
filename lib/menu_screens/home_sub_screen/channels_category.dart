@@ -367,7 +367,8 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               builder: (context) => VideoScreen(
                 videoUrl: newsItem.url,
                 bannerImageUrl: newsItem.banner,
-                startAtPosition: Duration.zero,
+                startAtPosition: Duration.zero, 
+                videoType: newsItem.streamType,
               ),
             ),
           );

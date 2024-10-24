@@ -593,6 +593,7 @@ Future<void> _fetchLiveDataInBackground() async {
                 videoUrl: newsItem.url,
                 bannerImageUrl: newsItem.banner,
                 startAtPosition: Duration.zero,
+                videoType: newsItem.streamType,
               ),
             ),
           );
