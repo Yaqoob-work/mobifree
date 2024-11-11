@@ -2,10 +2,8 @@
 
 
 
-
-
 // import 'package:flutter/material.dart';
-// import 'dart:async';
+
 // import '../main.dart';
 // import '../menu_screens/home_sub_screen/sub_vod.dart';
 
@@ -17,15 +15,17 @@
 //   final double? width;
 //   final double? height;
 //   final double? focusedHeight;
+//   final FocusNode? focusNode; // Add FocusNode as a parameter
 
 //   const FocusableItemWidget({
 //     required this.imageUrl,
 //     required this.name,
 //     required this.onTap,
 //     required this.fetchPaletteColor,
-//     this.width, // Optional width parameter
-//     this.height, // Optional height parameter when not focused
-//     this.focusedHeight, // Optional height when focused
+//     this.width, 
+//     this.height,
+//     this.focusedHeight,
+//     this.focusNode, // Accept FocusNode as input
 //   });
 
 //   @override
@@ -34,7 +34,7 @@
 
 // class _FocusableItemWidgetState extends State<FocusableItemWidget> {
 //   bool isFocused = false;
-//   Color paletteColor = Colors.grey; // Default color
+//   Color paletteColor = Colors.grey; 
 
 //   @override
 //   void initState() {
@@ -42,7 +42,7 @@
 //     _updatePaletteColor();
 //   }
 
-//     Future<void> _updatePaletteColor() async {
+//   Future<void> _updatePaletteColor() async {
 //     try {
 //       Color color = await widget.fetchPaletteColor(widget.imageUrl);
 //       if (mounted) {
@@ -51,10 +51,9 @@
 //         });
 //       }
 //     } catch (e) {
-//       // Handle exceptions like network errors here
 //       if (mounted) {
 //         setState(() {
-//           paletteColor = Colors.grey; // fallback color
+//           paletteColor = Colors.grey; 
 //         });
 //       }
 //     }
@@ -62,13 +61,13 @@
 
 //   @override
 //   Widget build(BuildContext context) {
-//     // Determine width and height
 //     final double containerWidth = widget.width ?? screenwdt * 0.19;
 //     final double containerHeight = isFocused
-//         ? (widget.focusedHeight ?? screenhgt * 0.24) // Height when focused
-//         : (widget.height ?? screenhgt * 0.21); // Default height
+//         ? (widget.focusedHeight ?? screenhgt * 0.24)
+//         : (widget.height ?? screenhgt * 0.21);
 
 //     return FocusableActionDetector(
+//       focusNode: widget.focusNode, // Use the passed FocusNode
 //       onFocusChange: (hasFocus) {
 //         setState(() {
 //           isFocused = hasFocus;
@@ -91,7 +90,7 @@
 //             AnimatedContainer(
 //               width: containerWidth,
 //               height: containerHeight,
-//               duration: const Duration(milliseconds: 300), // Smooth transition
+//               duration: const Duration(milliseconds: 300),
 //               decoration: BoxDecoration(
 //                 border: Border.all(
 //                   color: isFocused ? paletteColor : Colors.transparent,
@@ -142,7 +141,7 @@ class FocusableItemWidget extends StatefulWidget {
   final double? width;
   final double? height;
   final double? focusedHeight;
-  final FocusNode? focusNode; // Add FocusNode as a parameter
+  final FocusNode? focusNode;
 
   const FocusableItemWidget({
     required this.imageUrl,
@@ -152,7 +151,7 @@ class FocusableItemWidget extends StatefulWidget {
     this.width, 
     this.height,
     this.focusedHeight,
-    this.focusNode, // Accept FocusNode as input
+    this.focusNode,
   });
 
   @override
@@ -161,12 +160,17 @@ class FocusableItemWidget extends StatefulWidget {
 
 class _FocusableItemWidgetState extends State<FocusableItemWidget> {
   bool isFocused = false;
-  Color paletteColor = Colors.grey; 
+  Color paletteColor = Colors.grey;
 
   @override
   void initState() {
     super.initState();
     _updatePaletteColor();
+
+    // Request focus if this widget's focusNode is initially provided and focused
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.focusNode?.requestFocus();
+    });
   }
 
   Future<void> _updatePaletteColor() async {
@@ -180,7 +184,7 @@ class _FocusableItemWidgetState extends State<FocusableItemWidget> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          paletteColor = Colors.grey; 
+          paletteColor = Colors.grey;
         });
       }
     }
@@ -194,7 +198,7 @@ class _FocusableItemWidgetState extends State<FocusableItemWidget> {
         : (widget.height ?? screenhgt * 0.21);
 
     return FocusableActionDetector(
-      focusNode: widget.focusNode, // Use the passed FocusNode
+      focusNode: widget.focusNode,
       onFocusChange: (hasFocus) {
         setState(() {
           isFocused = hasFocus;
@@ -217,7 +221,7 @@ class _FocusableItemWidgetState extends State<FocusableItemWidget> {
             AnimatedContainer(
               width: containerWidth,
               height: containerHeight,
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 400),
               decoration: BoxDecoration(
                 border: Border.all(
                   color: isFocused ? paletteColor : Colors.transparent,

@@ -10,6 +10,7 @@ class NewsItem extends StatefulWidget {
   final VoidCallback onTap;
   final ValueChanged<String> onEnterPress;
   final bool hideDescription;
+  final FocusNode? focusNode;
 
   NewsItem({
     Key? key,
@@ -17,6 +18,7 @@ class NewsItem extends StatefulWidget {
     required this.onTap,
     required this.onEnterPress,
     this.hideDescription = false,
+    this.focusNode,
   }) : super(key: key);
 
   @override
@@ -31,6 +33,7 @@ class _NewsItemState extends State<NewsItem> {
   @override
   Widget build(BuildContext context) {
     return Focus(
+        focusNode: widget.focusNode,
       onFocusChange: _handleFocusChange,
       onKey: (FocusNode node, RawKeyEvent event) {
         if (event is RawKeyDownEvent &&

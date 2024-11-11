@@ -1300,9 +1300,81 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
 import '../../video_widget/video_movie_screen.dart';
 import '../../video_widget/socket_service.dart';
+import '../../video_widget/video_screen.dart';
 import '../../video_widget/vlc_player_screen.dart';
 import '../../widgets/utils/color_service.dart';
 import '../../widgets/utils/random_light_color_widget.dart';
+
+
+class NewsItemModel {
+  final String id;
+  final String content_id;
+  final String url;
+  final String name;
+  final String banner;
+  final String streamType;
+  final String genres;
+  final String status;
+
+  NewsItemModel({
+    required this.id,
+    required this.content_id,
+    required this.url,
+    required this.name,
+    required this.banner,
+    required this.streamType,
+    required this.genres,
+    required this.status,
+  });
+
+  factory NewsItemModel.fromJson(Map<String, dynamic> json) {
+    return NewsItemModel(
+      id: json['id'] ?? '',
+      content_id: json['content_id'] ?? '',
+      url: json['url'] ?? '',
+      name: json['name'] ?? '',
+      banner: json['banner'] ?? '',
+      streamType: json['stream_type'] ?? '',
+      genres: json['genres'] ?? '',
+      status: json['status'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'content_id': content_id,
+      'url': url,
+      'name': name,
+      'banner': banner,
+      'stream_type': streamType,
+      'genres': genres,
+      'status': status,
+    };
+  }
+
+  NewsItemModel copyWith({
+    String? id,
+    String? content_id,
+    String? url,
+    String? name,
+    String? banner,
+    String? streamType,
+    String? genres,
+    String? status,
+  }) {
+    return NewsItemModel(
+      id: id ?? this.id,
+      content_id: content_id ?? this.content_id,
+      url: url ?? this.url,
+      name: name ?? this.name,
+      banner: banner ?? this.banner,
+      streamType: streamType ?? this.streamType,
+      genres: genres ?? this.genres,
+      status: status ?? this.status,
+    );
+  }
+}
 
 class BannerSlider extends StatefulWidget {
   // final double initialHeight;
@@ -1320,7 +1392,8 @@ class BannerSlider extends StatefulWidget {
 }
 
 class _BannerSliderState extends State<BannerSlider> {
-  List<dynamic> bannerList = [];
+  // List<dynamic> bannerList = [];
+  List<NewsItemModel> bannerList = [];
   Map<String, Color> bannerColors = {};
   bool isLoading = true;
   String errorMessage = '';
@@ -1367,45 +1440,112 @@ class _BannerSliderState extends State<BannerSlider> {
   }
 
 
-Future<void> _loadCachedData() async {
-  final prefs = await SharedPreferences.getInstance();
-  final cachedBanners = prefs.getString('banners');
+// Future<void> _loadCachedData() async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final cachedBanners = prefs.getString('banners');
 
-  if (cachedBanners != null) {
-    final List<dynamic> responseData = json.decode(cachedBanners);
-    setState(() {
-      bannerList = responseData
-          .where((banner) => banner['status'] == "1")
-          .map((banner) {
-        return {
-          'content_id': banner['content_id'] ?? '',
-          'banner': banner['banner'] ?? localImage,
-          'title': banner['title'] ?? 'No Title',
-        };
-      }).toList();
+//   if (cachedBanners != null) {
+//     final List<dynamic> responseData = json.decode(cachedBanners);
+//     setState(() {
+//       bannerList = responseData
+//           .where((banner) => banner['status'] == "1")
+//           .map((banner) {
+//         return {
+//           'content_id': banner['content_id'] ?? '',
+//           'banner': banner['banner'] ?? localImage,
+//           'title': banner['title'] ?? 'No Title',
+//         };
+//       }).toList();
 
-      selectedContentId = bannerList.isNotEmpty
-          ? bannerList[0]['content_id'].toString()
-          : null;
-      isLoading = false;
-    });
+//       selectedContentId = bannerList.isNotEmpty
+//           ? bannerList[0]['content_id'].toString()
+//           : null;
+//       isLoading = false;
+//     });
 
-    // Fetch banner colors only if banners exist
-    if (bannerList.isNotEmpty) {
-      await _fetchBannerColors();
+//     // Fetch banner colors only if banners exist
+//     if (bannerList.isNotEmpty) {
+//       await _fetchBannerColors();
+//     }
+//   } else {
+//     // No cache found, show error or proceed with loading from API
+//     setState(() {
+//       isLoading = false;
+//     });
+//   }
+
+//   // Background API fetch to update cache
+//   fetchBanners(isBackgroundFetch: true);
+// }
+
+
+
+
+  // Future<void> _loadCachedData() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final cachedBanners = prefs.getString('banners');
+
+  //   if (cachedBanners != null) {
+  //     final List<dynamic> responseData = json.decode(cachedBanners);
+  //     setState(() {
+  //       bannerList = responseData
+  //           .where((banner) => banner['status'] == "1")
+  //           .map((banner) => NewsItemModel.fromJson(banner))
+  //           .toList();
+
+  //       selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
+  //       isLoading = false;
+  //     });
+
+  //     // Fetch banner colors only if banners exist
+  //     if (bannerList.isNotEmpty) {
+  //       await _fetchBannerColors();
+  //     }
+  //   } else {
+  //     // No cache found, show error or proceed with loading from API
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+
+  //   // Background API fetch to update cache
+  //   fetchBanners(isBackgroundFetch: true);
+  // }
+
+
+  Future<void> _loadCachedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedBanners = prefs.getString('banners');
+
+    if (cachedBanners != null) {
+      final List<dynamic> responseData = json.decode(cachedBanners);
+      setState(() {
+        bannerList = responseData
+            .where((banner) => banner['status'] == "1")
+            .map((banner) => NewsItemModel.fromJson(banner))
+            .toList();
+
+        selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
+        isLoading = false;
+      });
+
+      // Fetch banner colors only if banners exist
+      if (bannerList.isNotEmpty) {
+        await _fetchBannerColors();
+      }
+    } else {
+      // No cache found, show error or proceed with loading from API
+      setState(() {
+        isLoading = false;
+      });
     }
-  } else {
-    // No cache found, show error or proceed with loading from API
-    setState(() {
-      isLoading = false;
-    });
+
+    // Background API fetch to update cache
+    fetchBanners(isBackgroundFetch: true);
   }
 
-  // Background API fetch to update cache
-  fetchBanners(isBackgroundFetch: true);
-}
 
-  // Fetch data from API and check if there's any difference with cache
+
   Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final cachedBanners = prefs.getString('banners');
@@ -1421,31 +1561,25 @@ Future<void> _loadCachedData() async {
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
-        // Cache aur API data check karo
+        // Check if cache and API data are the same
         if (cachedBanners != null) {
           final cachedData = json.decode(cachedBanners);
           if (json.encode(cachedData) == json.encode(responseData)) {
-            return; // Agar data same hai to UI ko update nahi karna
+            return; // No need to update UI if data is the same
           }
         }
 
-        // Naya data cache mein store karo aur UI ko update karo
         setState(() {
-          bannerList = responseData.where((banner) => banner['status'] == "1").map((banner) {
-            return {
-              'content_id': banner['content_id'] ?? '',
-              'banner': banner['banner'] ?? localImage,
-              'title': banner['title'] ?? 'No Title',
-            };
-          }).toList();
+          bannerList = responseData
+              .where((banner) => banner['status'] == "1")
+              .map((banner) => NewsItemModel.fromJson(banner))
+              .toList();
 
-          selectedContentId = bannerList.isNotEmpty
-              ? bannerList[0]['content_id'].toString()
-              : null;
+          selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
           isLoading = false;
         });
 
-        // Cache update karo
+        // Update cache
         prefs.setString('banners', response.body);
 
         _fetchBannerColors();
@@ -1462,13 +1596,72 @@ Future<void> _loadCachedData() async {
   }
 
 
+  // // Fetch data from API and check if there's any difference with cache
+  // Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final cachedBanners = prefs.getString('banners');
+
+  //   try {
+  //     final response = await https.get(
+  //       Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
+  //       headers: {
+  //         'x-api-key': 'vLQTuPZUxktl5mVW',
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final List<dynamic> responseData = json.decode(response.body);
+
+  //       // Cache aur API data check karo
+  //       if (cachedBanners != null) {
+  //         final cachedData = json.decode(cachedBanners);
+  //         if (json.encode(cachedData) == json.encode(responseData)) {
+  //           return; // Agar data same hai to UI ko update nahi karna
+  //         }
+  //       }
+
+  //       // Naya data cache mein store karo aur UI ko update karo
+  //       setState(() {
+  //         bannerList = responseData.where((banner) => banner['status'] == "1").map((banner) {
+  //           return {
+  //             'content_id': banner['content_id'] ?? '',
+  //             'banner': banner['banner'] ?? localImage,
+  //             'title': banner['title'] ?? 'No Title',
+  //           };
+  //         }).toList();
+
+  //         selectedContentId = bannerList.isNotEmpty
+  //             ? bannerList[0]['content_id'].toString()
+  //             : null;
+  //         isLoading = false;
+  //       });
+
+  //       // Cache update karo
+  //       prefs.setString('banners', response.body);
+
+  //       _fetchBannerColors();
+  //       _startAutoSlide();
+  //     } else {
+  //       throw Exception('Failed to load banners');
+  //     }
+  //   } catch (e) {
+  //     setState(() {
+  //       errorMessage = e.toString();
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
+
+  
+
+
   Future<void> _fetchBannerColors() async {
     for (var banner in bannerList) {
-      final imageUrl = banner['banner'] ?? localImage;
+      final imageUrl = banner.banner ?? localImage;
       final secondaryColor =
           await _paletteColorService.getSecondaryColor(imageUrl);
       setState(() {
-        bannerColors[banner['content_id']] = secondaryColor;
+        bannerColors[banner.content_id] = secondaryColor;
       });
     }
   }
@@ -1620,15 +1813,13 @@ Future<void> _loadCachedData() async {
 // }
 
 
-
-  Future<void> fetchAndPlayVideo(String contentId) async {
+  Future<void> fetchAndPlayVideo(String contentId, List<NewsItemModel> channelList) async {
     if (_isNavigating) return; // Prevent duplicate navigation
     _isNavigating = true;
 
     bool shouldPlayVideo = true;
     bool shouldPop = true;
 
-    // Show loading indicator while video is loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1665,72 +1856,56 @@ Future<void> _loadCachedData() async {
         if (filteredData != null) {
           String videoUrl = filteredData['url'] ?? '';
 
-          // Check if it's a YouTube video
-          if (filteredData['stream_type'] == 'YoutubeLive' ||
-              filteredData['type'] == 'Youtube') {
+          if (filteredData['stream_type'] == 'YoutubeLive' || filteredData['type'] == 'Youtube') {
             for (int i = 0; i < _maxRetries; i++) {
               try {
                 videoUrl = await _socketService.getUpdatedUrl(videoUrl);
                 filteredData['url'] = videoUrl;
                 filteredData['stream_type'] = "M3u8";
-                break; // Exit loop when URL is successfully updated
+                break;
               } catch (e) {
-                if (i == _maxRetries - 1)
-                  rethrow; // Rethrow error on last retry
-                await Future.delayed(
-                    Duration(seconds: _retryDelay)); // Delay before next retry
+                if (i == _maxRetries - 1) rethrow;
+                await Future.delayed(Duration(seconds: _retryDelay));
               }
             }
           }
 
           if (shouldPop) {
-            Navigator.of(context, rootNavigator: true)
-                .pop(); // Close the loading dialog
+            Navigator.of(context, rootNavigator: true).pop();
           }
 
           if (shouldPlayVideo) {
-            // Navigate to VideoPlayer Screen
-
-            if (filteredData['stream_type'] == 'VLC' ||
-                filteredData['type'] == 'VLC') {
-              //   // Navigate to VLC Player screen when stream type is VLC
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VlcPlayerScreen(
-                    videoUrl: filteredData['url'],
-                    // videoTitle: filteredData['title'] ?? 'No Title',
-                    channelList: [],
-                    genres: '',
-                    // channels: [],
-                    // initialIndex: 1,
-                    bannerImageUrl: filteredData['banner'],
-                    startAtPosition: Duration.zero,
-                    // onFabFocusChanged: (bool) {},
-                    isLive: true,
-                  ),
-                ),
-              );
-            } else {
+            // if (filteredData['stream_type'] == 'VLC' || filteredData['type'] == 'VLC') {
+            //   await Navigator.push(
+            //     context,
+            //     MaterialPageRoute(
+            //       builder: (context) => VlcPlayerScreen(
+            //         videoUrl: filteredData['url'],
+            //         channelList: channelList,
+            //         genres: '',
+            //         bannerImageUrl: filteredData['banner'],
+            //         startAtPosition: Duration.zero,
+            //         isLive: true,
+            //       ),
+            //     ),
+            //   );
+            // } else {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => VideoMovieScreen(
+                  builder: (context) => VideoScreen(
                     videoUrl: filteredData['url'],
-                    videoTitle: filteredData['title'] ?? 'No Title',
-                    channelList: [],
+                    channelList: channelList,
                     videoType: filteredData['type']!,
-                    videoBanner: '',
-                    onFabFocusChanged: (bool focused) {},
-                    genres: '',
-                    url: '',
-                    // type: '',
+                    isLive: true,isVOD: false,
+                    bannerImageUrl: filteredData['banner'] ?? localImage,
+                    startAtPosition: Duration.zero,
                   ),
                 ),
               ).then((_) {
                 _isNavigating = false;
               });
-            }
+            // }
           }
         } else {
           throw Exception('Video not found');
@@ -1750,6 +1925,137 @@ Future<void> _loadCachedData() async {
     }
   }
 
+  // Future<void> fetchAndPlayVideo(String contentId) async {
+  //   if (_isNavigating) return; // Prevent duplicate navigation
+  //   _isNavigating = true;
+
+  //   bool shouldPlayVideo = true;
+  //   bool shouldPop = true;
+
+  //   // Show loading indicator while video is loading
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return WillPopScope(
+  //         onWillPop: () async {
+  //           shouldPlayVideo = false;
+  //           shouldPop = false;
+  //           return true;
+  //         },
+  //         child: SpinKitFadingCircle(
+  //           color: borderColor,
+  //           size: 50.0,
+  //         ),
+  //       );
+  //     },
+  //   );
+
+  //   try {
+  //     final response = await https.get(
+  //       Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+  //       headers: {
+  //         'x-api-key': 'vLQTuPZUxktl5mVW',
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final List<dynamic> responseData = json.decode(response.body);
+  //       final filteredData = responseData.firstWhere(
+  //         (channel) => channel['id'].toString() == contentId,
+  //         orElse: () => null,
+  //       );
+
+  //       if (filteredData != null) {
+  //         String videoUrl = filteredData['url'] ?? '';
+
+  //         // Check if it's a YouTube video
+  //         if (filteredData['stream_type'] == 'YoutubeLive' ||
+  //             filteredData['type'] == 'Youtube') {
+  //           for (int i = 0; i < _maxRetries; i++) {
+  //             try {
+  //               videoUrl = await _socketService.getUpdatedUrl(videoUrl);
+  //               filteredData['url'] = videoUrl;
+  //               filteredData['stream_type'] = "M3u8";
+  //               break; // Exit loop when URL is successfully updated
+  //             } catch (e) {
+  //               if (i == _maxRetries - 1)
+  //                 rethrow; // Rethrow error on last retry
+  //               await Future.delayed(
+  //                   Duration(seconds: _retryDelay)); // Delay before next retry
+  //             }
+  //           }
+  //         }
+
+  //         if (shouldPop) {
+  //           Navigator.of(context, rootNavigator: true)
+  //               .pop(); // Close the loading dialog
+  //         }
+
+  //         if (shouldPlayVideo) {
+  //           // Navigate to VideoPlayer Screen
+
+  //           if (filteredData['stream_type'] == 'VLC' ||
+  //               filteredData['type'] == 'VLC') {
+  //             //   // Navigate to VLC Player screen when stream type is VLC
+  //             await Navigator.push(
+  //               context,
+  //               MaterialPageRoute(
+  //                 builder: (context) => VlcPlayerScreen(
+  //                   videoUrl: filteredData['url'],
+  //                   // videoTitle: filteredData['title'] ?? 'No Title',
+  //                   channelList: [],
+  //                   genres: '',
+  //                   // channels: [],
+  //                   // initialIndex: 1,
+  //                   bannerImageUrl: filteredData['banner'],
+  //                   startAtPosition: Duration.zero,
+  //                   // onFabFocusChanged: (bool) {},
+  //                   isLive: true,
+  //                 ),
+  //               ),
+  //             );
+  //           } else {
+  //             Navigator.push(
+  //               context,
+  //               MaterialPageRoute(
+  //                 builder: (context) => VideoScreen(
+  //                   videoUrl: filteredData['url'],
+  //                   // videoTitle: filteredData['title'] ?? 'No Title',
+  //                   channelList: [],
+  //                   videoType: filteredData['type']!,
+  //                   isLive: true, bannerImageUrl: filteredData['banner']??localImage, 
+  //                   startAtPosition: Duration.zero,
+  //                   // videoBanner: '',
+  //                   // onFabFocusChanged: (bool focused) {},
+  //                   // genres: '',
+  //                   // url: '',
+  //                   // type: '',
+  //                 ),
+  //               ),
+  //             ).then((_) {
+  //               _isNavigating = false;
+  //             });
+  //           }
+  //         }
+  //       } else {
+  //         throw Exception('Video not found');
+  //       }
+  //     } else {
+  //       throw Exception('Failed to load featured live TV');
+  //     }
+  //   } catch (e) {
+  //     if (shouldPop) {
+  //       Navigator.of(context, rootNavigator: true).pop();
+  //     }
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Something Went Wrong: ${e.toString()}')),
+  //     );
+  //   } finally {
+  //     _isNavigating = false;
+  //   }
+  // }
+
   void _scrollToBanner(int index) {
     _pageController.animateToPage(
       index,
@@ -1757,7 +2063,7 @@ Future<void> _loadCachedData() async {
       curve: Curves.easeIn,
     );
     setState(() {
-      selectedContentId = bannerList[index]['content_id'].toString();
+      selectedContentId = bannerList[index].content_id.toString();
     });
   }
 
@@ -1791,7 +2097,7 @@ Future<void> _loadCachedData() async {
                           onPageChanged: (index) {
                             setState(() {
                               selectedContentId =
-                                  bannerList[index]['content_id'].toString();
+                                  bannerList[index].content_id.toString();
                             });
                           },
                           itemBuilder: (context, index) {
@@ -1810,13 +2116,12 @@ Future<void> _loadCachedData() async {
                                       //   placeholder: (context, url) => localImage,
                                       // ),
                                       CachedNetworkImage(
-                                    imageUrl: banner['banner'] ?? localImage,
+                                    imageUrl: banner.banner ?? localImage,
                                     fit: BoxFit.fill,
                                     placeholder: (context, url) => localImage,
                                     errorWidget: (context, url, error) =>
                                         Icon(Icons.error),
-                                    cacheKey: banner[
-                                        'content_id'], // Ensure cache key is unique per banner
+                                    cacheKey: banner.content_id, // Ensure cache key is unique per banner
                                     fadeInDuration: Duration(
                                         milliseconds:
                                             500), // Reduce fade-in time
@@ -1854,7 +2159,7 @@ Future<void> _loadCachedData() async {
                                     event.logicalKey ==
                                         LogicalKeyboardKey.select) {
                                   if (selectedContentId != null) {
-                                    fetchAndPlayVideo(selectedContentId!);
+                                    fetchAndPlayVideo(selectedContentId!,bannerList);
                                   }
                                   return KeyEventResult.handled;
                                 }
@@ -1863,7 +2168,7 @@ Future<void> _loadCachedData() async {
                               child: GestureDetector(
                                 onTap: () {
                                   if (selectedContentId != null) {
-                                    fetchAndPlayVideo(selectedContentId!);
+                                    fetchAndPlayVideo(selectedContentId!,bannerList);
                                   }
                                 },
                                 child: Align(

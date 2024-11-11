@@ -266,6 +266,7 @@ class _LiveScreenState extends State<LiveScreen> {
 
   final SocketService _socketService = SocketService();
   final ApiService _apiService = ApiService();
+  final FocusNode firstItemFocusNode = FocusNode();
   bool _isLoading = true;
   String _errorMessage = '';
   bool _isNavigating = false;
@@ -284,6 +285,12 @@ class _LiveScreenState extends State<LiveScreen> {
     _apiService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         _loadCachedDataAndFetchLive(); // Refetch data if changes occur
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Request focus on the first item after the screen is built
+      if (firstItemFocusNode.canRequestFocus) {
+        firstItemFocusNode.requestFocus();
       }
     });
   }
@@ -490,19 +497,21 @@ Future<void> _fetchLiveDataInBackground() async {
         ),
         itemCount: _musicList.length,
         itemBuilder: (context, index) {
-          return _buildNewsItem(_musicList[index]);
+          return _buildNewsItem(_musicList[index],index);
         },
       ),
     );
   }
 
-  Widget _buildNewsItem(NewsItemModel item) {
+  Widget _buildNewsItem(NewsItemModel item,index) {
     return NewsItem(
       key: Key(item.id),
       item: item,
       hideDescription: true,
       onTap: () => _navigateToVideoScreen(item),
       onEnterPress: _handleEnterPress,
+            focusNode: index == 0 ? firstItemFocusNode : FocusNode(),
+
     );
   }
 
@@ -594,6 +603,8 @@ Future<void> _fetchLiveDataInBackground() async {
                 bannerImageUrl: newsItem.banner,
                 startAtPosition: Duration.zero,
                 videoType: newsItem.streamType,
+                channelList: _musicList,
+                isLive: true,isVOD: false,
               ),
             ),
           );
@@ -614,6 +625,7 @@ Future<void> _fetchLiveDataInBackground() async {
   @override
   void dispose() {
     _socketService.dispose();
+    firstItemFocusNode.dispose();
     _timer?.cancel();
     super.dispose();
   }

@@ -11,24 +11,24 @@ class VideoMovieScreen extends StatefulWidget {
   final String videoTitle;
   final List<dynamic> channelList;
 
-  VideoMovieScreen(
-      {required this.videoUrl,
-      required this.videoTitle,
-      required this.channelList,
-      required String videoBanner,
-      required Null Function(bool focused) onFabFocusChanged,
-      required String genres,
-      required String videoType,
-      required String url,
-      // required String type
-      });
+  VideoMovieScreen({
+    required this.videoUrl,
+    required this.videoTitle,
+    required this.channelList,
+    required String videoBanner,
+    required Null Function(bool focused) onFabFocusChanged,
+    required String genres,
+    required String videoType,
+    required String url,
+    // required String type
+  });
 
   @override
   _VideoMovieScreenState createState() => _VideoMovieScreenState();
 }
 
 class _VideoMovieScreenState extends State<VideoMovieScreen>
-    with WidgetsBindingObserver  {
+    with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
@@ -75,8 +75,6 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     }
   }
 
-  
-
   void _handleNetworkError() {
     _wasPlayingBeforeDisconnection = _controller.value.isPlaying;
     _lastKnownPosition = _controller.value.position;
@@ -110,30 +108,28 @@ class _VideoMovieScreenState extends State<VideoMovieScreen>
     }
   }
 
-
-
   @override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  if (state == AppLifecycleState.paused) {
-    // ऐप बैकग्राउंड में जाने पर वीडियो पॉज़ करें
-    if (_controller.value.isInitialized && _controller.value.isPlaying) {
-      _lastKnownPosition = _controller.value.position;
-      _wasPlayingBeforeDisconnection = true; // इस लाइन को जोड़ें
-      _controller.pause();
-    } else {
-      _wasPlayingBeforeDisconnection = false; // इस लाइन को जोड़ें
-    }
-  } else if (state == AppLifecycleState.resumed) {
-    // ऐप फोरग्राउंड में वापस आने पर वीडियो रीज्यूम करें
-    if (_controller.value.isInitialized) {
-      _controller.seekTo(_lastKnownPosition);
-      if (_wasPlayingBeforeDisconnection) { // इस चेक को जोड़ें
-        _controller.play();
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // ऐप बैकग्राउंड में जाने पर वीडियो पॉज़ करें
+      if (_controller.value.isInitialized && _controller.value.isPlaying) {
+        _lastKnownPosition = _controller.value.position;
+        _wasPlayingBeforeDisconnection = true; // इस लाइन को जोड़ें
+        _controller.pause();
+      } else {
+        _wasPlayingBeforeDisconnection = false; // इस लाइन को जोड़ें
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // ऐप फोरग्राउंड में वापस आने पर वीडियो रीज्यूम करें
+      if (_controller.value.isInitialized) {
+        _controller.seekTo(_lastKnownPosition);
+        if (_wasPlayingBeforeDisconnection) {
+          // इस चेक को जोड़ें
+          _controller.play();
+        }
       }
     }
   }
-}
-
 
   @override
   void dispose() {
@@ -154,47 +150,19 @@ void didChangeAppLifecycleState(AppLifecycleState state) {
     super.dispose();
   }
 
-
-
-
   void _videoListener() {
-  setState(() {
-    _isBuffering = _controller.value.isBuffering;
-    if (!_isBuffering) {
-      _lastKnownPosition = _controller.value.position;
+    setState(() {
+      _isBuffering = _controller.value.isBuffering;
+      if (!_isBuffering) {
+        _lastKnownPosition = _controller.value.position;
+      }
+    });
+
+    if (_controller.value.hasError) {
+      print('Video error: ${_controller.value.errorDescription}');
+      _handleNetworkError();
     }
-  });
-
-  if (_controller.value.hasError) {
-    print('Video error: ${_controller.value.errorDescription}');
-    _handleNetworkError();
   }
-}
-
-
-  // void _videoListener() {
-  //   setState(() {
-  //     _isBuffering = _controller.value.isBuffering;
-  //     if (!_isBuffering) {
-  //       _lastKnownPosition = _controller.value.position;
-  //     }
-  //   });
-
-  //   if (!_isBuffering &&
-  //       _controller.value.isInitialized &&
-  //       !_controller.value.isPlaying) {
-  //     Future.delayed(Duration(seconds: 2), () {
-  //       if (!_controller.value.isPlaying) {
-  //         _controller.play();
-  //       }
-  //     });
-  //   }
-
-  //   if (_controller.value.hasError) {
-  //     print('Video error: ${_controller.value.errorDescription}');
-  //     _handleNetworkError();
-  //   }
-  // }
 
   void _startHideControlsTimer() {
     _hideControlsTimer = Timer(Duration(seconds: 10), () {

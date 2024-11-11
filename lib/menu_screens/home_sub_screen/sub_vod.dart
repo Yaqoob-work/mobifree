@@ -1098,6 +1098,11 @@
 //   }
 // }
 
+
+
+
+
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -1110,6 +1115,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 import '../../video_widget/socket_service.dart';
 import '../../video_widget/video_movie_screen.dart';
+import '../../video_widget/video_screen.dart';
 import '../../video_widget/vlc_player_screen.dart';
 import '../../widgets/focussable_item_widget.dart';
 import '../../widgets/small_widgets/loading_indicator.dart';
@@ -1151,8 +1157,9 @@ class ContentApi {
   final int id;
   final String name;
   final String banner;
+  final String url;
 
-  ContentApi({required this.id, required this.name, required this.banner});
+  ContentApi({required this.id, required this.name, required this.banner, required this.url});
 
   factory ContentApi.fromJson(Map<String, dynamic> json) {
     return ContentApi(
@@ -1161,6 +1168,7 @@ class ContentApi {
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       banner: json['banner'] ?? localImage,
+      url: json['url'] ?? '',
     );
   }
 }
@@ -1258,6 +1266,7 @@ Future<List<ContentApi>> fetchContent(
   if (response.statusCode == 200) {
     List<dynamic> body = json.decode(response.body);
     apiContent = body.map((dynamic item) => ContentApi.fromJson(item)).toList();
+    
 
     // Step 3: Compare cached data with API data
     if (!listEquals(content, apiContent)) {
@@ -1321,17 +1330,51 @@ Future<MovieDetailsApi> fetchMovieDetails(
 //   }
 // }
 
+
+
+// Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final cachedPlayLink = prefs.getString('movie_playlink_$movieId');
+
+//   // Step 1: Return cached play link immediately if available
+//   if (cachedPlayLink != null) {
+//     final Map<String, dynamic> cachedData = json.decode(cachedPlayLink);
+//     return {'url': cachedData['url'] ?? '', 'type': cachedData['type'] ?? ''};
+//   }
+
+//   // Step 2: Fetch the play link from the API if no cache is available
+//   final response = await https.get(
+//     Uri.parse('https://api.ekomflix.com/android/getMoviePlayLinks/$movieId/0'),
+//     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//   );
+
+//   if (response.statusCode == 200) {
+//     final List<dynamic> body = json.decode(response.body);
+//     if (body.isNotEmpty) {
+//       final Map<String, dynamic> firstItem = body.first as Map<String, dynamic>;
+
+//       // Cache the fetched play link
+//       prefs.setString('movie_playlink_$movieId', json.encode(firstItem));
+
+//       // Return the fetched data
+//       return {'url': firstItem['url'] ?? '', 'type': firstItem['type'] ?? ''};
+//     }
+//     return {'url': '', 'type': ''};
+//   } else {
+//     throw Exception('Failed to load movie play link');
+//   }
+// }
+
+
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final prefs = await SharedPreferences.getInstance();
   final cachedPlayLink = prefs.getString('movie_playlink_$movieId');
 
-  // Step 1: Return cached play link immediately if available
   if (cachedPlayLink != null) {
     final Map<String, dynamic> cachedData = json.decode(cachedPlayLink);
     return {'url': cachedData['url'] ?? '', 'type': cachedData['type'] ?? ''};
   }
 
-  // Step 2: Fetch the play link from the API if no cache is available
   final response = await https.get(
     Uri.parse('https://api.ekomflix.com/android/getMoviePlayLinks/$movieId/0'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
@@ -1341,11 +1384,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     final List<dynamic> body = json.decode(response.body);
     if (body.isNotEmpty) {
       final Map<String, dynamic> firstItem = body.first as Map<String, dynamic>;
-
-      // Cache the fetched play link
       prefs.setString('movie_playlink_$movieId', json.encode(firstItem));
-
-      // Return the fetched data
       return {'url': firstItem['url'] ?? '', 'type': firstItem['type'] ?? ''};
     }
     return {'url': '', 'type': ''};
@@ -1353,6 +1392,7 @@ Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
     throw Exception('Failed to load movie play link');
   }
 }
+
 
 // // Widget to handle image loading (either base64 or URL)
 // Widget displayImage(String imageUrl) {
@@ -1669,14 +1709,16 @@ class _ContentScreenState extends State<ContentScreen> {
   List<ContentApi> _content = [];
   bool _isLoading = true;
   bool _cacheLoaded = false;
-  final FocusNode _firstItemFocusNode = FocusNode();
+  FocusNode firstItemFocusNode = FocusNode();
+  List<String> channelList = [];
 
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration(milliseconds: 50), () async {
-    // Load cached content first
+      // Load cached content first
       _loadCachedContent();
+      firstItemFocusNode.requestFocus();
     });
     // Fetch content from API in the background
     _fetchContentInBackground();
@@ -1696,11 +1738,7 @@ class _ContentScreenState extends State<ContentScreen> {
         _isLoading = false;
         _cacheLoaded = true;
       });
-      if (_content.isNotEmpty) {
-        Future.delayed(Duration(milliseconds: 100), () {
-          _firstItemFocusNode.requestFocus();
-        });
-      }
+
     } else {
       print('No cache found for content');
     }
@@ -1709,15 +1747,13 @@ class _ContentScreenState extends State<ContentScreen> {
   Future<void> _fetchContentInBackground() async {
     try {
       final fetchedContent = await fetchContent(context, widget.networkId);
+
       if (!listEquals(_content, fetchedContent)) {
         setState(() {
           _content = fetchedContent;
+          
         });
-        if (_content.isNotEmpty) {
-          Future.delayed(Duration(milliseconds: 100), () {
-            _firstItemFocusNode.requestFocus();
-          });
-        }
+
       }
     } catch (e) {
       // print('Error fetching content: $e');
@@ -1734,6 +1770,8 @@ class _ContentScreenState extends State<ContentScreen> {
       }
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -1764,14 +1802,14 @@ class _ContentScreenState extends State<ContentScreen> {
           itemCount: _content.length,
           itemBuilder: (context, index) {
             return FocusableItemWidget(
-              focusNode: index == 0 ? _firstItemFocusNode : null,
+              focusNode: index == 0 ? firstItemFocusNode : null,
               imageUrl: _content[index].banner,
               name: _content[index].name,
               onTap: () async {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DetailsPage(content: _content[index]),
+                    builder: (context) => DetailsPage(content: _content[index],channelList: _content,),
                   ),
                 );
               },
@@ -1784,224 +1822,13 @@ class _ContentScreenState extends State<ContentScreen> {
   }
 }
 
-// class DetailsPage extends StatefulWidget {
-//   final ContentApi content;
 
-//   DetailsPage({required this.content});
-
-//   @override
-//   _DetailsPageState createState() => _DetailsPageState();
-// }
-
-// class _DetailsPageState extends State<DetailsPage> {
-//   final SocketService _socketService = SocketService();
-//   final int _maxRetries = 3;
-//   final int _retryDelay = 5; // seconds
-//   bool _shouldContinueLoading = true;
-//   bool _isLoading = false;
-//   MovieDetailsApi? _movieDetails;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _socketService.initSocket();
-//     checkServerStatus();
-//     _loadMovieDetails();
-//   }
-
-//   @override
-//   void dispose() {
-//     _socketService.dispose();
-//     super.dispose();
-//   }
-
-//   Future<void> _loadMovieDetails() async {
-//     try {
-//       final details = await fetchMovieDetails(context,widget.content.id);
-//       setState(() {
-//         _movieDetails = details;
-//       });
-//     } catch (e) {
-//       print('Something Went Wrong');
-//       // Handle error (e.g., show a snackbar)
-//     }
-//   }
-
-//   // Add this method to check the server status and reconnect if needed
-//   void checkServerStatus() {
-//     Timer.periodic(Duration(seconds: 10), (timer) {
-//       if (!_socketService.socket.connected) {
-//         print('YouTube server down, retrying...');
-//         _socketService.initSocket(); // Re-establish the socket connection
-//       }
-//     });
-//   }
-
-// Future<void> _updateUrlIfNeeded(Map<String, String> playLink) async {
-//   if (playLink['type'] == 'Youtube' || playLink['type'] == 'YoutubeLive') {
-//     for (int i = 0; i < _maxRetries; i++) {
-//       if (!_shouldContinueLoading) break;
-//       try {
-//         String updatedUrl =
-//             await _socketService.getUpdatedUrl(playLink['url']!);
-//         playLink['url'] = updatedUrl;
-//         playLink['type'] = 'M3u8';
-//         break;
-//       } catch (e) {
-//         if (i == _maxRetries - 1) rethrow;
-//         await Future.delayed(Duration(seconds: _retryDelay));
-//       }
-//     }
-//   }
-// }
-
-//   Future<bool> _onWillPop() async {
-//     if (_isLoading) {
-//       setState(() {
-//         _isLoading = false;
-//         _shouldContinueLoading = false;
-//       });
-//       return false;
-//     }
-//     return true;
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return WillPopScope(
-//       onWillPop: _onWillPop,
-//       child: Scaffold(
-//         backgroundColor: cardColor,
-//         body: Stack(
-//           children: [
-//             _movieDetails == null
-//                 ? Center(child: LoadingIndicator())
-//                 : Padding(
-//                     padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
-//                     child: _buildMovieDetailsUI(context, _movieDetails!),
-//                   ),
-//             if (_isLoading)
-//               Center(
-//                 child: SpinKitFadingCircle(
-//                   color: borderColor,
-//                   size: 50.0,
-//                 ),
-//               ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildMovieDetailsUI(
-//       BuildContext context, MovieDetailsApi movieDetails) {
-//     return Container(
-//       padding: const EdgeInsets.all(20.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         children: [
-//           if (movieDetails.status == '1')
-//             CachedNetworkImage(
-//               imageUrl: movieDetails.banner,
-//               placeholder: (context, url) => localImage,
-//               fit: BoxFit.cover,
-//               width: screenwdt * 0.7,
-//               height: screenhgt * 0.55,
-//             ),
-//           Text(movieDetails.name,
-//               style: TextStyle(color: Colors.white, fontSize: nametextsz)),
-//           SizedBox(height: 10),
-//           Expanded(
-//             child: ListView.builder(
-//               scrollDirection: Axis.horizontal,
-//               itemCount: 1,
-//               itemBuilder: (context, index) {
-//                 return FocusableItemWidget(
-//                   imageUrl: widget.content
-//                       .banner, // Replace with actual image URL if available
-//                   name: '',
-//                   onTap: () => _playVideo(movieDetails),
-//                   fetchPaletteColor: fetchPaletteColor,
-//                 );
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Future<void> _playVideo(MovieDetailsApi movieDetails) async {
-//     setState(() {
-//       _isLoading = true;
-//     });
-//     _shouldContinueLoading = true;
-
-//     try {
-//       final playLink = await fetchMoviePlayLink(widget.content.id);
-//       await _updateUrlIfNeeded(playLink);
-
-//       if (_shouldContinueLoading) {
-//         if (playLink['type'] == 'VLC' || playLink['type'] == 'VLC') {
-//           //   // Navigate to VLC Player screen when stream type is VLC
-//           await Navigator.push(
-//             context,
-//             MaterialPageRoute(
-//               builder: (context) => VlcPlayerScreen(
-//                 videoUrl: playLink['url']!,
-//                 // videoTitle: movieDetails.name,
-//                 channelList: [],
-//                 genres: movieDetails.genres,
-//                 // channels: [],
-//                 // initialIndex: 1,
-//                 bannerImageUrl: movieDetails.banner,
-//                 startAtPosition: Duration.zero,
-//                 // onFabFocusChanged: (bool) {},
-//                 isLive: false,
-//               ),
-//             ),
-//           );
-//         } else {
-//           await Navigator.push(
-//             context,
-//             MaterialPageRoute(
-//               builder: (context) => VideoMovieScreen(
-//                 videoUrl: playLink['url']!,
-//                 videoTitle: movieDetails.name,
-//                 channelList: [],
-//                 videoBanner: movieDetails.banner,
-//                 onFabFocusChanged: (bool focused) {},
-//                 genres: movieDetails.genres,
-//                 videoType: playLink['type']!,
-//                 url: playLink['url']!,
-//                 type: playLink['type']!,
-//               ),
-//             ),
-//           );
-//         }
-//       }
-//     } catch (e) {
-//       _handleVideoError(context);
-//     } finally {
-//       setState(() {
-//         _isLoading = false;
-//       });
-//     }
-//   }
-
-//   void _handleVideoError(BuildContext context) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(
-//           content:
-//               Text('Something Went Wrong', style: TextStyle(fontSize: 20))),
-//     );
-//   }
-// }
 
 class DetailsPage extends StatefulWidget {
   final ContentApi content;
+  final List<ContentApi> channelList;
 
-  DetailsPage({required this.content});
+  DetailsPage({required this.content, required this.channelList, });
 
   @override
   _DetailsPageState createState() => _DetailsPageState();
@@ -2017,18 +1844,17 @@ class _DetailsPageState extends State<DetailsPage> {
   bool _isVideoPlaying = false;
   Timer? _timer;
   bool _isReturningFromVideo = false;
-  final FocusNode _firstBannerFocusNode = FocusNode();
+  FocusNode firstItemFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _socketService.initSocket();
     checkServerStatus();
-    Future.delayed(Duration(milliseconds: 50), () async {
+
+    Future.delayed(Duration(milliseconds: 100), () async {
       _loadCachedAndFetchMovieDetails();
-    });
-    Future.delayed(Duration(milliseconds: 60), () {
-      _firstBannerFocusNode.requestFocus();
+      firstItemFocusNode.requestFocus();
     });
   }
 
@@ -2036,14 +1862,14 @@ class _DetailsPageState extends State<DetailsPage> {
   void dispose() {
     _socketService.dispose();
     _timer?.cancel();
-    _firstBannerFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _loadCachedAndFetchMovieDetails() async {
+    FocusScope.of(context).unfocus();
     try {
       final cachedDetails = await fetchMovieDetails(context, widget.content.id);
-      // await Future.delayed(Duration(milliseconds: 100));
+      // await Future.delayed(Duration(milliseconds: 10));
 
       setState(() {
         _movieDetails = cachedDetails;
@@ -2120,47 +1946,48 @@ class _DetailsPageState extends State<DetailsPage> {
           if (movieDetails.status == '1')
             displayImage(
               movieDetails.banner,
-              width: screenwdt , // Custom width
-              height: screenhgt , // Custom height
+              width: screenwdt, // Custom width
+              height: screenhgt, // Custom height
             ),
-         Padding(
-           padding:  EdgeInsets.symmetric(horizontal:  screenwdt*0.03),
-           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SizedBox(height: screenhgt*0.05,),
-             Container(
-              child: Text(movieDetails.name,
-                  style: TextStyle(color: Colors.white, fontSize: Headingtextsz*1.5)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SizedBox(
+                  height: screenhgt * 0.05,
+                ),
+                Container(
+                  child: Text(movieDetails.name,
+                      style: TextStyle(
+                          color: Colors.white, fontSize: Headingtextsz * 1.5)),
+                ),
+                Spacer(),
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 1,
+                    itemBuilder: (context, index) {
+                      return FocusableItemWidget(
+                        focusNode: firstItemFocusNode,
+                        imageUrl: widget.content.banner,
+                        name: '',
+                        onTap: () => _playVideo(movieDetails),
+                        fetchPaletteColor: fetchPaletteColor,
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            Spacer(),
-            Expanded(
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: 1,
-                itemBuilder: (context, index) {
-                  return FocusableItemWidget(
-                    focusNode: _firstBannerFocusNode,
-                    imageUrl: widget.content.banner,
-                    name: '',
-                    onTap: () => _playVideo(movieDetails),
-                    fetchPaletteColor: fetchPaletteColor,
-                  );
-                },
-              ),
-            ),
-           ],),
-         )
+          )
         ],
       ),
     );
   }
 
-
-
-
-
   Future<void> _playVideo(MovieDetailsApi movieDetails) async {
+    
     if (_isVideoPlaying) {
       return; // Agar ek video already play ho raha hai to naya video mat play karo
     }
@@ -2173,68 +2000,84 @@ class _DetailsPageState extends State<DetailsPage> {
 
     try {
       final playLink = await fetchMoviePlayLink(widget.content.id);
-      int retryCount = 0;
-      while (retryCount < 3) {
-        try {
-          await _updateUrlIfNeeded(playLink);
-          break;
-        } catch (e) {
-          retryCount++;
-          if (retryCount == 3) rethrow;
-          await Future.delayed(Duration(seconds: 2)); // Reduced delay
+      if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+        int retryCount = 0;
+        while (retryCount < 3) {
+          try {
+            await _updateUrlIfNeeded(playLink);
+            break;
+          } catch (e) {
+            retryCount++;
+            if (retryCount == 3) rethrow;
+            await Future.delayed(Duration(seconds: 2)); // Reduced delay
+          }
         }
-      }
 
-      if (_shouldContinueLoading) {
-        if (playLink['type'] == 'VLC') {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VlcPlayerScreen(
-                videoUrl: playLink['url']!,
-                channelList: [],
-                genres: movieDetails.genres,
-                bannerImageUrl: movieDetails.banner,
-                startAtPosition: Duration.zero,
-                isLive: false,
+        if (_shouldContinueLoading) {
+          // if (playLink['type'] == 'VLC') {
+          //   await Navigator.push(
+          //     context,
+          //     MaterialPageRoute(
+          //       builder: (context) => VlcPlayerScreen(
+          //         videoUrl: playLink['url']!,
+          //         channelList: [],
+          //         genres: movieDetails.genres,
+          //         bannerImageUrl: movieDetails.banner,
+          //         startAtPosition: Duration.zero,
+          //         isLive: false,
+          //       ),
+          //     ),
+          //   );
+          // } else {
+
+            await Navigator.push(
+              
+              context,
+              MaterialPageRoute(
+                // builder: (context) => VideoMovieScreen(
+                //   videoUrl: playLink['url']!,
+                //   videoTitle: movieDetails.name,
+                //   channelList: [],
+                //   videoBanner: movieDetails.banner,
+                //   onFabFocusChanged: (bool focused) {},
+                //   genres: movieDetails.genres,
+                //   videoType: playLink['type']!,
+                //   url: playLink['url']!,
+                //   // type: playLink['type']!,
+                // ),
+                builder: (context) => VideoScreen(
+                  videoUrl: playLink['url']!,
+                  // videoTitle: movieDetails.name,
+                  channelList: widget.channelList,
+                  // videoBanner: movieDetails.banner,
+                  // onFabFocusChanged: (bool focused) {},
+                  // genres: movieDetails.genres,
+                  videoType: playLink['type']!,
+                  bannerImageUrl: playLink['banner'] ?? '',
+                  startAtPosition: Duration.zero,
+                  isLive: false, isVOD: true,
+
+                  // url: playLink['url']!,
+                  // type: playLink['type']!,
+                ),
               ),
-            ),
-          );
-        } else {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VideoMovieScreen(
-                videoUrl: playLink['url']!,
-                videoTitle: movieDetails.name,
-                channelList: [],
-                videoBanner: movieDetails.banner,
-                onFabFocusChanged: (bool focused) {},
-                genres: movieDetails.genres,
-                videoType: playLink['type']!,
-                url: playLink['url']!,
-                // type: playLink['type']!,
-              ),
-            ),
-          );
+            );
+          // }
         }
+
+        setState(() {
+          _isLoading = false;
+          _isReturningFromVideo = true;
+        });
+        // // Video screen se wapas aane ke baad 1 second ka delay
+        // await Future.delayed(Duration(
+        //   milliseconds: 100,
+        // ));
+
+        setState(() {
+          _isReturningFromVideo = false;
+        });
       }
-      setState(() {
-        _isLoading = false;
-        _isReturningFromVideo = true;
-      });
-      // Video screen se wapas aane ke baad 1 second ka delay
-      await Future.delayed(Duration(
-        milliseconds: 100,
-      ));
-
-      setState(() {
-        _isReturningFromVideo = false;
-      });
-
-          Future.delayed(Duration(milliseconds: 60), () {
-      _firstBannerFocusNode.requestFocus();
-    });
     } catch (e) {
       _handleVideoError(
         context,
@@ -2248,61 +2091,6 @@ class _DetailsPageState extends State<DetailsPage> {
   }
 }
 
-// Future<void> _playVideo(MovieDetailsApi movieDetails) async {
-
-//   setState(() {
-//     _isLoading = true;
-//   });
-
-//   try {
-//     final playLink = await fetchMoviePlayLink(widget.content.id);
-//     if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
-//       await _updateUrlIfNeeded(playLink);
-
-//       if (playLink['type'] == 'VLC') {
-//         await Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => VlcPlayerScreen(
-//               videoUrl: playLink['url']!,
-//               bannerImageUrl: movieDetails.banner,
-//               startAtPosition: Duration.zero,
-//               isLive: false,
-//               channelList: [],
-//               genres: movieDetails.genres,
-//             ),
-//           ),
-//         );
-//       } else {
-//         await Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => VideoMovieScreen(
-//               videoUrl: playLink['url']!,
-//               videoTitle: movieDetails.name,
-//               videoBanner: movieDetails.banner,
-//               genres: movieDetails.genres,
-//               videoType: playLink['type']!,
-//               url: playLink['url']!,
-//               type: playLink['type']!,
-//               channelList: [],
-//               onFabFocusChanged: (bool focused) {},
-//             ),
-//           ),
-//         );
-//       }
-//     } else {
-//       _handleVideoError(context);
-//     }
-//   } catch (e) {
-//     _handleVideoError(context);
-//   } finally {
-//     setState(() {
-//       _isLoading = false;
-//     });
-//   }
-// }
-
 void _handleVideoError(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -2310,74 +2098,3 @@ void _handleVideoError(BuildContext context) {
     ),
   );
 }
-// }
-
-//   Future<void> _playVideo(MovieDetailsApi movieDetails) async {
-//     if (_isVideoPlaying) {
-//       return; // Agar ek video already play ho raha hai to naya video mat play karo
-//     }
-
-//     setState(() {
-//       _isLoading = true;
-//       _isVideoPlaying = true;
-//     });
-//     _shouldContinueLoading = true;
-
-//     try {
-//       final playLink = await fetchMoviePlayLink(widget.content.id);
-//       int retryCount = 0;
-//       while (retryCount < 3) {
-//         try {
-//           await _updateUrlIfNeeded(playLink);
-//           break;
-//         } catch (e) {
-//           retryCount++;
-//           if (retryCount == 3) rethrow;
-//           await Future.delayed(Duration(seconds: 1)); // Reduced delay
-//         }
-//       }
-
-//       if (_shouldContinueLoading) {
-//         if (playLink['type'] == 'VLC') {
-//           await Navigator.push(
-//             context,
-//             MaterialPageRoute(
-//               builder: (context) => VlcPlayerScreen(
-//                 videoUrl: playLink['url']!,
-//                 channelList: [],
-//                 genres: movieDetails.genres,
-//                 bannerImageUrl: movieDetails.banner,
-//                 startAtPosition: Duration.zero,
-//                 isLive: false,
-//               ),
-//             ),
-//           );
-//         } else {
-//           await Navigator.push(
-//             context,
-//             MaterialPageRoute(
-//               builder: (context) => VideoMovieScreen(
-//                 videoUrl: playLink['url']!,
-//                 videoTitle: movieDetails.name,
-//                 channelList: [],
-//                 videoBanner: movieDetails.banner,
-//                 onFabFocusChanged: (bool focused) {},
-//                 genres: movieDetails.genres,
-//                 videoType: playLink['type']!,
-//                 url: playLink['url']!,
-//                 type: playLink['type']!,
-//               ),
-//             ),
-//           );
-//         }
-//       }
-//     } catch (e) {
-//       _handleVideoError(context, e);
-//     } finally {
-//       setState(() {
-//         _isLoading = false;
-//         _isVideoPlaying = false;
-//       });
-//     }
-//   }
-// }

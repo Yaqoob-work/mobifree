@@ -484,7 +484,7 @@ class _CategoryWidgetState extends State<CategoryWidget> {
             builder: (context) => VlcPlayerScreen(
               // videoTitle: channels[index].name,
               videoUrl: channels[index].url,
-              channelList: [],
+              channelList: channels,
               genres: channels[index].genres,
               // channels: channels,
               // initialIndex: index,
@@ -513,7 +513,10 @@ class _CategoryWidgetState extends State<CategoryWidget> {
                 // genres: channels[index].genres,
                 // channelList: [],
                 bannerImageUrl: '',
-                startAtPosition: Duration.zero, videoType: channels[index].streamType,
+                startAtPosition: Duration.zero, videoType: 
+                channels[index].streamType,
+                channelList: channels,
+                isLive: true, isVOD: false,
               ),
             ),
           ),
@@ -622,6 +625,8 @@ class _CategoryGridViewState extends State<CategoryGridView> {
                             startAtPosition:
                                 Duration.zero, // Start video at the beginning
                                 videoType: widget.filteredChannels[index].streamType,
+                                channelList: widget.filteredChannels,
+                                isLive: true,isVOD: false,
                           ),
                         ),
                       ).then((_) {
