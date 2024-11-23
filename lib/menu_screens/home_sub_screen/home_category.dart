@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
 import '../../video_widget/socket_service.dart';
@@ -121,7 +119,6 @@ class CategoryService {
   }
 }
 
-
 class HomeCategory extends StatefulWidget {
   @override
   _HomeCategoryState createState() => _HomeCategoryState();
@@ -135,10 +132,10 @@ class _HomeCategoryState extends State<HomeCategory> {
   void initState() {
     super.initState();
     // _categories = fetchCategories(context);
-        // _categoryService = CategoryService();  // Initialize the service here
-        // _categories = _categoryService.fetchCategories();
-          // Trigger cache update when the page is entered
-  // _categoryService._updateCacheInBackground();
+    // _categoryService = CategoryService();  // Initialize the service here
+    // _categories = _categoryService.fetchCategories();
+    // Trigger cache update when the page is entered
+    // _categoryService._updateCacheInBackground();
     // _categoryService.updateStream.listen((hasChanges) {
     //   if (hasChanges) {
     //     setState(() {
@@ -147,9 +144,7 @@ class _HomeCategoryState extends State<HomeCategory> {
     //   }
     // });
 
-
-
-        _categoryService = CategoryService();
+    _categoryService = CategoryService();
     _loadCachedCategories(); // Load cached categories immediately
     _fetchCategoriesInBackground(); // Fetch new categories in background
 
@@ -173,13 +168,14 @@ class _HomeCategoryState extends State<HomeCategory> {
     });
   }
 
-    Future<void> _loadCachedCategories() async {
+  Future<void> _loadCachedCategories() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedData = prefs.getString('categories');
 
     if (cachedData != null) {
       setState(() {
-        _categories = Future.value(_categoryService._processCategories(json.decode(cachedData)));
+        _categories = Future.value(
+            _categoryService._processCategories(json.decode(cachedData)));
       });
     }
   }
@@ -188,7 +184,7 @@ class _HomeCategoryState extends State<HomeCategory> {
     _categories = _categoryService.fetchCategories();
   }
 
-    @override
+  @override
   void dispose() {
     _categoryService.dispose();
     super.dispose();
@@ -276,7 +272,7 @@ class Channel {
     return Channel(
       id: json['id'],
       name: json['name'],
-      banner: json['banner']??localImage,
+      banner: json['banner'] ?? localImage,
       genres: json['genres'],
       url: json['url'] ?? '',
       streamType: json['stream_type'] ?? '',
@@ -303,15 +299,15 @@ class _CategoryWidgetState extends State<CategoryWidget> {
   int _retryDelay = 5; // seconds
   final int timeoutDuration = 10; // seconds
   bool _shouldContinueLoading = true;
-    late Future<List<Category>> _categories;
+  late Future<List<Category>> _categories;
   late CategoryService _categoryService;
 
   @override
   void initState() {
     super.initState();
     _socketService.initSocket();
-            _categoryService = CategoryService();  // Initialize the service here
-        _categories = _categoryService.fetchCategories();
+    _categoryService = CategoryService(); // Initialize the service here
+    _categories = _categoryService.fetchCategories();
     _categoryService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         setState(() {
@@ -477,55 +473,33 @@ class _CategoryWidgetState extends State<CategoryWidget> {
   Future<void> _navigateToVideoScreen(
       BuildContext context, List<Channel> channels, int index) async {
     if (_shouldContinueLoading) {
-      if (channels[index].streamType == 'VLC') {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VlcPlayerScreen(
-              // videoTitle: channels[index].name,
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PopScope(
+            canPop: false,
+            onPopInvoked: (didPop) {
+              if (didPop) return;
+              Navigator.of(context).pop();
+            },
+            child: VideoScreen(
               videoUrl: channels[index].url,
-              channelList: channels,
-              genres: channels[index].genres,
-              // channels: channels,
-              // initialIndex: index,
-              bannerImageUrl: channels[index].banner,
+              bannerImageUrl: '',
               startAtPosition: Duration.zero,
-              // onFabFocusChanged: (bool) {},
+              videoType: channels[index].streamType,
+              channelList: channels,
               isLive: true,
+              isVOD: false,
+              isHomeCategory: true,isBannerSlider: false,
+              source: 'isHomeCategory',isSearch: false,
             ),
           ),
-        );
-      } else {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PopScope(
-              canPop: false,
-              onPopInvoked: (didPop) {
-                if (didPop) return;
-                Navigator.of(context).pop();
-              },
-              child: VideoScreen(
-                // channels: channels,
-                // initialIndex: index,
-                // videoTitle: channels[index].name,
-                videoUrl: channels[index].url,
-                // genres: channels[index].genres,
-                // channelList: [],
-                bannerImageUrl: '',
-                startAtPosition: Duration.zero, videoType: 
-                channels[index].streamType,
-                channelList: channels,
-                isLive: true, isVOD: false,
-              ),
-            ),
-          ),
-        );
+        ),
+      );
 
-        // Handle any result returned from VideoScreen if needed
-        if (result != null) {
-          // Process the result
-        }
+      // Handle any result returned from VideoScreen if needed
+      if (result != null) {
+        // Process the result
       }
     }
   }
@@ -614,19 +588,16 @@ class _CategoryGridViewState extends State<CategoryGridView> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => VideoScreen(
-                            // channels: widget.filteredChannels,
-                            // initialIndex: index,
                             videoUrl: widget.filteredChannels[index]
                                 .url, // Pass the video URL
-                            // videoTitle: widget.filteredChannels[index].name, // Pass the video title
-                            // channelList: [], // Your channel list logic here
-                            // genres: widget.filteredChannels[index].genres, // Pass genres
                             bannerImageUrl: '', // Banner image URL (optional)
                             startAtPosition:
                                 Duration.zero, // Start video at the beginning
-                                videoType: widget.filteredChannels[index].streamType,
-                                channelList: widget.filteredChannels,
-                                isLive: true,isVOD: false,
+                            videoType:
+                                widget.filteredChannels[index].streamType,
+                            channelList: widget.filteredChannels,
+                            isLive: true, isVOD: false,isBannerSlider: false,
+                            source: 'isHomeCategory',isSearch: false,
                           ),
                         ),
                       ).then((_) {
@@ -646,10 +617,7 @@ class _CategoryGridViewState extends State<CategoryGridView> {
             ),
             if (_isLoading)
               Center(
-                child: SpinKitFadingCircle(
-                  color: borderColor,
-                  size: 50.0,
-                ), // Circular loading indicator
+                child: LoadingIndicator() // Circular loading indicator
               ),
           ],
         ),
@@ -676,8 +644,6 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
   void initState() {
     super.initState();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -795,8 +761,3 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
     );
   }
 }
-
-
-
-
-

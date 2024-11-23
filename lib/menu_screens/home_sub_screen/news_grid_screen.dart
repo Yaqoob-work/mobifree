@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
@@ -10,9 +9,7 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
-import '../../video_widget/vlc_player_screen.dart';
 
-// import '../video_widget/vlc_player_screen.dart';
 
 class NewsGridScreen extends StatefulWidget {
   final List<NewsItemModel> newsList;
@@ -26,6 +23,7 @@ class NewsGridScreen extends StatefulWidget {
 class _NewsGridScreenState extends State<NewsGridScreen> {
   final List<NewsItemModel> _entertainmentList = [];
   final SocketService _socketService = SocketService();
+  final FocusNode firstItemFocusNode = FocusNode();
   bool _isLoading = false;
   String _errorMessage = '';
   bool _isNavigating = false;
@@ -38,6 +36,12 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     _socketService.initSocket();
     checkServerStatus();
     _entertainmentList.addAll(widget.newsList);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Request focus on the first item after the screen is built
+      if (firstItemFocusNode.canRequestFocus) {
+        firstItemFocusNode.requestFocus();
+      }
+    });
   }
 
   void checkServerStatus() {
@@ -80,20 +84,22 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
           ),
           itemCount: _entertainmentList.length,
           itemBuilder: (context, index) {
-            return _buildNewsItem(_entertainmentList[index]);
+            return _buildNewsItem(_entertainmentList[index],index);
           },
         ),
       ],
     );
   }
 
-  Widget _buildNewsItem(NewsItemModel item) {
+  Widget _buildNewsItem(NewsItemModel item,index) {
     return NewsItem(
       key: Key(item.id),
       hideDescription: true,
       item: item,
       onTap: () => _navigateToVideoScreen(item),
       onEnterPress: _handleEnterPress,
+      focusNode: index == 0 ? firstItemFocusNode : FocusNode(),
+
     );
   }
 
@@ -164,42 +170,18 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     }
 
     if (shouldPlayVideo) {
-      // if (newsItem.streamType == 'VLC') {
-      // //   // Navigate to VLC Player screen when stream type is VLC
-      //   await Navigator.push(
-      //      context,
-      //     MaterialPageRoute(
-      //       builder: (context) => VlcPlayerScreen(
-      //         videoUrl: newsItem.url,
-      //         // videoTitle: newsItem.name,
-      //         channelList: [],
-      //         genres: newsItem.genres,
-      //         // channels: [],
-      //         // initialIndex: 1,
-      //         bannerImageUrl: newsItem.banner,
-      //         startAtPosition: Duration.zero, 
-      //         // onFabFocusChanged: (bool) {  }, 
-      //         isLive: true,
-      //       ),
-      //     ),
-      //   );
-      // } else {
-        // Default case for other stream types
+
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => VideoScreen(
               videoUrl: newsItem.url,
-              // videoTitle: newsItem.name,
-              // channelList: _musicList,
-              // genres: newsItem.genres,
-              // channels: [],
-              // initialIndex: 1,
               bannerImageUrl: newsItem.banner,
               startAtPosition: Duration.zero,
               videoType: newsItem.streamType,
               channelList: _entertainmentList,
-              isLive: true,isVOD: false,
+              isLive: true,isVOD: false,isBannerSlider: false,
+              source: 'isLiveScreen',isSearch: false,
             ),
           ),
         );
@@ -216,4 +198,10 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     _isNavigating = false;
   }
 }
+@override
+  void dispose() {
+    _socketService.dispose();
+    firstItemFocusNode.dispose();
+    super.dispose();
+  }
 }

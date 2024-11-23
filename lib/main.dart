@@ -671,6 +671,22 @@ void main() {
   runApp(MyApp());
 }
 
+// void main() {
+//   HttpOverrides.global = MyHttpOverrides();
+
+//   runApp(
+//     MultiProvider(
+//       providers: [
+//         ChangeNotifierProvider(
+          
+//           create: (_) => VideoProvider(),
+//         ),
+//       ],
+//       child: MyApp(),
+//     ),
+//   );
+// }
+
 var highlightColor;
 var cardColor;
 var hintColor;

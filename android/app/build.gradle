@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.android' version '1.7.10'
+    id 'org.jetbrains.kotlin.android' version '1.8.20'
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
@@ -59,7 +59,7 @@ android {
 
 
     defaultConfig {
-        applicationId "com.ekom.one"
+        applicationId "com.ekom.four"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()

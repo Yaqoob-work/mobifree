@@ -4,7 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/news_item_model.dart';
 
@@ -30,7 +30,7 @@ class ApiService {
   Stream<bool> get updateStream => _updateController.stream;
 
 Future<List<NewsItemModel>> fetchMusicData() async {
-  final response = await http.get(
+  final response = await https.get(
     Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
@@ -44,7 +44,7 @@ Future<List<NewsItemModel>> fetchMusicData() async {
 }
 
 Future<List<NewsItemModel>> fetchNewsData() async {
-  final response = await http.get(
+  final response = await https.get(
     Uri.parse('https://api.ekomflix.com/android/getNewsData'),
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
@@ -76,7 +76,7 @@ Future<List<NewsItemModel>> fetchNewsData() async {
   }
 
   Future<void> _fetchAndCacheSettings() async {
-    final response = await http.get(
+    final response = await https.get(
       Uri.parse('https://api.ekomflix.com/android/getSettings'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );
@@ -110,7 +110,7 @@ Future<List<NewsItemModel>> fetchNewsData() async {
   }
 
   Future<void> _fetchAndCacheEntertainment() async {
-    final response = await http.get(
+    final response = await https.get(
       Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );

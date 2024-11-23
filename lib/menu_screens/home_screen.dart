@@ -1,8 +1,7 @@
 import 'package:mobi_tv_entertainment/main.dart';
-import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/empty_page.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/sub_vod.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'home_sub_screen/banner_slider_screen.dart';
 import 'home_sub_screen/home_category.dart';
 import 'home_sub_screen/music_screen.dart';
@@ -66,41 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Future<void> _fetchData() async {
-  //   if (_isLoading) return;
-  //   setState(() {
-  //     _isLoading = true;
-  //   });
-
-  //   // Simulate network request delay
-  //   await Future.delayed(const Duration(seconds: 1));
-
-  //   try {
-  //     final response = await https.get(
-  //       Uri.parse('https://api.ekomflix.com/android/getSettings'),
-  //       headers: {
-  //         'x-api-key': 'vLQTuPZUxktl5mVW',
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final data = jsonDecode(response.body);
-  //       setState(() {
-  //         _tvenableAll = data['tvenableAll'] == 1;
-  //       });
-  //     } else {
-  //       // Handle errors or non-200 responses
-  //       print('Failed to load settings');
-  //     }
-  //   } catch (e) {
-  //     // Handle network errors or JSON parsing errors
-  //     print('Error: $e');
-  //   }
-
-  //   setState(() {
-  //     _isLoading = false;
-  //   });
-  // }
 
   void _scrollListener() {
     // if (_scrollController.position.pixels ==
@@ -163,13 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: SubVod(),
                       ),
                     ),
-                    //               Container(
-                    //   color: cardColor,
-                    //   child: SizedBox(
-                    //     height: screenhgt,
-                    //     child: Tabbar(),
-                    //   ),
-                    // ),
+
                     Container(
                       color: cardColor,
                       child: SizedBox(
@@ -177,21 +135,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: HomeCategory(),
                       ),
                     ),
-
-                    // Container(
-                    //   height: 0,
-                    //   child: Text(''),
-                    // ),
                     if (_isLoading)
                       // ...[
                       // const Padding(
                       // padding: EdgeInsets.symmetric(vertical: 20),
                       // child:
                       Center(
-                        child: SpinKitFadingCircle(
-                          color: borderColor,
-                          size: 50.0,
-                        ),
+                        child: LoadingIndicator()
                       ),
                     // ),
                     // ],
@@ -199,16 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // if (_isSplashVisible)
-            //   Positioned.fill(
-            //     child: Container(
-            //       color: Colors.white, // Optional: Splash screen background color
-            //       child: Image.asset(
-            //         'assets/logo.png', // Splash image
-            //         fit: BoxFit.fill ,
-            //       ),
-            //     ),
-            //   ),
           ],
         ),
       ),

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
-class EmptyPage extends StatefulWidget {
-  const EmptyPage({super.key});
-
-  @override
-  State<EmptyPage> createState() => _EmptyPageState();
-}
-
-class _EmptyPageState extends State<EmptyPage> {
+class EmptyPage extends StatelessWidget {
+  const EmptyPage({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('EmptyPage'),
+      ),
+      body: Center(
+        child: Text('EmptyPage'),
+      ),
+    );
   }
 }

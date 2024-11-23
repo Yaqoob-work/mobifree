@@ -563,7 +563,8 @@ class _MusicScreenState extends State<MusicScreen> {
                 startAtPosition: Duration.zero,
                 videoType: newsItem.streamType,
                 channelList: _musicList,
-                isLive: true,isVOD: false,
+                isLive: true,isVOD: false,isBannerSlider: false,
+                source: 'isLiveScreen',isSearch: false,
               ),
             ),
           );
@@ -592,13 +593,7 @@ class _MusicScreenState extends State<MusicScreen> {
 
   
 
-  // @override
-  // void dispose() {
-  //   _socketService.dispose();
-  //   // Dispose focus nodes
-  //   categoryFocusNodes.values.forEach((node) => node.dispose());
-  //   super.dispose();
-  // }
+
 
   @override
   void dispose() {
