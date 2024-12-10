@@ -484,7 +484,7 @@ class _CategoryWidgetState extends State<CategoryWidget> {
             },
             child: VideoScreen(
               videoUrl: channels[index].url,
-              bannerImageUrl: '',
+              bannerImageUrl: channels[index].banner,
               startAtPosition: Duration.zero,
               videoType: channels[index].streamType,
               channelList: channels,

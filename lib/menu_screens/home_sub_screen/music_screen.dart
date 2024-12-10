@@ -471,6 +471,9 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
+
+
+
   Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     if (_isNavigating) return;
     _isNavigating = true;

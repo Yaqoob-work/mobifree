@@ -1,7 +1,3 @@
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -16,27 +12,36 @@ import '../video_widget/video_screen.dart';
 import '../widgets/models/news_item_model.dart';
 import '../widgets/utils/color_service.dart';
 
-
-  Future<List<NewsItemModel>> fetchFromApi(String searchTerm) async {
+Future<List<NewsItemModel>> fetchFromApi(String searchTerm) async {
   try {
     final response = await https.get(
       // Uri.encodeComponent(searchTerm)
-      Uri.parse('https://acomtv.com/android/searchContent/${searchTerm}/0'),
+      Uri.parse(
+          'https://api.ekomflix.com/android/searchContent/${searchTerm}/0'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );
-    print("API Response Status Code: ${response.statusCode}");
-    print("API Response Body: ${response.body}");
 
     if (response.statusCode == 200) {
+      print(
+          'Requesting: https://api.ekomflix.com/android/searchContent/${searchTerm}/0');
+// print('Headers: ${response.headers}');
+// print('Bodyyyyy: ${response.body}');
+
+//     print("API Response Status Code: ${response.statusCode}");
+//     print("API Response Body: ${response.body}");
       final List<dynamic> responseData = json.decode(response.body);
 
       if (settings['tvenableAll'] == 0) {
-        final enabledChannels = settings['channels']?.map((id) => id.toString()).toSet() ?? {};
+        final enabledChannels =
+            settings['channels']?.map((id) => id.toString()).toSet() ?? {};
 
         return responseData
             .where((channel) =>
                 channel['name'] != null &&
-                channel['name'].toString().toLowerCase().contains(searchTerm.toLowerCase()) &&
+                channel['name']
+                    .toString()
+                    .toLowerCase()
+                    .contains(searchTerm.toLowerCase()) &&
                 enabledChannels.contains(channel['id'].toString()))
             .map((channel) => NewsItemModel.fromJson(channel))
             .toList();
@@ -44,7 +49,10 @@ import '../widgets/utils/color_service.dart';
         return responseData
             .where((channel) =>
                 channel['name'] != null &&
-                channel['name'].toString().toLowerCase().contains(searchTerm.toLowerCase()))
+                channel['name']
+                    .toString()
+                    .toLowerCase()
+                    .contains(searchTerm.toLowerCase()))
             .map((channel) => NewsItemModel.fromJson(channel))
             .toList();
       }
@@ -56,20 +64,10 @@ import '../widgets/utils/color_service.dart';
   }
 }
 
-
-
-
-
-
-
-
-
 Uint8List _getImageFromBase64String(String base64String) {
   // Split the base64 string to remove metadata if present
   return base64Decode(base64String.split(',').last);
 }
-
-
 
 Map<String, dynamic> settings = {};
 
@@ -89,7 +87,6 @@ Future<void> fetchSettings() async {
     print('Error fetching settings: $e');
   }
 }
-
 
 void main() {
   runApp(MaterialApp(home: SearchScreen()));
@@ -140,14 +137,18 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  Future<void> _updateChannelUrlIfNeeded(List<NewsItemModel> result, int index) async {
-    if (result[index].streamType == 'YoutubeLive' || result[index].streamType == 'Youtube') {
+  Future<void> _updateChannelUrlIfNeeded(
+      List<NewsItemModel> result, int index) async {
+    if (result[index].streamType == 'YoutubeLive' ||
+        result[index].streamType == 'Youtube') {
       for (int i = 0; i < _maxRetries; i++) {
         if (!_shouldContinueLoading) break;
         try {
-          String updatedUrl = await _socketService.getUpdatedUrl(result[index].url);
+          String updatedUrl =
+              await _socketService.getUpdatedUrl(result[index].url);
           setState(() {
-            result[index] = result[index].copyWith(url: updatedUrl, streamType: 'M3u8');
+            result[index] =
+                result[index].copyWith(url: updatedUrl, streamType: 'M3u8');
           });
           break;
         } catch (e) {
@@ -162,8 +163,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_isNavigating) return;
     _isNavigating = true;
     _showLoadingIndicator(context);
-
-    
 
     try {
       await _updateChannelUrlIfNeeded(searchResults, index);
@@ -180,10 +179,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _shouldContinueLoading = true;
       _dismissLoadingIndicator();
     }
-
-    
   }
-
 
 //   Future<void> _onItemTap(BuildContext context, int index) async {
 //   if (_isNavigating) return;
@@ -249,8 +245,6 @@ class _SearchScreenState extends State<SearchScreen> {
 //   }
 // }
 
-
-
   void _showLoadingIndicator(BuildContext context) {
     showDialog(
       context: context,
@@ -273,61 +267,54 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Future<void> _navigateToVideoScreen(
+      BuildContext context, List<NewsItemModel> channels, int index) async {
+    if (index < 0 || index >= channels.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid channel index')),
+      );
+      return;
+    }
 
-Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> channels, int index) async {
-  if (index < 0 || index >= channels.length) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid channel index')),
-    );
-    return;
-  }
-
-  final channel = channels[index];
-  final String? videoUrl = channel.url;
-  final String? streamType = channel.streamType;
-  final String? genres = channel.genres;
-  final int? parsedContentType = int.tryParse(channel.contentType);
-
+    final channel = channels[index];
+    final String? videoUrl = channel.url;
+    final String? streamType = channel.streamType;
+    final String? genres = channel.genres;
+    final int? parsedContentType = int.tryParse(channel.contentType);
 
     if (parsedContentType == 1) {
-    
-  print('Navigating to DetailsPage with ID: ${int.tryParse(channel.id) ?? 0}');
+      print(
+          'Navigating to DetailsPage with ID: ${int.tryParse(channel.id) ?? 0}');
 
-
-
-
-    try {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DetailsPage(
-            channelList: 
-            searchResults
-            ,
-            id: int.tryParse(channel.id) ?? 0,
-            source: 'isSearchScreenViaDetailsPageChannelList',
+      try {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailsPage(
+              channelList: searchResults,
+              id: int.tryParse(channel.id) ?? 0,
+              source: 'isSearchScreenViaDetailsPageChannelList',
+            ),
           ),
-        ),
-      );
-    } catch (e) {
-      // print('Error navigating to details page: $e');
+        );
+      } catch (e) {
+        // print('Error navigating to details page: $e');
+      }
+      //         ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Video information is missing or invalid 1.Channel contentType: ${channel.contentType} 2. Parsed contentType: $parsedContentType')),
+      // );
     }
-    //         ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(content: Text('Video information is missing or invalid 1.Channel contentType: ${channel.contentType} 2. Parsed contentType: $parsedContentType')),
-    // );
-  }
 
-  if (videoUrl == null || videoUrl.isEmpty || streamType == null) {
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(content: Text('Video information is missing or invalid')),
-    // );
-    return;
-  }
+    if (videoUrl == null || videoUrl.isEmpty || streamType == null) {
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Video information is missing or invalid')),
+      // );
+      return;
+    }
 
-  // print('Navigating to video with URL: $videoUrl');
-  // print('Stream type: $streamType');
-  // print('Content type: $parsedContentType');
-
+    // print('Navigating to video with URL: $videoUrl');
+    // print('Stream type: $streamType');
+    // print('Content type: $parsedContentType');
 
     try {
       await Navigator.push(
@@ -338,21 +325,20 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
             startAtPosition: Duration.zero,
             bannerImageUrl: channel.banner,
             videoType: streamType,
-            channelList: 
-            searchResults
-            ,
+            channelList: searchResults,
             isLive: true,
-            isVOD: false,isBannerSlider: false,
-            source: 'isSearchScreen',isSearch: true,
+            isVOD: false,
+            isBannerSlider: false,
+            source: 'isSearchScreen',
+            isSearch: true,
           ),
         ),
       );
     } catch (e) {
       // print('Error navigating to video screen: $e');
     }
-  // }
-}
-
+    // }
+  }
 
   void _dismissLoadingIndicator() {
     if (Navigator.of(context).canPop()) {
@@ -380,10 +366,6 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
     setState(() {});
   }
 
-
-
-
-
   void _performSearch(String searchTerm) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
 
@@ -409,7 +391,8 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
         if (!mounted) return;
         setState(() {
           searchResults = api1Results;
-          _itemFocusNodes.addAll(List.generate(searchResults.length, (index) => FocusNode()));
+          _itemFocusNodes.addAll(
+              List.generate(searchResults.length, (index) => FocusNode()));
           isLoading = false;
         });
 
@@ -417,7 +400,9 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
 
         if (!mounted) return;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_itemFocusNodes.isNotEmpty && _itemFocusNodes[0].context != null && mounted) {
+          if (_itemFocusNodes.isNotEmpty &&
+              _itemFocusNodes[0].context != null &&
+              mounted) {
             FocusScope.of(context).requestFocus(_itemFocusNodes[0]);
           }
         });
@@ -491,9 +476,11 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
                         ),
                       )
                     : Padding(
-                        padding: EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
                         child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 5,
                           ),
                           itemCount: searchResults.length,
@@ -548,7 +535,8 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
           Focus(
             focusNode: _searchIconFocusNode,
             onKey: (node, event) {
-              if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+              if (event is RawKeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.select) {
                 _toggleSearchField();
                 return KeyEventResult.handled;
               }
@@ -557,7 +545,8 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
             child: IconButton(
               icon: Icon(
                 Icons.search,
-                color: _searchIconFocusNode.hasFocus ? borderColor : Colors.white,
+                color:
+                    _searchIconFocusNode.hasFocus ? borderColor : Colors.white,
                 size: _searchIconFocusNode.hasFocus ? 35 : 30,
               ),
               onPressed: _toggleSearchField,
@@ -577,7 +566,8 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
     return Focus(
       focusNode: _itemFocusNodes[index],
       onKeyEvent: (FocusNode node, KeyEvent event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.select) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.select) {
           _onItemTap(context, index);
           return KeyEventResult.handled;
         }
@@ -619,22 +609,20 @@ Future<void> _navigateToVideoScreen(BuildContext context, List<NewsItemModel> ch
             ),
             child: status == '1'
                 ? ClipRRect(
-                    child: 
-                     isBase64
-                      ? Image.memory(
-                          _getImageFromBase64String(result.banner),
-                          width: screenwdt * 0.19,
-                          height: screenhgt * 0.2,
-                          fit: BoxFit.cover,
-                        )
-                      :
-                    CachedNetworkImage(
-                      imageUrl: result.banner,
-                      placeholder: (context, url) => localImage,
-                      width: screenwdt * 0.19,
-                      height: screenhgt * 0.2,
-                      fit: BoxFit.cover,
-                    ),
+                    child: isBase64
+                        ? Image.memory(
+                            _getImageFromBase64String(result.banner),
+                            width: screenwdt * 0.19,
+                            height: screenhgt * 0.2,
+                            fit: BoxFit.cover,
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: result.banner,
+                            placeholder: (context, url) => localImage,
+                            width: screenwdt * 0.19,
+                            height: screenhgt * 0.2,
+                            fit: BoxFit.cover,
+                          ),
                   )
                 : null,
           ),

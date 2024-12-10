@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/sub_vod.dart';
 import 'package:flutter/material.dart';
+import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'home_sub_screen/banner_slider_screen.dart';
 import 'home_sub_screen/home_category.dart';
@@ -25,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // double _bannerHeight = screenhgt; // Initial height
   // double _bannerWidth = screenwdt; // Initial height
 
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // _checkIfSplashNeeded();
     // _resetSplashFlag();
     // _initializeScreen();
+
   }
 
   //   Future<void> _initializeScreen() async {
@@ -62,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    
     super.dispose();
   }
 
@@ -102,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     // if (_tvenableAll) // Conditionally display SubVod
                     Container(
                       color: cardColor,
-                      height: screenhgt*0.5,
+                      height: screenhgt*0.8,
                       width: screenwdt,
                       child: BannerSlider(
                         // initialHeight: screenhgt * 0.5,
