@@ -253,6 +253,7 @@ class Channel {
   final String genres;
   String url;
   String streamType;
+  final String? contentType;
   String type;
   String status;
 
@@ -264,6 +265,7 @@ class Channel {
     required this.genres,
     required this.url,
     required this.streamType,
+    this.contentType,
     required this.type,
     required this.status,
   });
@@ -276,6 +278,7 @@ class Channel {
       genres: json['genres'],
       url: json['url'] ?? '',
       streamType: json['stream_type'] ?? '',
+      contentType: json['content_type']?.toString(),
       type: json['Type'] ?? '',
       status: json['status'] ?? '',
       description: json['description'] ?? '',

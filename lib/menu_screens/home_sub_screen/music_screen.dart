@@ -532,26 +532,26 @@ class _MusicScreenState extends State<MusicScreen> {
       }
 
       if (shouldPlayVideo) {
-        if (newsItem.streamType == 'VLC') {
-          //   // Navigate to VLC Player screen when stream type is VLC
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VlcPlayerScreen(
-                videoUrl: newsItem.url,
-                // videoTitle: newsItem.name,
-                channelList: _musicList,
-                genres: newsItem.genres,
-                // channels: [],
-                // initialIndex: 1,
-                bannerImageUrl: newsItem.banner,
-                startAtPosition: Duration.zero,
-                // onFabFocusChanged: (bool) {},
-                isLive: true,
-              ),
-            ),
-          );
-        } else {
+        // if (newsItem.streamType == 'VLC') {
+        //   //   // Navigate to VLC Player screen when stream type is VLC
+        //   await Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (context) => VlcPlayerScreen(
+        //         videoUrl: newsItem.url,
+        //         // videoTitle: newsItem.name,
+        //         channelList: _musicList,
+        //         genres: newsItem.genres,
+        //         // channels: [],
+        //         // initialIndex: 1,
+        //         bannerImageUrl: newsItem.banner,
+        //         startAtPosition: Duration.zero,
+        //         // onFabFocusChanged: (bool) {},
+        //         isLive: true,
+        //       ),
+        //     ),
+        //   );
+        // } else {
           await Navigator.push(
             context,
             MaterialPageRoute(
@@ -572,7 +572,7 @@ class _MusicScreenState extends State<MusicScreen> {
             ),
           );
         }
-      }
+      // }
     } catch (e) {
       if (shouldPop) {
         Navigator.of(context, rootNavigator: true).pop();

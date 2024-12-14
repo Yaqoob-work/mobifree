@@ -52,6 +52,7 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   provider: ^6.1.2
   event_bus: ^2.0.1
+
   # better_player: ^0.0.84
   # chewie: ^1.8.1
 

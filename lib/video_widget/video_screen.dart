@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -185,9 +186,15 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _controller?.stop();
+    try {
+      if (_controller != null) {
+        _controller!.stop();
+        _controller!.dispose();
+      }
+    } catch (e) {
+      print("Error disposing controller: $e");
+    }
     _controller?.removeListener(() {});
-    _controller?.dispose();
     _saveLastPlayedVideo(widget.videoUrl,
         _controller?.value.position ?? Duration.zero, widget.bannerImageUrl);
     _connectivityCheckTimer?.cancel();
@@ -345,12 +352,73 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
+//   // First, update the VlcPlayer initialization in _initializeVLCController:
+// Future<void> _initializeVLCController() async {
+//   setState(() {
+//     _loadingVisible = true;
+//   });
+
+//   try {
+//     String modifiedUrl = '${widget.videoUrl}?network-caching=10000&live-caching=1000&rtsp-tcp';
+
+//     if (_controller != null) {
+//       await _controller!.dispose();
+//     }
+
+//     _controller = VlcPlayerController.network(
+//       modifiedUrl,
+//       hwAcc: HwAcc.auto,
+//       autoPlay: false,  // Changed to false to handle initialization properly
+//       options: VlcPlayerOptions(
+//         advanced: VlcAdvancedOptions([
+//           VlcAdvancedOptions.networkCaching(10000),
+//           VlcAdvancedOptions.liveCaching(1000),
+//         ]),
+//         http: VlcHttpOptions([
+//           VlcHttpOptions.httpReconnect(true),
+//         ]),
+//         video: VlcVideoOptions([
+//           VlcVideoOptions.dropLateFrames(true),
+//           VlcVideoOptions.skipFrames(true),
+//         ]),
+//       ),
+//     );
+
+//      _controller!.initialize();
+
+//     setState(() {
+//       _isVideoInitialized = true;
+//     });
+
+//     // Only start playing after successful initialization
+//     if (_isVideoInitialized) {
+//       await _controller!.play();
+//     }
+
+//   } catch (e) {
+//     print("Error initializing video: $e");
+//     setState(() {
+//       _isVideoInitialized = false;
+//       _loadingVisible = false;
+//     });
+//   }
+
+//   // Hide loading after a delay
+//   Future.delayed(Duration(seconds: widget.isVOD ? 9 : 3), () {
+//     if (mounted) {
+//       setState(() {
+//         _loadingVisible = false;
+//       });
+//     }
+//   });
+// }
+
   Future<void> _initializeVLCController() async {
     // try {
     setState(() {
       _loadingVisible = true; // Show loading initially
     });
-    
+
     String modifiedUrl =
         '${widget.videoUrl}?network-caching=10000&live-caching=1000&rtsp-tcp';
     _controller = VlcPlayerController.network(
@@ -429,8 +497,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     print("All retries failed for URL: $url");
   }
 
-
-
   Future<void> _onItemTap(int index) async {
     var selectedChannel = widget.channelList[index];
     String updatedUrl = selectedChannel.url;
@@ -441,10 +507,35 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
     try {
       final int contentId = int.tryParse(selectedChannel.id) ?? 0;
+    // Handle isHomeCategory case
+    if (widget.source == 'isHomeCategory') {
+      try {
+        updatedUrl = await fetchHomeChannelUrl(
+          selectedChannel.streamType ?? '',
+          selectedChannel.url,
+          selectedChannel.id
+        );
+      } catch (e) {
+        updatedUrl = selectedChannel.url;
+      }
+    }
+    // Handle other cases with safe null checks for contentType
 
-      if (widget.source == 'isSearchScreen') {}
+    // else if (selectedChannel.contentType != null && 
+    //         (selectedChannel.contentType == '1' || selectedChannel.contentType == '1') &&
+    //         widget.source == 'isSearchScreen') {
+    //   final playLink = await fetchMoviePlayLink(contentId);
 
-      // Fetch the updated URL logic
+    //   if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+    //     updatedUrl = playLink['url']!;
+    //     if (playLink['type'] == 'Youtube' ||
+    //         playLink['type'] == 'YoutubeLive' ||
+    //         playLink['content_type'] == '1' ||
+    //         playLink['content_type'] == 1) {
+    //       updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+    //     }
+    //   }
+    // }
       if (widget.isBannerSlider) {
         final playLink =
             await fetchLiveFeaturedTVById(selectedChannel.contentId);
@@ -464,26 +555,26 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       }
 
       if (selectedChannel.contentType == '1' ||
-            selectedChannel.contentType == 1 && widget.source == 'isSearchScreen') {
-          // final playLink =
-          //     await fetchLiveFeaturedTVById(selectedChannel.id);
-           final playLink = await fetchMoviePlayLink(contentId);
+          selectedChannel.contentType == 1 &&
+              widget.source == 'isSearchScreen') {
+        // final playLink =
+        //     await fetchLiveFeaturedTVById(selectedChannel.id);
+        final playLink = await fetchMoviePlayLink(contentId);
 
-          print('hellow isSearchScreen$playLink');
-          if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
-            updatedUrl = playLink['url']!;
-            if (playLink['type'] == 'Youtube' ||
-                playLink['type'] == 'YoutubeLive' ||
-                playLink['content_type'] == '1' ||
-                playLink['content_type'] == 1) {
-              updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
-              print('hellow isSearchScreen$updatedUrl');
-            }
+        print('hellow isSearchScreen$playLink');
+        if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+          updatedUrl = playLink['url']!;
+          if (playLink['type'] == 'Youtube' ||
+              playLink['type'] == 'YoutubeLive' ||
+              playLink['content_type'] == '1' ||
+              playLink['content_type'] == 1) {
+            updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+            print('hellow isSearchScreen$updatedUrl');
           }
         }
+      }
 
-      if (
-        widget.isVOD ||
+      if (widget.isVOD ||
               widget.source == 'isSearchScreenViaDetailsPageChannelList'
           //|| widget.source == 'isSearchScreen'
           ) {
@@ -507,7 +598,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
             }
           }
         }
-        
       }
 
       // Store modifiedUrl
@@ -548,11 +638,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
   }
 
-
-
-
-
-
   Future<String> _fetchUpdatedUrl(String originalUrl) async {
     for (int i = 0; i < _maxRetries; i++) {
       try {
@@ -568,18 +653,55 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     return ''; // Return empty string if all retries fail
   }
 
-//   Future<String> _fetchUpdatedUrl(String originalUrl) async {
-//   for (int i = 0; i < _maxRetries; i++) {
-//     try {
-//       final updatedUrl = await _socketService.getUpdatedUrl(originalUrl);
-//       if (updatedUrl.isNotEmpty) return updatedUrl;
-//     } catch (e) {
-//       print("Retry ${i + 1} failed: $e");
-//     }
-//     await Future.delayed(Duration(seconds: 2 << i)); // Exponential backoff
-//   }
-//   return ''; // Return empty if all retries fail
-// }
+Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String id) async {
+  try {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      
+      // Safely convert ID to match API response format
+      final searchId = id.toString().trim();
+      
+      // Search for matching item
+      for (var item in data) {
+        if (item['id'].toString().trim() == searchId) {
+          if (item['url'] != null && item['url'].toString().isNotEmpty) {
+            String updatedUrl = item['url'].toString();
+            
+            // Handle Youtube/YoutubeLive if needed
+            if (streamType == 'YoutubeLive' || streamType == 'Youtube') {
+              try {
+                updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+              } catch (e) {
+                print('Error updating YouTube URL: $e');
+                // If YouTube URL update fails, return original URL
+                return updatedUrl;
+              }
+            }
+            
+            return updatedUrl;
+          }
+        }
+      }
+      
+      // If no matching URL found, use initial URL as fallback
+      print('No matching URL found in API response, using initial URL');
+      return initialUrl;
+    } else {
+      print('API Error: ${response.statusCode}');
+      // Return initial URL as fallback on API error
+      return initialUrl;
+    }
+  } catch (e) {
+    print('Error in fetchHomeChannelUrl: $e');
+    // Return initial URL as fallback on any error
+    return initialUrl;
+  }
+}
 
   Future<void> _initializeVolume() async {
     try {
@@ -732,66 +854,27 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
-
-// VideoScreen में _saveLastPlayedVideo में सुधार
-Future<void> _saveLastPlayedVideo(
-    String videoUrl, Duration position, String bannerImageUrl) async {
-  try {
+  Future<void> _saveLastPlayedVideo(
+      String videoUrl, Duration position, String bannerImageUrl) async {
     if (_controller is VlcPlayerController) {
       position = (_controller as VlcPlayerController).value.position;
+    } else {
+      position = Duration.zero; // Or handle accordingly for VLC if needed
     }
-    
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    
-    // Get channel name
-    String videoName = '';
-    if (_focusedIndex >= 0 && _focusedIndex < widget.channelList.length) {
-      videoName = widget.channelList[_focusedIndex].name ?? 'Untitled Video';
-    }
-    
-    List<String> lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
-    String newVideoEntry = "$videoUrl|${position.inMilliseconds}|$bannerImageUrl|$videoName";
-    
-    // Remove duplicates
-    lastPlayedVideos.removeWhere((entry) => entry.split('|')[0] == videoUrl);
+
+    List<String>? lastPlayedVideos =
+        prefs.getStringList('last_played_videos') ?? [];
+    String newVideoEntry =
+        "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
     lastPlayedVideos.insert(0, newVideoEntry);
-    
+
     if (lastPlayedVideos.length > 12) {
       lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
     }
-    
+
     await prefs.setStringList('last_played_videos', lastPlayedVideos);
-    
-    // Emit event after successful save
-    GlobalEventBus.eventBus.fire(RefreshPageEvent('uniquePageId'));
-  } catch (e) {
-    print("Error saving last played video: $e");
   }
-}
-
-
-
-  // Future<void> _saveLastPlayedVideo(
-  //     String videoUrl, Duration position, String bannerImageUrl) async {
-  //   if (_controller is VlcPlayerController) {
-  //     position = (_controller as VlcPlayerController).value.position;
-  //   } else {
-  //     position = Duration.zero; // Or handle accordingly for VLC if needed
-  //   }
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  //   List<String>? lastPlayedVideos =
-  //       prefs.getStringList('last_played_videos') ?? [];
-  //   String newVideoEntry =
-  //       "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
-  //   lastPlayedVideos.insert(0, newVideoEntry);
-
-  //   if (lastPlayedVideos.length > 12) {
-  //     lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
-  //   }
-
-  //   await prefs.setStringList('last_played_videos', lastPlayedVideos);
-  // }
 
   void _seekForward() {
     if (_controller != null) {
@@ -983,77 +1066,113 @@ Future<void> _saveLastPlayedVideo(
     }
   }
 
+  Widget _buildVideoPlayer() {
+    if (!_isVideoInitialized || _controller == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Get screen dimensions
+        final screenWidth = constraints.maxWidth;
+        final screenHeight = constraints.maxHeight;
+
+        // Get video dimensions
+        final videoWidth = _controller!.value.size?.width ?? screenWidth;
+        final videoHeight = _controller!.value.size?.height ?? screenHeight;
+
+        // Calculate aspect ratios
+        final videoRatio = videoWidth / videoHeight;
+        final screenRatio = screenWidth / screenHeight;
+
+        // Default scale factors
+        double scaleX = 1.0;
+        double scaleY = 1.0;
+
+        // Calculate optimal scaling
+        if (videoRatio < screenRatio) {
+          // Video is too narrow, scale width while maintaining aspect ratio
+          scaleX = (screenRatio / videoRatio).clamp(1.0, 1.35);
+          // Adjust height if width scaling is too aggressive
+          if (scaleX > 1.2) {
+            scaleY = (1.0 / (scaleX - 1.0)).clamp(0.85, 1.0);
+          }
+        } else {
+          // Video is too wide, scale height while maintaining aspect ratio
+          scaleY = (videoRatio / screenRatio).clamp(0.85, 1.0);
+          scaleX = scaleX.clamp(1.0, 1.35); // Limit horizontal scaling
+        }
+
+        return Container(
+          width: screenWidth,
+          height: screenHeight,
+          color: Colors.black,
+          child: Center(
+            child: Transform(
+              transform: Matrix4.identity()..scale(scaleX, scaleY, 1.0),
+              alignment: Alignment.center,
+              child: VlcPlayer(
+                controller: _controller!,
+                placeholder: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
         _controller!.pause();
-              // पहले video को save करें
-      await _saveLastPlayedVideo(widget.videoUrl,
-          _controller?.value.position ?? Duration.zero, widget.bannerImageUrl);
-          
-      // फिर कुछ delay दें
-      await Future.delayed(Duration(milliseconds: 300));
-      
-      // उसके बाद refresh event fire करें
-      GlobalEventBus.eventBus.fire(RefreshPageEvent('uniquePageId'));
+        await _saveLastPlayedVideo(
+            widget.videoUrl,
+            _controller?.value.position ?? Duration.zero,
+            widget.bannerImageUrl);
+        await Future.delayed(Duration(milliseconds: 500));
+        GlobalEventBus.eventBus.fire(RefreshPageEvent('uniquePageId'));
         Navigator.of(context).pop(true);
         return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Focus(
-          focusNode: screenFocusNode,
-          onKey: (node, event) {
-            if (event is RawKeyDownEvent) {
-              _handleKeyEvent(event);
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: GestureDetector(
-            onTap: _resetHideControlsTimer,
-            child: Stack(
-              children: [
-                Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (_isBuffering) Center(child: LoadingIndicator()),
-                      if (_loadingVisible ||
-                          !_isVideoInitialized ||
-                          _controller == null ||
-                          !_controller!.value.isInitialized ||
-                          _isBuffering)
-                        AnimatedOpacity(
-                          opacity: _isBuffering || _loadingVisible
-                              ? 1.0
-                              : 0.0, // Show when loading
-                          duration:
-                              Duration(milliseconds: 5000), // Smooth transition
-                          child: Center(child: LoadingIndicator()),
-                        ),
-                      if (_isVideoInitialized)
-                        VlcPlayer(
-                          controller: _controller!,
-                          aspectRatio: 16 / 9,
-                        ),
-                    ],
-                  ),
-                ),
-                AnimatedOpacity(
-                  opacity: _loadingVisible
-                      ? 1.0
-                      : 0.0, // 1.0 when visible, 0.0 when invisible
-                  duration: Duration(seconds: 4), // Fade duration
-                  child: Container(
-                      color: Colors.black,
-                      child: Center(child: LoadingIndicator())),
-                ),
-                if (_controlsVisible)
-                  if (!widget.channelList.isEmpty) _buildChannelList(),
-                if (_controlsVisible) _buildControls(),
-              ],
+        body: SizedBox(
+          width: screenwdt,
+          height: screenhgt,
+          child: Focus(
+            focusNode: screenFocusNode,
+            onKey: (node, event) {
+              if (event is RawKeyDownEvent) {
+                _handleKeyEvent(event);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: GestureDetector(
+              onTap: _resetHideControlsTimer,
+              child: Stack(
+                children: [
+                  // Video Player - यहाँ नया implementation जोड़ा गया है
+                  if (_isVideoInitialized && _controller != null)
+                    _buildVideoPlayer(), // नया _buildVideoPlayer method का उपयोग
+
+                  // Loading Indicator
+                  if (_loadingVisible || !_isVideoInitialized || _isBuffering)
+                    Container(
+                      color: Colors.black54,
+                      child: Center(child: LoadingIndicator()),
+                    ),
+
+                  // Channel List
+                  if (_controlsVisible && !widget.channelList.isEmpty)
+                    _buildChannelList(),
+
+                  // Controls
+                  if (_controlsVisible) _buildControls(),
+                ],
+              ),
             ),
           ),
         ),
@@ -1141,17 +1260,18 @@ Future<void> _saveLastPlayedVideo(
                                 //             Container(color: Colors.grey[800]),
                                 //   )
                                 Image.memory(
-                                    _getCachedImage(channel.banner ?? ''),
+                                    _getCachedImage(
+                                        channel.banner ?? localImage),
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
                                             Container(color: Colors.grey[800]),
                                   )
                                 : CachedNetworkImage(
-                                    imageUrl: channel.banner ?? '',
+                                    imageUrl: channel.banner ?? localImage,
                                     fit: BoxFit.cover,
                                     errorWidget: (context, url, error) =>
-                                        Container(color: Colors.grey[800]),
+                                        localImage,
                                   ),
                           ),
                           if (_focusedIndex == index)
@@ -1434,7 +1554,3 @@ Future<void> _saveLastPlayedVideo(
     );
   }
 }
-
-
-
-

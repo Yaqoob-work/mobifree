@@ -611,14 +611,17 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? ClipRRect(
                     child: isBase64
                         ? Image.memory(
-                            _getImageFromBase64String(result.banner),
+                            _getImageFromBase64String(result.banner) ??
+                                localImage,
                             width: screenwdt * 0.19,
                             height: screenhgt * 0.2,
                             fit: BoxFit.cover,
+                            
                           )
                         : CachedNetworkImage(
-                            imageUrl: result.banner,
+                            imageUrl: result.banner ?? localImage,
                             placeholder: (context, url) => localImage,
+                            errorWidget: (context, url, error) => localImage,
                             width: screenwdt * 0.19,
                             height: screenhgt * 0.2,
                             fit: BoxFit.cover,
