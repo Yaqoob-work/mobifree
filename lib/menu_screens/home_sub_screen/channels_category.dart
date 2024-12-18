@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -14,8 +12,6 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../video_widget/vlc_player_screen.dart';
-
 class ChannelsCategory extends StatefulWidget {
   @override
   _ChannelsCategoryState createState() => _ChannelsCategoryState();
@@ -24,10 +20,9 @@ class ChannelsCategory extends StatefulWidget {
 class _ChannelsCategoryState extends State<ChannelsCategory> {
   // final List<NewsItemModel> _musicList = [];
   List<NewsItemModel> _musicList = [];
-
+  final SocketService _socketService = SocketService();
   final Map<String, List<NewsItemModel>> _groupedByGenre =
       {}; // Group by genres
-  final SocketService _socketService = SocketService();
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   String _errorMessage = '';
@@ -42,21 +37,9 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
     super.initState();
     _socketService.initSocket();
     checkServerStatus();
-    // fetchData();
-        // Update cache when the page is entered
-    // _apiService.updateCacheOnPageEnter();
-    // // Listen to updates from the ApiService stream
-    // _apiService.updateStream.listen((hasChanges) {
-    //   if (hasChanges) {
-    //     setState(() {
-    //       _isLoading = true;
-    //     });
-    //     fetchData(); // Refetch the data only when changes occur
-    //   }
-    // });
     _loadCachedData();
     _fetchDataInBackground();
-        _apiService.updateStream.listen((hasChanges) {
+    _apiService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         setState(() {
           _isLoading = true;
@@ -64,10 +47,19 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
         _fetchDataInBackground();
       }
     });
-
   }
 
-
+  void checkServerStatus() {
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      // Check if the socket is connected, otherwise attempt to reconnect
+      if (!_socketService.socket.connected && !_isAttemptingReconnect) {
+        _isAttemptingReconnect = true;
+        // print('YouTube server down, retrying...');
+        _socketService.initSocket(); // Re-establish the socket connection
+        _isAttemptingReconnect = false;
+      }
+    });
+  }
 
   Future<void> _loadCachedData() async {
     setState(() {
@@ -83,7 +75,8 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
         final List<dynamic> cachedData = json.decode(cachedEntertainment);
         setState(() {
           _musicList.clear();
-          _musicList.addAll(cachedData.map((item) => NewsItemModel.fromJson(item)).toList());
+          _musicList.addAll(
+              cachedData.map((item) => NewsItemModel.fromJson(item)).toList());
           _groupByGenre(_musicList);
           _isLoading = false;
         });
@@ -131,18 +124,6 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
     }
   }
 
-  void checkServerStatus() {
-    Timer.periodic(Duration(seconds: 10), (timer) {
-      // Check if the socket is connected, otherwise attempt to reconnect
-      if (!_socketService.socket.connected && !_isAttemptingReconnect) {
-        _isAttemptingReconnect = true;
-        // print('YouTube server down, retrying...');
-        _socketService.initSocket(); // Re-establish the socket connection
-        _isAttemptingReconnect = false;
-      }
-    });
-  }
-
   Future<void> fetchData() async {
     setState(() {
       _isLoading = true;
@@ -156,8 +137,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
       // Grouping by genres
       setState(() {
         _musicList.clear();
-        _musicList
-            .addAll(_apiService.allChannelList); // Add fetched items
+        _musicList.addAll(_apiService.allChannelList); // Add fetched items
 
         // Grouping items by their genres
         _groupByGenre(_musicList);
@@ -278,84 +258,82 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
   }
 
   void _handleEnterPress(String itemId) {
-    final selectedItem =
-        _musicList.firstWhere((item) => item.id == itemId);
+    final selectedItem = _musicList.firstWhere((item) => item.id == itemId);
     _navigateToVideoScreen(selectedItem);
   }
 
-
-
   Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
-  if (_isNavigating) return;
-  _isNavigating = true;
+    if (_isNavigating) return;
+    _isNavigating = true;
 
-  bool shouldPlayVideo = true;
-  bool shouldPop = true;
+    bool shouldPlayVideo = true;
+    bool shouldPop = true;
 
-  // Show loading indicator while video is loading
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return WillPopScope(
-        onWillPop: () async {
-          shouldPlayVideo = false;
-          shouldPop = false;
-          return true;
-        },
-        child: Center(child: LoadingIndicator()),
-      );
-    },
-  );
+    // Show loading indicator while video is loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            shouldPlayVideo = false;
+            shouldPop = false;
+            return true;
+          },
+          child: Center(child: LoadingIndicator()),
+        );
+      },
+    );
 
-  Timer(Duration(seconds: 10), () {
-    _isNavigating = false;
-  });
+    Timer(Duration(seconds: 10), () {
+      _isNavigating = false;
+    });
 
-  try {
-    if (newsItem.streamType == 'YoutubeLive') {
-      // Retry fetching the updated URL if stream type is YouTube Live
-      for (int i = 0; i < _maxRetries; i++) {
-        try {
-          String updatedUrl =
-              await _socketService.getUpdatedUrl(newsItem.url);
-          newsItem = NewsItemModel(
-            id: newsItem.id,
-            name: newsItem.name,
-            description: newsItem.description,
-            banner: newsItem.banner,
-            url: updatedUrl,
-            streamType: 'M3u8',
-            genres: newsItem.genres,
-            status: newsItem.status,
-          );
-          break; // Exit loop when URL is successfully updated
-        } catch (e) {
-          if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
-          await Future.delayed(
-              Duration(seconds: _retryDelay)); // Delay before next retry
+    try {
+            String originalUrl = newsItem.url;
+
+      if (newsItem.streamType == 'YoutubeLive') {
+        // Retry fetching the updated URL if stream type is YouTube Live
+        for (int i = 0; i < _maxRetries; i++) {
+          try {
+
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(newsItem.url);
+            newsItem = NewsItemModel(
+              id: newsItem.id,
+              name: newsItem.name,
+              description: newsItem.description,
+              banner: newsItem.banner,
+              url: updatedUrl,
+              streamType: 'M3u8',
+              genres: newsItem.genres,
+              status: newsItem.status,
+            );
+            break; // Exit loop when URL is successfully updated
+          } catch (e) {
+            if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
+            await Future.delayed(
+                Duration(seconds: _retryDelay)); // Delay before next retry
+          }
         }
       }
-    }
 
-    if (shouldPop) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
+      if (shouldPop) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
-    if (shouldPlayVideo) {
-      // Extract all genres of the clicked banner
-      final List<String> selectedGenres = newsItem.genres
-          .split(',')
-          .map((genre) => genre.trim())
-          .toList();
+      if (shouldPlayVideo) {
+        // Extract all genres of the clicked banner
+        final List<String> selectedGenres =
+            newsItem.genres.split(',').map((genre) => genre.trim()).toList();
 
-      // Filter the channel list based on the selected genres
-      final List<NewsItemModel> filteredChannelList = _musicList.where((item) {
-        final List<String> itemGenres =
-            item.genres.split(',').map((genre) => genre.trim()).toList();
-        return selectedGenres.any((genre) => itemGenres.contains(genre));
-      }).toList();
-
+        // Filter the channel list based on the selected genres
+        final List<NewsItemModel> filteredChannelList =
+            _musicList.where((item) {
+          final List<String> itemGenres =
+              item.genres.split(',').map((genre) => genre.trim()).toList();
+          return selectedGenres.any((genre) => itemGenres.contains(genre));
+        }).toList();
 
         await Navigator.push(
           context,
@@ -366,25 +344,29 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               startAtPosition: Duration.zero,
               videoType: newsItem.streamType,
               channelList: filteredChannelList,
-              isLive: true,isVOD: false,isBannerSlider: false,
-              source: 'isLiveScreen',isSearch: false,
+              isLive: true,
+              isVOD: false,
+              isBannerSlider: false,
+              source: 'isLiveScreen',
+              isSearch: false,
+              videoId: int.tryParse(newsItem.id),
+              unUpdatedUrl: originalUrl,
+              
             ),
           ),
         );
-      
+      }
+    } catch (e) {
+      if (shouldPop) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      _isNavigating = false;
     }
-  } catch (e) {
-    if (shouldPop) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Something Went Wrong')),
-    );
-  } finally {
-    _isNavigating = false;
   }
-}
-
 
   @override
   void dispose() {

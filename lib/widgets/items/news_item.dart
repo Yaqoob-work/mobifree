@@ -1,8 +1,10 @@
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
 import 'package:mobi_tv_entertainment/widgets/utils/color_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../models/news_item_model.dart';
 
 class NewsItem extends StatefulWidget {
@@ -26,9 +28,36 @@ class NewsItem extends StatefulWidget {
 }
 
 class _NewsItemState extends State<NewsItem> {
-  bool isFocused = false;
+    bool isFocused = false;
   Color dominantColor = Colors.white.withOpacity(0.5);
   final PaletteColorService _paletteColorService = PaletteColorService();
+
+  void _handleFocusChange(bool hasFocus) async {
+    setState(() {
+      isFocused = hasFocus;
+    });
+
+    if (hasFocus) {
+      if (widget.item.id == 'view_all') {
+        dominantColor = Colors.blue;
+      } else {
+        dominantColor = await _paletteColorService.getSecondaryColor(
+          widget.item.banner,
+          fallbackColor: Colors.grey,
+        );
+      }
+      // Update color using provider
+      context.read<ColorProvider>().updateColor(dominantColor, true);
+      setState(() {});
+    } else {
+      // Reset color when item loses focus
+      context.read<ColorProvider>().resetColor();
+    }
+  }
+
+  // bool isFocused = false;
+  // Color dominantColor = Colors.white.withOpacity(0.5);
+  // final PaletteColorService _paletteColorService = PaletteColorService();
 
   @override
   Widget build(BuildContext context) {
@@ -173,27 +202,27 @@ class _NewsItemState extends State<NewsItem> {
     );
   }
 
-  void _handleFocusChange(bool hasFocus) async {
-    setState(() {
-      isFocused = hasFocus;
-    });
+  // void _handleFocusChange(bool hasFocus) async {
+  //   setState(() {
+  //     isFocused = hasFocus;
+  //   });
 
-    if (hasFocus) {
-      if (widget.item.id == 'view_all') {
-        // For "View All", use a predefined color
-        dominantColor = Colors.blue
-            // .withOpacity(0.5)
-            ;
-      } else {
-        // For content items, extract color from the banner
-                dominantColor = await _paletteColorService.getSecondaryColor(
-          widget.item.banner,
-          fallbackColor: Colors.grey,
-        );
-      }
-      setState(() {});
-    }
-  }
+  //   if (hasFocus) {
+  //     if (widget.item.id == 'view_all') {
+  //       // For "View All", use a predefined color
+  //       dominantColor = Colors.blue
+  //           // .withOpacity(0.5)
+  //           ;
+  //     } else {
+  //       // For content items, extract color from the banner
+  //               dominantColor = await _paletteColorService.getSecondaryColor(
+  //         widget.item.banner,
+  //         fallbackColor: Colors.grey,
+  //       );
+  //     }
+  //     setState(() {});
+  //   }
+  // }
 }
 
 

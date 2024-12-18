@@ -1,4 +1,3 @@
-
 // import 'dart:async';
 // import 'dart:convert';
 // import 'dart:io';
@@ -89,7 +88,6 @@
 //   final ApkUpdater _apkUpdater = ApkUpdater();
 //   bool _isLoading = true;  // Loading state variable
 
-
 //   @override
 //   void initState() {
 //     super.initState();
@@ -168,7 +166,6 @@
 // //   }
 // // }
 
-
 //   Future<void> _fetchTvenableAllStatus() async {
 //     try {
 //       final response = await https.get(
@@ -182,7 +179,6 @@
 //         final data = jsonDecode(response.body);
 //         String serverVersion = data['version'];
 //       String releaseNotes = data['releaseNotes']; // Extract releaseNotes
-
 
 //         // print('Current Version: $_currentVersion');
 //         // print('Server Version: $serverVersion');
@@ -218,7 +214,6 @@
 //     }
 //   }
 
-
 //   bool _isVersionNewer(String serverVersion, String currentVersion) {
 //     List<String> serverParts = serverVersion.split('.');
 //     List<String> currentParts = currentVersion.split('.');
@@ -249,9 +244,6 @@
 //     _pageController.jumpToPage(index);
 //   }
 
-
-
-
 //   @override
 //   Widget build(BuildContext context) {
 //         if (_isLoading) {
@@ -271,9 +263,9 @@
 //     ];
 
 //     return SafeArea(
-      
+
 //       child: Scaffold(
-        
+
 //         body: Column(
 //           children: [
 //             TopNavigationBar(
@@ -348,9 +340,6 @@
 //     return await getApplicationDocumentsDirectory();
 //   }
 // }
-
-
-
 
 // class UpdatePage extends StatefulWidget {
 //   final String apkUrl;
@@ -551,7 +540,7 @@
 //                                 const AlwaysStoppedAnimation<Color>(Colors.blue),
 //                           ), ),
 //                           Expanded(flex:1,child: Text('')),
-                          
+
 //                         ],
 //                       ),
 //                       const SizedBox(height: 10),
@@ -632,13 +621,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -648,7 +630,9 @@ import 'package:mobi_tv_entertainment/menu_screens/notification_screen.dart';
 import 'package:mobi_tv_entertainment/menu_screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/menu_screens/live_screen.dart';
 import 'package:http/http.dart' as https;
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'menu/top_navigation_bar.dart';
@@ -663,11 +647,16 @@ class MyHttpOverrides extends HttpOverrides {
   }
 }
 
-
-
 void main() {
   HttpOverrides.global = MyHttpOverrides();
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ColorProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 // void main() {
@@ -677,7 +666,7 @@ void main() {
 //     MultiProvider(
 //       providers: [
 //         ChangeNotifierProvider(
-          
+
 //           create: (_) => VideoProvider(),
 //         ),
 //       ],
@@ -720,6 +709,8 @@ class _MyAppState extends State<MyApp> {
     // });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     screenhgt = MediaQuery.of(context).size.height;
@@ -729,7 +720,7 @@ class _MyAppState extends State<MyApp> {
     menutextsz = MediaQuery.of(context).size.width / 70;
     Headingtextsz = MediaQuery.of(context).size.width / 50;
     highlightColor = Colors.blue;
-    cardColor = Color.fromARGB(255, 8, 1, 34);
+    cardColor =  const Color.fromARGB(200, 0, 0, 0).withOpacity(0.7);
     hintColor = Colors.white;
     borderColor = Color.fromARGB(255, 247, 6, 118);
     localImage = Image.asset(
@@ -962,32 +953,51 @@ class _MyHomeState extends State<MyHome> {
       VOD(),
       LiveScreen(),
       SearchScreen(),
+      NotificationScreen()
     ];
 
-    return SafeArea(
-      child: Scaffold(
-        body: Column(
-          children: [
-            TopNavigationBar(
-              selectedPage: _selectedPage,
-              onPageSelected: _onPageSelected,
-              tvenableAll: _tvenableAll,
+    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+      // Get background color based on provider state
+      Color backgroundColor = colorProvider.isItemFocused
+          ? colorProvider.dominantColor.withOpacity(0.5)
+          : cardColor;
+      return SafeArea(
+        child: Scaffold(
+          body: Container(
+            color: backgroundColor,
+            child: Stack(
+              children: [
+                Container(
+                  width: screenwdt,
+                  height: screenhgt,
+                color: cardColor,
+                  child: Column(
+                    children: [
+                      TopNavigationBar(
+                        selectedPage: _selectedPage,
+                        onPageSelected: _onPageSelected,
+                        tvenableAll: _tvenableAll,
+                      ),
+                      Expanded(
+                        child: PageView(
+                          controller: _pageController,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _selectedPage = index;
+                            });
+                          },
+                          children: pages,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _selectedPage = index;
-                  });
-                },
-                children: pages,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as https;
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../video_widget/socket_service.dart';
 import '../../video_widget/video_screen.dart';
@@ -184,9 +186,6 @@ Future<MovieDetailsApi> fetchMovieDetails(
   }
 }
 
-
-
-
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final prefs = await SharedPreferences.getInstance();
   final cachedPlayLink = prefs.getString('movie_playlink_$movieId');
@@ -340,31 +339,46 @@ class _SubVodState extends State<SubVod> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: cardColor,
-      body: _isLoading
-          ? Center(
-              child: LoadingIndicator()) // Show loading only if no cached data
-          : _buildNetworksList(),
-    );
+    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+      // Use provider's color for background
+      Color backgroundColor = colorProvider.isItemFocused
+          ? colorProvider.dominantColor.withOpacity(0.3)
+          : Colors.black87;
+
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: _isLoading
+            ? Center(
+                child:
+                    LoadingIndicator()) // Show loading only if no cached data
+            : _buildNetworksList(),
+      );
+    });
   }
 
   Widget _buildNetworksList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
       children: [
-        Padding(
-          padding:
-              const EdgeInsets.all(8.0), // Add some padding around the text
-          child: Text(
-            'Contents',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.white, // Adjust this color to match your theme
+        Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+          // Use provider's color for text
+          Color textColor = colorProvider.isItemFocused
+              ? colorProvider.dominantColor
+              : Colors.white;
+
+          return Padding(
+            padding:
+                const EdgeInsets.all(8.0), // Add some padding around the text
+            child: Text(
+              'Contents',
+              style: TextStyle(
+                fontSize: 24.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.white, // Adjust this color to match your theme
+              ),
             ),
-          ),
-        ),
+          );
+        }),
         Expanded(
           child: _networks.isEmpty
               ? Center(child: Text('No Networks Available'))
@@ -473,7 +487,7 @@ class _VODState extends State<VOD> {
   // }
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor,
+      backgroundColor: Colors.black87,
       body: _isLoading
           ? Center(child: LoadingIndicator())
           : _networks != null
@@ -590,18 +604,25 @@ class _ContentScreenState extends State<ContentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: cardColor,
-      // body:
-      //     _isLoading ? Center(child: Text('...')) : _buildContentList(),
-      body: _isLoading
-          ? !_cacheLoaded
-              ? Center(child: Text('...'))
-              : Center(child: LoadingIndicator())
-          : _content != null
-              ? _buildContentList()
-              : Center(child: Text('...')),
-    );
+    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+      // Use provider's color for background
+      Color backgroundColor = colorProvider.isItemFocused
+          ? colorProvider.dominantColor.withOpacity(0.3)
+          : Colors.black87;
+
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        // body:
+        //     _isLoading ? Center(child: Text('...')) : _buildContentList(),
+        body: _isLoading
+            ? !_cacheLoaded
+                ? Center(child: Text('...'))
+                : Center(child: LoadingIndicator())
+            : _content != null
+                ? _buildContentList()
+                : Center(child: Text('...')),
+      );
+    });
   }
 
   Widget _buildContentList() {
@@ -645,7 +666,7 @@ class DetailsPage extends StatefulWidget {
   // final NewsItemModel content;
   final int id;
   final List<NewsItemModel> channelList;
-  final String source; 
+  final String source;
 
   DetailsPage({
     required this.id,
@@ -731,6 +752,7 @@ class _DetailsPageState extends State<DetailsPage> {
   }
 
   Future<void> _updateUrlIfNeeded(Map<String, String> playLink) async {
+    
     if (playLink['type'] == 'Youtube' || playLink['type'] == 'YoutubeLive') {
       for (int i = 0; i < _maxRetries; i++) {
         if (!_shouldContinueLoading) break;
@@ -759,7 +781,7 @@ class _DetailsPageState extends State<DetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor,
+      backgroundColor: Colors.black87,
       body: _isLoading
           ? Center(child: LoadingIndicator())
           : _isReturningFromVideo // Check if returning from video
@@ -845,6 +867,7 @@ class _DetailsPageState extends State<DetailsPage> {
 
     try {
       final playLink = await fetchMoviePlayLink(widget.id);
+      String originalUrl= playLink['url']!;
       if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
         int retryCount = 0;
         while (retryCount < 3) {
@@ -869,8 +892,11 @@ class _DetailsPageState extends State<DetailsPage> {
                 videoType: playLink['type']!,
                 bannerImageUrl: playLink['banner'] ?? '',
                 startAtPosition: Duration.zero,
-                isLive: false, isVOD: true,isBannerSlider: false,
-                source: widget.source,isSearch: false,
+                isLive: false,
+                isVOD: true,
+                isBannerSlider: false,
+                source: widget.source,
+                isSearch: false, unUpdatedUrl: originalUrl,
               ),
             ),
           );

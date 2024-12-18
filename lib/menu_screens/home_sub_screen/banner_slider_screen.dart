@@ -1,124 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
-import '../../video_widget/socket_service.dart';
 import '../../video_widget/video_screen.dart';
 import '../../widgets/models/news_item_model.dart';
 import '../../widgets/utils/color_service.dart';
 import '../../widgets/utils/random_light_color_widget.dart';
-
-// class NewsItemModel {
-//   final String id;
-//   final String content_id;
-//   late final String url;
-//   final String name;
-//   final String banner;
-//   late final String streamType;
-//   final String genres;
-//   final String status;
-
-//   NewsItemModel({
-//     required this.id,
-//     required this.content_id,
-//     required this.url,
-//     required this.name,
-//     required this.banner,
-//     required this.streamType,
-//     required this.genres,
-//     required this.status,
-//   });
-
-//   factory NewsItemModel.fromJson(Map<String, dynamic> json) {
-//     return NewsItemModel(
-//       id: json['id'] ?? '',
-//       content_id: json['content_id'] ?? '',
-//       url: json['url'] ?? '',
-//       name: json['name'] ?? '',
-//       banner: json['banner'] ?? '',
-//       streamType: json['stream_type'] ?? '',
-//       genres: json['genres'] ?? '',
-//       status: json['status'] ?? '',
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       'id': id,
-//       'content_id': content_id,
-//       'url': url,
-//       'name': name,
-//       'banner': banner,
-//       'stream_type': streamType,
-//       'genres': genres,
-//       'status': status,
-//     };
-//   }
-
-//   NewsItemModel copyWith({
-//     String? id,
-//     String? content_id,
-//     String? url,
-//     String? name,
-//     String? banner,
-//     String? streamType,
-//     String? genres,
-//     String? status,
-//   }) {
-//     return NewsItemModel(
-//       id: id ?? this.id,
-//       content_id: content_id ?? this.content_id,
-//       url: url ?? this.url,
-//       name: name ?? this.name,
-//       banner: banner ?? this.banner,
-//       streamType: streamType ?? this.streamType,
-//       genres: genres ?? this.genres,
-//       status: status ?? this.status,
-//     );
-//   }
-// }
-
-//  Future<Map<String, String>> fetchLiveFeaturedTVById(int contentId) async {
-//   final prefs = await SharedPreferences.getInstance();
-//   final cachedData = prefs.getString('live_featured_tv');
-
-//   List<dynamic> responseData;
-
-//   if (cachedData != null) {
-//     responseData = json.decode(cachedData);
-//   } else {
-//     final response = await https.get(
-//       Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-//       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-//     );
-
-//     if (response.statusCode == 200) {
-//       responseData = json.decode(response.body);
-//       prefs.setString('live_featured_tv', json.encode(responseData));
-//     } else {
-//       throw Exception('Failed to load featured live TV');
-//     }
-//   }
-
-//   final matchedItem = responseData.firstWhere(
-//     (channel) => channel['id'].toString() == contentId,
-//     orElse: () => null,
-//   );
-
-//   if (matchedItem != null) {
-//     return {
-//       'url': matchedItem['url'] ?? '',
-//       'type': matchedItem['type'] ?? '',
-//     };
-//   } else {
-//     throw Exception('No matching channel found for id $contentId');
-//   }
-// }
 
 Future<Map<String, String>> fetchLiveFeaturedTVById(String contentId) async {
   final prefs = await SharedPreferences.getInstance();
@@ -179,6 +75,7 @@ class BannerSlider extends StatefulWidget {
 class _BannerSliderState extends State<BannerSlider> {
   // List<dynamic> bannerList = [];
   List<Map<String, dynamic>> lastPlayedVideos = [];
+  final SocketService _socketService = SocketService();
   List<NewsItemModel> bannerList = [];
   Map<String, Color> bannerColors = {};
   bool isLoading = true;
@@ -192,7 +89,6 @@ class _BannerSliderState extends State<BannerSlider> {
   bool _islastPlayedBannerFocusNode = false;
   bool _isNavigating = false;
   Color? _currentFocusColor;
-  final SocketService _socketService = SocketService();
   final int _maxRetries = 3;
   final int _retryDelay = 5; // seconds
   final PaletteColorService _paletteColorService =
@@ -206,7 +102,7 @@ class _BannerSliderState extends State<BannerSlider> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    _socketService.initSocket(); // Initialize SocketService
+    _socketService.initSocket();
     // fetchBanners();
     // _startBackgroundApiFetch(); // Start periodic background fetch
     // _startAutoSlide();
@@ -242,10 +138,10 @@ class _BannerSliderState extends State<BannerSlider> {
   @override
   void dispose() {
     _pageController.dispose();
+    _socketService.dispose();
     _timer.cancel();
     _buttonFocusNode.dispose();
     _lastPlayedBannerFocusNode.dispose();
-    _socketService.dispose(); // Dispose of the SocketService
     refreshSubscription.cancel();
     super.dispose();
   }
@@ -271,30 +167,56 @@ class _BannerSliderState extends State<BannerSlider> {
   //   }
   // }
 
-// BannerSlider में _loadLastPlayedVideos में सुधार
-  Future<void> _loadLastPlayedVideos() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      List<String>? storedVideos = prefs.getStringList('last_played_videos');
+// // BannerSlider में _loadLastPlayedVideos में सुधार
+//   Future<void> _loadLastPlayedVideos() async {
+//     try {
+//       SharedPreferences prefs = await SharedPreferences.getInstance();
+//       List<String>? storedVideos = prefs.getStringList('last_played_videos');
 
-      if (storedVideos != null && storedVideos.isNotEmpty) {
-        setState(() {
-          lastPlayedVideos = storedVideos.map((videoEntry) {
-            List<String> details = videoEntry.split('|');
-            return {
-              'videoUrl': details[0],
-              'position': Duration(milliseconds: int.parse(details[1])),
-              'bannerImageUrl': details[2],
-              'videoName': details.length > 3 ? details[3] : 'Untitled Video',
-              'focusNode': FocusNode(),
-            };
-          }).toList();
-        });
-      }
-    } catch (e) {
-      print("Error loading last played videos: $e");
-    }
-  }
+//       if (storedVideos != null && storedVideos.isNotEmpty) {
+//         setState(() {
+//           lastPlayedVideos = storedVideos.map((videoEntry) {
+//             List<String> details = videoEntry.split('|');
+//             return {
+//               'videoUrl': details[0],
+//               'position': Duration(milliseconds: int.parse(details[1])),
+//               'bannerImageUrl': details[2],
+//               'videoName': details.length > 3 ? details[3] : 'Untitled Video',
+//               'focusNode': FocusNode(),
+//             };
+//           }).toList();
+//         });
+//       }
+//     } catch (e) {
+//       print("Error loading last played videos: $e");
+//     }
+//   }
+
+  // Future<void> _loadLastPlayedVideos() async {
+  //   try {
+  //     SharedPreferences prefs = await SharedPreferences.getInstance();
+  //     List<String>? storedVideos = prefs.getStringList('last_played_videos');
+
+  //     if (storedVideos != null && storedVideos.isNotEmpty) {
+  //       setState(() {
+  //         lastPlayedVideos = storedVideos.map((videoEntry) {
+  //           List<String> details = videoEntry.split('|');
+  //           return {
+  //             'videoUrl': details[0],
+  //             'position': Duration(milliseconds: int.parse(details[1])),
+  //             'bannerImageUrl': details[2],
+  //             'videoName': details.length > 3
+  //                 ? details[3]
+  //                 : '', // Extract video name or use default
+  //             'focusNode': FocusNode(),
+  //           };
+  //         }).toList();
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("Error loading last played videos: $e");
+  //   }
+  // }
 
 // // Helper method to compare video lists
 // bool _areVideoListsEqual(List<Map<String, dynamic>> list1, List<Map<String, dynamic>> list2) {
@@ -488,25 +410,46 @@ class _BannerSliderState extends State<BannerSlider> {
     }
   }
 
+  // void _onButtonFocusNode() {
+  //   setState(() {
+  //     _isButtonFocused = _buttonFocusNode.hasFocus;
+  //     if (_isButtonFocused) {
+  //       _currentFocusColor = bannerColors[selectedContentId!];
+
+  //       // _currentHeight = widget.initialHeight * 1.6; // Increase height
+  //       // _currentWidth = widget.initialWidth * 1.6;
+  //     }
+  //     //   else {
+  //     //     _currentHeight = widget.initialHeight; // Reset to original height
+  //     //     _currentWidth = widget.initialWidth;
+  //     //   }
+  //     //   widget.onHeightChange(
+  //     //     _currentHeight,
+  //     //   ); // Call the callback to update HomeScreen height
+
+  //     //   widget.onWidthChange(
+  //     //       _currentWidth); // Call the callback to update HomeScreen height
+  //   });
+  // }
+
   void _onButtonFocusNode() {
     setState(() {
       _isButtonFocused = _buttonFocusNode.hasFocus;
-      if (_isButtonFocused) {
-        _currentFocusColor = bannerColors[selectedContentId!];
-
-        // _currentHeight = widget.initialHeight * 1.6; // Increase height
-        // _currentWidth = widget.initialWidth * 1.6;
+      if (_isButtonFocused && selectedContentId != null) {
+        // Focus आने पर एक बार random color set करें
+        // Math.Random के through color generate करें
+        final random = Random();
+        final color = Color.fromRGBO(
+          random.nextInt(256),
+          random.nextInt(256),
+          random.nextInt(256),
+          1,
+        );
+        _currentFocusColor = color;
+        context.read<ColorProvider>().updateColor(color, true);
+      } else {
+        context.read<ColorProvider>().resetColor();
       }
-      //   else {
-      //     _currentHeight = widget.initialHeight; // Reset to original height
-      //     _currentWidth = widget.initialWidth;
-      //   }
-      //   widget.onHeightChange(
-      //     _currentHeight,
-      //   ); // Call the callback to update HomeScreen height
-
-      //   widget.onWidthChange(
-      //       _currentWidth); // Call the callback to update HomeScreen height
     });
   }
 
@@ -608,6 +551,7 @@ class _BannerSliderState extends State<BannerSlider> {
       // );
 
       if (responseData != null) {
+        String originalUrl = responseData['url'] ?? '';
         String videoUrl = responseData['url'] ?? '';
 
         if (responseData['stream_type'] == 'YoutubeLive' ||
@@ -636,6 +580,7 @@ class _BannerSliderState extends State<BannerSlider> {
               builder: (context) => VideoScreen(
                 videoUrl: responseData['url']!,
                 channelList: channelList,
+                videoId: int.parse(contentId),
                 videoType: responseData['type']!,
                 isLive: true,
                 isVOD: false,
@@ -644,6 +589,8 @@ class _BannerSliderState extends State<BannerSlider> {
                 isBannerSlider: true,
                 source: 'isBannerSlider',
                 isSearch: false,
+                unUpdatedUrl: originalUrl,
+                
               ),
             ),
           ).then((_) {
@@ -665,105 +612,6 @@ class _BannerSliderState extends State<BannerSlider> {
     }
   }
 
-  // Future<void> fetchAndPlayVideo(
-  //     String contentId, List<NewsItemModel> channelList) async {
-  //   if (_isNavigating) return; // Prevent duplicate navigation
-  //   _isNavigating = true;
-
-  //   bool shouldPlayVideo = true;
-  //   bool shouldPop = true;
-
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (BuildContext context) {
-  //       return WillPopScope(
-  //         onWillPop: () async {
-  //           shouldPlayVideo = false;
-  //           shouldPop = false;
-  //           return true;
-  //         },
-  //         child: SpinKitFadingCircle(
-  //           color: borderColor,
-  //           size: 50.0,
-  //         ),
-  //       );
-  //     },
-  //   );
-
-  //   try {
-  //     final response = await https.get(
-  //       Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-  //       headers: {
-  //         'x-api-key': 'vLQTuPZUxktl5mVW',
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> responseData = json.decode(response.body);
-  //       final filteredData = responseData.firstWhere(
-  //         (channel) => channel['id'].toString() == contentId,
-  //         orElse: () => null,
-  //       );
-
-  //       if (filteredData != null) {
-  //         String videoUrl = filteredData['url'] ?? '';
-
-  //         if (filteredData['stream_type'] == 'YoutubeLive' ||
-  //             filteredData['type'] == 'Youtube') {
-  //           for (int i = 0; i < _maxRetries; i++) {
-  //             try {
-  //               videoUrl = await _socketService.getUpdatedUrl(videoUrl);
-  //               filteredData['url'] = videoUrl;
-  //               filteredData['stream_type'] = "M3u8";
-  //               break;
-  //             } catch (e) {
-  //               if (i == _maxRetries - 1) rethrow;
-  //               await Future.delayed(Duration(seconds: _retryDelay));
-  //             }
-  //           }
-  //         }
-
-  //         if (shouldPop) {
-  //           Navigator.of(context, rootNavigator: true).pop();
-  //         }
-
-  //         if (shouldPlayVideo) {
-  //           Navigator.push(
-  //             context,
-  //             MaterialPageRoute(
-  //               builder: (context) => VideoScreen(
-  //                 videoUrl: filteredData['url'],
-  //                 channelList: channelList,
-  //                 videoType: filteredData['type']!,
-  //                 isLive: true,
-  //                 isVOD: false,
-  //                 bannerImageUrl: filteredData['banner'] ?? localImage,
-  //                 startAtPosition: Duration.zero,
-  //               ),
-  //             ),
-  //           ).then((_) {
-  //             _isNavigating = false;
-  //           });
-  //         }
-  //       } else {
-  //         throw Exception('Video not found');
-  //       }
-  //     } else {
-  //       throw Exception('Failed to load featured live TV');
-  //     }
-  //   } catch (e) {
-  //     if (shouldPop) {
-  //       Navigator.of(context, rootNavigator: true).pop();
-  //     }
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Something Went Wrong: ${e.toString()}')),
-  //     );
-  //   } finally {
-  //     _isNavigating = false;
-  //   }
-  // }
-
   void _scrollToBanner(int index) {
     _pageController.animateToPage(
       index,
@@ -775,25 +623,208 @@ class _BannerSliderState extends State<BannerSlider> {
     });
   }
 
-  void _playVideo(String videoUrl, Duration position) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VideoScreen(
-          videoUrl: videoUrl,
-          // videoTitle: 'Last Played Video',
-          channelList: [],
-          bannerImageUrl: '',
-          startAtPosition: position,
-          // genres: '',
-          // channels: [],
-          // initialIndex: 1,
-          videoType: '', isLive: false, isVOD: true, isSearch: false,
-          isBannerSlider: false, source: '',
-        ),
-      ),
-    );
+//   // In BannerSlider class (_loadLastPlayedVideos method):
+// Future<void> _loadLastPlayedVideos() async {
+//   try {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     List<String>? storedVideos = prefs.getStringList('last_played_videos');
+
+//     if (storedVideos != null && storedVideos.isNotEmpty) {
+//       setState(() {
+//         lastPlayedVideos = storedVideos.map((videoEntry) {
+//           List<String> details = videoEntry.split('|');
+//           return {
+//             'videoUrl': details[0],
+//             'position': Duration(milliseconds: int.parse(details[1])),
+//             'bannerImageUrl': details[2],
+//             'videoName': details.length > 3 ? details[3] : '',
+//             'source': details.length > 4 ? details[4] : '', // Load source
+//             'focusNode': FocusNode(),
+//           };
+//         }).toList();
+//       });
+//     }
+//   } catch (e) {
+//     print("Error loading last played videos: $e");
+//   }
+// }
+
+// // First update the _loadLastPlayedVideos method
+//   Future<void> _loadLastPlayedVideos() async {
+//     try {
+//       SharedPreferences prefs = await SharedPreferences.getInstance();
+//       List<String>? storedVideos = prefs.getStringList('last_played_videos');
+
+//       if (storedVideos != null && storedVideos.isNotEmpty) {
+//         setState(() {
+//           lastPlayedVideos = storedVideos.map((videoEntry) {
+//             List<String> details = videoEntry.split('|');
+//             return {
+//               'videoUrl': details[0],
+//               'position': Duration(milliseconds: int.parse(details[1])),
+//               'bannerImageUrl': details[2],
+//               'videoName': details.length > 3 ? details[3] : '',
+//               'source': details.length > 4 ? details[4] : '',
+//               'videoId': details.length > 5 ? details[5] : '', // Add video ID
+//               'focusNode': FocusNode(),
+//             };
+//           }).toList();
+//         });
+//       }
+//     } catch (e) {
+//       print("Error loading last played videos: $e");
+//     }
+//   }
+
+  Future<void> _loadLastPlayedVideos() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String>? storedVideos = prefs.getStringList('last_played_videos');
+
+      if (storedVideos != null && storedVideos.isNotEmpty) {
+        setState(() {
+          lastPlayedVideos = storedVideos.map((videoEntry) {
+            List<String> details = videoEntry.split('|');
+
+            // Safely parse the position value with error handling
+            Duration position;
+            try {
+              position = Duration(milliseconds: int.tryParse(details[1]) ?? 0);
+            } catch (e) {
+              position = Duration.zero;
+            }
+
+            return {
+              'videoUrl': details.isNotEmpty ? details[0] : '',
+              'position': position,
+              'bannerImageUrl': details.length > 2 ? details[2] : '',
+              'videoName': details.length > 3 ? details[3] : '',
+              'source': details.length > 4 ? details[4] : '',
+              'videoId': details.length > 5 ? details[5] : '',
+              'focusNode': FocusNode(),
+            };
+          }).toList();
+        });
+      }
+    } catch (e) {
+      print("Error loading last played videos: $e");
+      // Reset to empty list in case of error
+      setState(() {
+        lastPlayedVideos = [];
+      });
+    }
   }
+
+
+
+  void _playVideo(Map<String, dynamic> videoData, Duration position) async {
+    if (videoData == null) return;
+
+    try {
+      // Convert lastPlayedVideos to a list of NewsItemModel objects
+      List<NewsItemModel> channelList = lastPlayedVideos
+          .map((video) => NewsItemModel(
+              id: video['videoId'] ?? '',
+              url: video['videoUrl'] ?? '',
+              banner: video['bannerImageUrl'] ?? '',
+              name: video['videoName'] ?? '',
+              contentId: video['videoId'] ?? '',
+              status: '1',
+              // type: '',
+              streamType: 'M3u8',
+              contentType: '1',
+              genres: ''))
+          .toList();
+
+      String source = videoData['source'] ?? '';
+      String videoId = videoData['videoId'] ?? '';
+      // String url = videoData['videoUrl'];
+      // if (source == 'isContentScreenViaDetailsPageChannelLIst') {
+      //   url = await _socketService.getUpdatedUrl(url);
+      // }
+      print('asdfghfdhkf:$source');
+      // print('asdfgh:$url');
+
+String updatedUrl = videoData['videoUrl'];
+if(source == 'isLiveScreen'){
+  updatedUrl = await _socketService.getUpdatedUrl(videoData['videoUrl']); // final हटा दिया
+}
+
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoScreen(
+            videoUrl:
+                // videoData['videoUrl'],
+                updatedUrl,
+            unUpdatedUrl: videoData['videoUrl'],
+            channelList: channelList,
+            bannerImageUrl: videoData['bannerImageUrl'],
+            startAtPosition: videoData['position'],
+            videoType: '',
+            isLive: false,
+            isVOD: source == 'isVOD',
+            isSearch: false,
+            isHomeCategory: source == 'isHomeCategory',
+            isBannerSlider: source == 'isBannerSlider',
+            videoId: videoId.isNotEmpty ? int.parse(videoId) : null,
+            source: source,
+          ),
+        ),
+      );
+    } catch (e) {
+      print("Error playing video: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to play this content')),
+      );
+    }
+  }
+
+// void _playVideo(Map<String, dynamic> videoData,Duration position) {
+//   if (videoData == null) return;
+
+//   Navigator.push(
+//     context,
+//     MaterialPageRoute(
+//       builder: (context) => VideoScreen(
+//         videoUrl: videoData['videoUrl'] ?? '',
+//         channelList: [],
+//         bannerImageUrl: videoData['bannerImageUrl'] ?? '',
+//         startAtPosition: videoData['position'] ?? Duration.zero,
+//         videoType: '',
+//         isLive: false,
+//         isVOD: true,
+//         isSearch: false,
+//         isBannerSlider: false,
+//         source: videoData['source'] ?? '',
+//         videoId: null,
+//         unUpdatedUrl: videoData['videoUrl'] ?? '',
+//       ),
+//     ),
+//   );
+// }
+
+  // void _playVideo(String videoUrl, Duration position) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => VideoScreen(
+  //         videoUrl: videoUrl,
+  //         // videoTitle: 'Last Played Video',
+  //         channelList: [],
+  //         bannerImageUrl: '',
+  //         startAtPosition: position,
+  //         // genres: '',
+  //         // channels: [],
+  //         // initialIndex: 1,
+  //         videoType: '', isLive: false, isVOD: true, isSearch: false,
+  //         isBannerSlider: false, source: '', videoId: null,
+  //         unUpdatedUrl: videoUrl,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -933,13 +964,13 @@ class _BannerSliderState extends State<BannerSlider> {
                                       SizedBox(
                                         height: screenhgt * 0.03,
                                       ),
+// RandomLightColorWidget में stored color use करें
                                       RandomLightColorWidget(
                                         hasFocus: _isButtonFocused,
                                         childBuilder: (Color randomColor) {
                                           return Container(
-                                            margin: EdgeInsets.all(screenwdt *
-                                                0.001), // Reduced padding
-
+                                            margin: EdgeInsets.all(
+                                                screenwdt * 0.001),
                                             padding: EdgeInsets.symmetric(
                                                 vertical: screenhgt * 0.02,
                                                 horizontal: screenwdt * 0.02),
@@ -949,19 +980,20 @@ class _BannerSliderState extends State<BannerSlider> {
                                                   : Colors.black38,
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              border: _isButtonFocused
-                                                  ? Border.all(
-                                                      color: randomColor,
-                                                      width: 2.0,
-                                                    )
-                                                  : Border.all(
-                                                      color: Colors.transparent,
-                                                      width: 2.0,
-                                                    ),
+                                              border: Border.all(
+                                                color: _isButtonFocused
+                                                    ? _currentFocusColor ??
+                                                        Colors.transparent
+                                                    : Colors.transparent,
+                                                width: 2.0,
+                                              ),
                                               boxShadow: _isButtonFocused
                                                   ? [
                                                       BoxShadow(
-                                                        color: randomColor,
+                                                        color:
+                                                            _currentFocusColor ??
+                                                                Colors
+                                                                    .transparent,
                                                         blurRadius: 15.0,
                                                         spreadRadius: 5.0,
                                                       ),
@@ -973,7 +1005,8 @@ class _BannerSliderState extends State<BannerSlider> {
                                               style: TextStyle(
                                                 fontSize: menutextsz,
                                                 color: _isButtonFocused
-                                                    ? randomColor
+                                                    ? _currentFocusColor ??
+                                                        hintColor
                                                     : hintColor,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -1016,140 +1049,277 @@ class _BannerSliderState extends State<BannerSlider> {
                                   height: screenhgt *
                                       0.02), // Add some spacing between the heading and the list
                               SizedBox(
-                                height: screenhgt *
-                                    0.25, // Fixed height for horizontal ListView
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  itemCount: lastPlayedVideos.length > 10
-                                      ? 10
-                                      : lastPlayedVideos.length,
-                                  itemBuilder: (context, index) {
-                                    Map<String, dynamic> videoData =
-                                        lastPlayedVideos[index];
-                                    FocusNode focusNode =
-                                        videoData['focusNode'] ?? FocusNode();
-                                    lastPlayedVideos[index]['focusNode'] =
-                                        focusNode;
+                                  height: screenhgt *
+                                      0.25, // Fixed height for horizontal ListView
+                                  // child: ListView.builder(
+                                  //   scrollDirection: Axis.horizontal,
+                                  //   padding: EdgeInsets.symmetric(horizontal: 10),
+                                  //   itemCount: lastPlayedVideos.length > 10
+                                  //       ? 10
+                                  //       : lastPlayedVideos.length,
+                                  //   itemBuilder: (context, index) {
+                                  //     Map<String, dynamic> videoData =
+                                  //         lastPlayedVideos[index];
+                                  //     FocusNode focusNode =
+                                  //         videoData['focusNode'] ?? FocusNode();
+                                  //     lastPlayedVideos[index]['focusNode'] =
+                                  //         focusNode;
 
-                                    return Focus(
-                                      focusNode: focusNode,
-                                      onKey: (node, event) {
-                                        if (event is RawKeyDownEvent) {
-                                          if (event.logicalKey ==
-                                                  LogicalKeyboardKey
-                                                      .arrowRight &&
-                                              index <
-                                                  lastPlayedVideos.length - 1) {
-                                            FocusScope.of(context).requestFocus(
-                                                lastPlayedVideos[index + 1]
-                                                    ['focusNode']);
-                                            return KeyEventResult.handled;
-                                          } else if (event.logicalKey ==
-                                                  LogicalKeyboardKey
-                                                      .arrowLeft &&
-                                              index > 0) {
-                                            FocusScope.of(context).requestFocus(
-                                                lastPlayedVideos[index - 1]
-                                                    ['focusNode']);
-                                            return KeyEventResult.handled;
-                                          } else if (event.logicalKey ==
-                                                  LogicalKeyboardKey.enter ||
-                                              event.logicalKey ==
-                                                  LogicalKeyboardKey.select) {
-                                            _playVideo(videoData['videoUrl'],
-                                                videoData['position']);
-                                            return KeyEventResult.handled;
+                                  //     return Focus(
+                                  //       focusNode: focusNode,
+                                  //       onKey: (node, event) {
+                                  //         if (event is RawKeyDownEvent) {
+                                  //           if (event.logicalKey ==
+                                  //                   LogicalKeyboardKey
+                                  //                       .arrowRight &&
+                                  //               index <
+                                  //                   lastPlayedVideos.length - 1) {
+                                  //             FocusScope.of(context).requestFocus(
+                                  //                 lastPlayedVideos[index + 1]
+                                  //                     ['focusNode']);
+                                  //             return KeyEventResult.handled;
+                                  //           } else if (event.logicalKey ==
+                                  //                   LogicalKeyboardKey
+                                  //                       .arrowLeft &&
+                                  //               index > 0) {
+                                  //             FocusScope.of(context).requestFocus(
+                                  //                 lastPlayedVideos[index - 1]
+                                  //                     ['focusNode']);
+                                  //             return KeyEventResult.handled;
+                                  //           } else if (event.logicalKey ==
+                                  //                   LogicalKeyboardKey.enter ||
+                                  //               event.logicalKey ==
+                                  //                   LogicalKeyboardKey.select) {
+                                  //             _playVideo(videoData,
+                                  //                 videoData['position']);
+                                  //             return KeyEventResult.handled;
+                                  //           }
+                                  //         }
+                                  //         return KeyEventResult.ignored;
+                                  //       },
+                                  //       child: GestureDetector(
+                                  //         onTap: () {
+                                  //           _playVideo(videoData['videoUrl'],
+                                  //               videoData['position']);
+                                  //         },
+                                  //         child: Container(
+                                  //           width: screenwdt * 0.15,
+                                  //           margin: EdgeInsets.symmetric(
+                                  //               horizontal: 5),
+                                  //           decoration: BoxDecoration(
+                                  //             borderRadius:
+                                  //                 BorderRadius.circular(8),
+                                  //             color: focusNode.hasFocus
+                                  //                 ? Colors.black87
+                                  //                 : Colors.black26,
+                                  //           ),
+                                  //           child: Column(
+                                  //             crossAxisAlignment:
+                                  //                 CrossAxisAlignment.start,
+                                  //             children: [
+                                  //               ClipRRect(
+                                  //                 borderRadius:
+                                  //                     BorderRadius.circular(8),
+                                  //                 child: Image.network(
+                                  //                   videoData['bannerImageUrl'] ??
+                                  //                       localImage,
+                                  //                   fit: BoxFit.cover,
+                                  //                   width: double.infinity,
+                                  //                   height: screenhgt * 0.15,
+                                  //                   errorBuilder: (context, error,
+                                  //                       stackTrace) {
+                                  //                     return Image.asset(
+                                  //                         'assets/logo.png',
+                                  //                         fit: BoxFit.cover,
+                                  //                         width: double.infinity,
+                                  //                         height:
+                                  //                             screenhgt * 0.15);
+                                  //                   },
+                                  //                 ),
+                                  //               ),
+                                  //               SizedBox(
+                                  //                   height: screenhgt * 0.02),
+                                  //               Padding(
+                                  //                 padding:
+                                  //                     const EdgeInsets.symmetric(
+                                  //                         horizontal: 5),
+                                  //                 child: LinearProgressIndicator(
+                                  //                   value: videoData['position']
+                                  //                           .inMilliseconds /
+                                  //                       (Duration(minutes: 60)
+                                  //                           .inMilliseconds),
+                                  //                   backgroundColor:
+                                  //                       Colors.grey.shade300,
+                                  //                   valueColor:
+                                  //                       AlwaysStoppedAnimation<
+                                  //                               Color>(
+                                  //                           focusNode.hasFocus
+                                  //                               ? Colors.blue
+                                  //                               : Colors.green),
+                                  //                 ),
+                                  //               ),
+                                  //               SizedBox(
+                                  //                   height: screenhgt * 0.02),
+                                  //               Padding(
+                                  //                 padding:
+                                  //                     const EdgeInsets.symmetric(
+                                  //                         horizontal: 5),
+                                  //                 child: Text(
+                                  //                   videoData['videoName'] ?? '',
+                                  //                   style: TextStyle(
+                                  //                     fontSize: nametextsz,
+                                  //                     color: focusNode.hasFocus
+                                  //                         ? Colors.white
+                                  //                         : Colors.grey,
+                                  //                   ),
+                                  //                   overflow:
+                                  //                       TextOverflow.ellipsis,
+                                  //                 ),
+                                  //               ),
+                                  //             ],
+                                  //           ),
+                                  //         ),
+                                  //       ),
+                                  //     );
+                                  //   },
+                                  // ),
+
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 10),
+                                    itemCount: lastPlayedVideos.length > 10
+                                        ? 10
+                                        : lastPlayedVideos.length,
+                                    itemBuilder: (context, index) {
+                                      Map<String, dynamic> videoData =
+                                          lastPlayedVideos[index];
+                                      FocusNode focusNode =
+                                          videoData['focusNode'] ?? FocusNode();
+                                      lastPlayedVideos[index]['focusNode'] =
+                                          focusNode;
+
+                                      return Focus(
+                                        focusNode: focusNode,
+                                        onKey: (node, event) {
+                                          if (event is RawKeyDownEvent) {
+                                            if (event.logicalKey ==
+                                                    LogicalKeyboardKey
+                                                        .arrowRight &&
+                                                index <
+                                                    lastPlayedVideos.length -
+                                                        1) {
+                                              FocusScope.of(context)
+                                                  .requestFocus(
+                                                      lastPlayedVideos[index +
+                                                          1]['focusNode']);
+                                              return KeyEventResult.handled;
+                                            } else if (event.logicalKey ==
+                                                    LogicalKeyboardKey
+                                                        .arrowLeft &&
+                                                index > 0) {
+                                              FocusScope.of(context)
+                                                  .requestFocus(
+                                                      lastPlayedVideos[index -
+                                                          1]['focusNode']);
+                                              return KeyEventResult.handled;
+                                            } else if (event.logicalKey ==
+                                                    LogicalKeyboardKey.enter ||
+                                                event.logicalKey ==
+                                                    LogicalKeyboardKey.select) {
+                                              _playVideo(videoData,
+                                                  videoData['position']);
+                                              return KeyEventResult.handled;
+                                            }
                                           }
-                                        }
-                                        return KeyEventResult.ignored;
-                                      },
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          _playVideo(videoData['videoUrl'],
-                                              videoData['position']);
+                                          return KeyEventResult.ignored;
                                         },
-                                        child: Container(
-                                          width: screenwdt * 0.15,
-                                          margin: EdgeInsets.symmetric(
-                                              horizontal: 5),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            color: focusNode.hasFocus
-                                                ? Colors.black87
-                                                : Colors.black26,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: Image.network(
-                                                  videoData['bannerImageUrl'] ??
-                                                      localImage,
-                                                  fit: BoxFit.cover,
-                                                  width: double.infinity,
-                                                  height: screenhgt * 0.15,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Image.asset(
-                                                        'assets/logo.png',
-                                                        fit: BoxFit.cover,
-                                                        width: double.infinity,
-                                                        height: screenhgt * 0.15);
-                                                  },
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                  height: screenhgt * 0.02),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 5),
-                                                child: LinearProgressIndicator(
-                                                  value: videoData['position']
-                                                          .inMilliseconds /
-                                                      (Duration(minutes: 60)
-                                                          .inMilliseconds),
-                                                  backgroundColor:
-                                                      Colors.grey.shade300,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                              Color>(
-                                                          focusNode.hasFocus
-                                                              ? Colors.blue
-                                                              : Colors.green),
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                  height: screenhgt * 0.02),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 5),
-                                                child: Text(
-                                                  videoData['videoName'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: nametextsz,
-                                                    color: focusNode.hasFocus
-                                                        ? Colors.white
-                                                        : Colors.grey,
+                                        child: GestureDetector(
+                                          onTap: () => _playVideo(
+                                              videoData, videoData['position']),
+                                          child: Container(
+                                            width: screenwdt * 0.15,
+                                            margin: EdgeInsets.symmetric(
+                                                horizontal: 5),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              color: focusNode.hasFocus
+                                                  ? Colors.black87
+                                                  : Colors.black26,
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  child: Image.network(
+                                                    videoData[
+                                                            'bannerImageUrl'] ??
+                                                        localImage,
+                                                    fit: BoxFit.cover,
+                                                    width: double.infinity,
+                                                    height: screenhgt * 0.15,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Image.asset(
+                                                          'assets/logo.png',
+                                                          fit: BoxFit.cover,
+                                                          width:
+                                                              double.infinity,
+                                                          height:
+                                                              screenhgt * 0.15);
+                                                    },
                                                   ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
                                                 ),
-                                              ),
-                                            ],
+                                                SizedBox(
+                                                    height: screenhgt * 0.02),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(horizontal: 5),
+                                                  child:
+                                                      LinearProgressIndicator(
+                                                    value: videoData['position']
+                                                            .inMilliseconds /
+                                                        (Duration(minutes: 60)
+                                                            .inMilliseconds),
+                                                    backgroundColor:
+                                                        Colors.grey.shade300,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                                Color>(
+                                                            focusNode.hasFocus
+                                                                ? Colors.blue
+                                                                : Colors.green),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                    height: screenhgt * 0.02),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(horizontal: 5),
+                                                  child: Text(
+                                                    videoData['videoName'] ??
+                                                        '',
+                                                    style: TextStyle(
+                                                      fontSize: nametextsz,
+                                                      color: focusNode.hasFocus
+                                                          ? Colors.white
+                                                          : Colors.grey,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              )
+                                      );
+                                    },
+                                  ))
                             ],
                           ),
                         ),

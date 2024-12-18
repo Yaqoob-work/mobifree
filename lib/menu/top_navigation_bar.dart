@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:provider/provider.dart';
 import '../main.dart';
 import '../widgets/utils/random_light_color_widget.dart';
 
@@ -24,7 +26,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(4, (index) => FocusNode());
+    _focusNodes = List.generate(5, (index) => FocusNode());
 
     // Set initial focus to the first menu item
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,31 +44,41 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-          vertical: screenhgt * 0.01, horizontal: screenwdt * 0.04),
-      color: cardColor,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // First button (Logo or Image)
-          IntrinsicWidth(
-            child: _buildNavigationItem('', 0, _focusNodes[0]),
-          ),
-
-          Spacer(),
-
-          // Remaining buttons
-          Row(
+    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+      // Get background color based on provider state
+      Color backgroundColor = colorProvider.isItemFocused
+          ? colorProvider.dominantColor.withOpacity(0.5)
+          : cardColor;
+      return Container(
+        color: backgroundColor,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+              vertical: screenhgt * 0.01, horizontal: screenwdt * 0.04),
+          color: cardColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildNavigationItem('Vod', 1, _focusNodes[1]),
-              _buildNavigationItem('Live TV', 2, _focusNodes[2]),
-              _buildNavigationItem('Search', 3, _focusNodes[3]),
+              // First button (Logo or Image)
+              IntrinsicWidth(
+                child: _buildNavigationItem('', 0, _focusNodes[0]),
+              ),
+        
+              Spacer(),
+        
+              // Remaining buttons
+              Row(
+                children: [
+                  _buildNavigationItem('Vod', 1, _focusNodes[1]),
+                  _buildNavigationItem('Live TV', 2, _focusNodes[2]),
+                  _buildNavigationItem('Search', 3, _focusNodes[3]),
+                  _buildNavigationItem('Notification', 4, _focusNodes[4]),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 
   Widget _buildNavigationItem(String title, int index, FocusNode focusNode) {

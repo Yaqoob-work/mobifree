@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/home_category.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +31,7 @@ class RefreshPageEvent {
 
 class VideoScreen extends StatefulWidget {
   final String videoUrl;
+  final String unUpdatedUrl;
   final List<dynamic> channelList;
   final String bannerImageUrl;
   final Duration startAtPosition;
@@ -44,6 +46,7 @@ class VideoScreen extends StatefulWidget {
 
   VideoScreen({
     required this.videoUrl,
+    required this.unUpdatedUrl,
     required this.channelList,
     required this.bannerImageUrl,
     required this.startAtPosition,
@@ -53,7 +56,7 @@ class VideoScreen extends StatefulWidget {
     required this.isSearch,
     this.isHomeCategory,
     required this.isBannerSlider,
-    this.videoId,
+    required this.videoId,
     required this.source,
   });
 
@@ -62,7 +65,7 @@ class VideoScreen extends StatefulWidget {
 }
 
 class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
-  // final SocketService _socketService = SocketService();
+  final SocketService _socketService = SocketService();
   VlcPlayerController? _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
@@ -96,7 +99,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool _wasPlayingBeforeDisconnection = false;
   int _maxRetries = 3;
   int _retryDelay = 5; // seconds
-  final SocketService _socketService = SocketService();
   Timer? _networkCheckTimer;
   bool _wasDisconnected = false;
   String? _currentModifiedUrl; // To store the current modified URL
@@ -123,20 +125,22 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _initializeVolume();
     _listenToVolumeChanges();
     // Match channel by ID as strings
-    if (widget.isVOD || widget.isBannerSlider) {
+    if (widget.isBannerSlider) {
       _focusedIndex = widget.channelList.indexWhere(
-        (channel) =>
-            channel.id.toString() ==
-            widget.videoId.toString(), // Convert IDs to strings
+        (channel) => channel.contentId.toString() == widget.videoId.toString(),
+      );
+    } else if (widget.isVOD || widget.source == 'isLiveScreen') {
+      _focusedIndex = widget.channelList.indexWhere(
+        (channel) => channel.id.toString() == widget.videoId.toString(),
       );
     } else {
       _focusedIndex = widget.channelList.indexWhere(
-        (channel) => channel.url == widget.videoUrl, // Match by URL
+        (channel) => channel.url == widget.videoUrl,
       );
     }
     // Default to 0 if no match is found
     _focusedIndex = (_focusedIndex >= 0) ? _focusedIndex : 0;
-    print('Initial focused index: $_focusedIndex');
+    // print('Initial focused index: $_focusedIndex');
     // Initialize focus nodes
     focusNodes = List.generate(
       widget.channelList.length,
@@ -147,7 +151,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       _setInitialFocus();
     });
     _differentActionOnDifferentSourceOfChannelList();
-    _initializeVLCController();
+    _initializeVLCController(_focusedIndex);
     _startHideControlsTimer();
     _startNetworkMonitor();
     _startPositionUpdater();
@@ -187,10 +191,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     try {
-      if (_controller != null) {
-        _controller!.stop();
-        _controller!.dispose();
-      }
+      _controller?.stop();
+      _controller?.dispose();
     } catch (e) {
       print("Error disposing controller: $e");
     }
@@ -344,13 +346,23 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
   void _startPositionUpdater() {
     Timer.periodic(Duration(seconds: 1), (_) {
-      if (_controller?.value.isInitialized ?? false) {
+      if (mounted && _controller?.value.isInitialized == true) {
         setState(() {
           _lastKnownPosition = _controller!.value.position;
         });
       }
     });
   }
+
+  // void _startPositionUpdater() {
+  //   Timer.periodic(Duration(seconds: 1), (_) {
+  //     if (_controller?.value.isInitialized ?? false) {
+  //       setState(() {
+  //         _lastKnownPosition = _controller!.value.position;
+  //       });
+  //     }
+  //   });
+  // }
 
 //   // First, update the VlcPlayer initialization in _initializeVLCController:
 // Future<void> _initializeVLCController() async {
@@ -412,25 +424,140 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 //     }
 //   });
 // }
-
-  Future<void> _initializeVLCController() async {
+  bool urlUpdating = false;
+  Future<void> _initializeVLCController(int index) async {
     // try {
     setState(() {
       _loadingVisible = true; // Show loading initially
     });
 
     String modifiedUrl =
-        '${widget.videoUrl}?network-caching=10000&live-caching=1000&rtsp-tcp';
+        '${widget.videoUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+    // var selectedChannel = widget.channelList[index];
+    // String updatedUrl = selectedChannel.url;
+    // final int contentId = int.tryParse(selectedChannel.id) ?? 0;
+
+    // if (widget.source == 'isHomeCategory') {
+    //   print('asd : ${selectedChannel.id}');
+
+    //   final playLink = await fetchLiveFeaturedTVById(selectedChannel.contentId);
+    //   if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+    //     updatedUrl = playLink['url']!;
+    //     if (playLink['stream_type'] == 'YoutubeLive') {
+    //       updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+    //       setState(() {
+    //         setState(() {
+    //           urlUpdating = true;
+    //         });
+    //       });
+    //     }
+    //   } else {
+    //     throw Exception("Invalid play link for VOD");
+    //   }
+    // } else if (selectedChannel.streamType == 'YoutubeLive' ||
+    //     selectedChannel.streamType == 'Youtube') {
+    //   updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
+    //   setState(() {
+    //     urlUpdating = true;
+    //   });
+    //   if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
+    // }
+    // if (widget.isBannerSlider) {
+    //   final playLink = await fetchLiveFeaturedTVById(selectedChannel.id);
+    //   if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+    //     updatedUrl = playLink['url']!;
+    //     if (playLink['stream_type'] == 'YoutubeLive') {
+    //       updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+    //       setState(() {
+    //         urlUpdating = true;
+    //       });
+    //     }
+    //   } else {
+    //     throw Exception("Invalid play link for VOD");
+    //   }
+    // } else if (selectedChannel.streamType == 'YoutubeLive' ||
+    //     selectedChannel.streamType == 'Youtube') {
+    //   updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
+    //   setState(() {
+    //     urlUpdating = true;
+    //   });
+    //   if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
+    // }
+
+    // if (selectedChannel.contentType == '1' ||
+    //     selectedChannel.contentType == 1 && widget.source == 'isSearchScreen') {
+    //   // final playLink =
+    //   //     await fetchLiveFeaturedTVById(selectedChannel.id);
+    //   final playLink = await fetchMoviePlayLink(contentId);
+
+    //   print('hellow isSearchScreen$playLink');
+    //   if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+    //     updatedUrl = playLink['url']!;
+    //     if (playLink['type'] == 'Youtube' ||
+    //         playLink['type'] == 'YoutubeLive' ||
+    //         playLink['content_type'] == '1' ||
+    //         playLink['content_type'] == 1) {
+    //       updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+    //       setState(() {
+    //         urlUpdating = true;
+    //       });
+    //       print('hellow isSearchScreen$updatedUrl');
+    //     }
+    //   }
+    // }
+
+    // if (widget.isVOD ||
+    //         widget.source == 'isSearchScreenViaDetailsPageChannelList'
+    //     //|| widget.source == 'isSearchScreen'
+    //     ) {
+    //   print('hellow isVOD');
+
+    //   if (selectedChannel.contentType == '1' ||
+    //       selectedChannel.contentType == 1) {
+    //     // final playLink =
+    //     //     await fetchLiveFeaturedTVById(selectedChannel.id);
+    //     final playLink = await fetchMoviePlayLink(contentId);
+
+    //     print('hellow isVOD$playLink');
+    //     if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+    //       updatedUrl = playLink['url']!;
+    //       if (playLink['type'] == 'Youtube' ||
+    //           playLink['type'] == 'YoutubeLive' ||
+    //           playLink['content_type'] == '1' ||
+    //           playLink['content_type'] == 1) {
+    //         updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+    //         setState(() {
+    //           urlUpdating = true;
+    //         });
+    //         print('hellow isVOD$updatedUrl');
+    //       }
+    //     }
+    //   }
+    // }
+
+    // String modifiedUrl =
+    //     '${updatedUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+
     _controller = VlcPlayerController.network(
       modifiedUrl,
       hwAcc: HwAcc.auto,
       autoPlay: true,
       // options: VlcPlayerOptions(),
+      options: VlcPlayerOptions(
+        video: VlcVideoOptions([
+          VlcVideoOptions.dropLateFrames(true),
+          VlcVideoOptions.skipFrames(true),
+        ]),
+      ),
     );
-
-    // _controller!.initialize();
-    _retryPlayback(modifiedUrl, 5);
-
+    if (!urlUpdating) {
+      _controller!.initialize();
+      await _retryPlayback(modifiedUrl, 5);
+    } else {
+      await Future.delayed(Duration(seconds: 5));
+      _controller!.initialize();
+      await _retryPlayback(modifiedUrl, 5);
+    }
     setState(() {
       _isVideoInitialized = true;
     });
@@ -472,6 +599,47 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Future<Map<String, String>> fetchHomeCategoryById(String contentId) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final cachedData = prefs.getString('live_featured_tv');
+
+  //   List<dynamic> responseData;
+
+  //   // Use cached data if available
+  //   if (cachedData != null) {
+  //     responseData = json.decode(cachedData);
+  //   } else {
+  //     // Fetch from API if cache is not available
+  //     final response = await https.get(
+  //       Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
+  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       responseData = json.decode(response.body);
+  //       // Cache the data
+  //       prefs.setString('live_featured_tv', json.encode(responseData));
+  //     } else {
+  //       throw Exception('Failed to load featured live TV');
+  //     }
+  //   }
+
+  //   // Find the matched item by id
+  //   final matchedItem = responseData.firstWhere(
+  //     (channel) => channel['id'] == contentId,
+  //     orElse: () => null,
+  //   );
+
+  //   if (matchedItem != null) {
+  //     return {
+  //       'url': matchedItem['url'] ?? '',
+  //       'type': matchedItem['type'] ?? '',
+  //     };
+  //   } else {
+  //     throw Exception('No matching channel found for id $contentId');
+  //   }
+  // }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -482,13 +650,12 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
   Future<void> _retryPlayback(String url, int retries) async {
     for (int i = 0; i < retries; i++) {
+      if (!mounted || !_controller!.value.isInitialized) return;
+
       try {
-        if (!_controller!.value.isInitialized) {
-          await _controller!.initialize();
-        }
         await _controller!.setMediaFromNetwork(url);
         await _controller!.play();
-        return; // Exit loop on success
+        return; // Exit on success
       } catch (e) {
         print("Retry ${i + 1} failed: $e");
         await Future.delayed(Duration(seconds: 1));
@@ -507,35 +674,25 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
     try {
       final int contentId = int.tryParse(selectedChannel.id) ?? 0;
-    // Handle isHomeCategory case
-    if (widget.source == 'isHomeCategory') {
-      try {
-        updatedUrl = await fetchHomeChannelUrl(
-          selectedChannel.streamType ?? '',
-          selectedChannel.url,
-          selectedChannel.id
-        );
-      } catch (e) {
-        updatedUrl = selectedChannel.url;
+
+      if (widget.source == 'isHomeCategory') {
+        final playLink =
+            await fetchLiveFeaturedTVById(selectedChannel.contentId);
+
+        if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+          updatedUrl = playLink['url']!;
+          if (playLink['stream_type'] == 'YoutubeLive') {
+            updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+          }
+        } else {
+          throw Exception("Invalid play link for VOD");
+        }
+      } else if (selectedChannel.streamType == 'YoutubeLive' ||
+          selectedChannel.streamType == 'Youtube') {
+        updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
+        if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
       }
-    }
-    // Handle other cases with safe null checks for contentType
 
-    // else if (selectedChannel.contentType != null && 
-    //         (selectedChannel.contentType == '1' || selectedChannel.contentType == '1') &&
-    //         widget.source == 'isSearchScreen') {
-    //   final playLink = await fetchMoviePlayLink(contentId);
-
-    //   if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
-    //     updatedUrl = playLink['url']!;
-    //     if (playLink['type'] == 'Youtube' ||
-    //         playLink['type'] == 'YoutubeLive' ||
-    //         playLink['content_type'] == '1' ||
-    //         playLink['content_type'] == 1) {
-    //       updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
-    //     }
-    //   }
-    // }
       if (widget.isBannerSlider) {
         final playLink =
             await fetchLiveFeaturedTVById(selectedChannel.contentId);
@@ -602,7 +759,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
       // Store modifiedUrl
       String _currentModifiedUrl =
-          '${updatedUrl}?network-caching=10000&live-caching=1000&rtsp-tcp';
+          '${updatedUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
 
       // Reinitialize the VLC player
       if (_controller != null && _controller!.value.isInitialized) {
@@ -611,7 +768,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         // _controller!.setMediaFromNetwork(_currentModifiedUrl);
         // await _controller!.play();
         // Attempt playback with retries
-        await _retryPlayback(updatedUrl, 5);
+        await _retryPlayback(_currentModifiedUrl, 5);
         setState(() {
           _focusedIndex = index;
         });
@@ -652,56 +809,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
     return ''; // Return empty string if all retries fail
   }
-
-Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String id) async {
-  try {
-    final response = await https.get(
-      Uri.parse('https://api.ekomflix.com/android/getSelectHomeCategory'),
-      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      
-      // Safely convert ID to match API response format
-      final searchId = id.toString().trim();
-      
-      // Search for matching item
-      for (var item in data) {
-        if (item['id'].toString().trim() == searchId) {
-          if (item['url'] != null && item['url'].toString().isNotEmpty) {
-            String updatedUrl = item['url'].toString();
-            
-            // Handle Youtube/YoutubeLive if needed
-            if (streamType == 'YoutubeLive' || streamType == 'Youtube') {
-              try {
-                updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
-              } catch (e) {
-                print('Error updating YouTube URL: $e');
-                // If YouTube URL update fails, return original URL
-                return updatedUrl;
-              }
-            }
-            
-            return updatedUrl;
-          }
-        }
-      }
-      
-      // If no matching URL found, use initial URL as fallback
-      print('No matching URL found in API response, using initial URL');
-      return initialUrl;
-    } else {
-      print('API Error: ${response.statusCode}');
-      // Return initial URL as fallback on API error
-      return initialUrl;
-    }
-  } catch (e) {
-    print('Error in fetchHomeChannelUrl: $e');
-    // Return initial URL as fallback on any error
-    return initialUrl;
-  }
-}
 
   Future<void> _initializeVolume() async {
     try {
@@ -854,27 +961,165 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
     });
   }
 
-  Future<void> _saveLastPlayedVideo(
-      String videoUrl, Duration position, String bannerImageUrl) async {
-    if (_controller is VlcPlayerController) {
-      position = (_controller as VlcPlayerController).value.position;
-    } else {
-      position = Duration.zero; // Or handle accordingly for VLC if needed
-    }
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  // Future<void> _saveLastPlayedVideo(
+  //     String videoUrl, Duration position, String bannerImageUrl) async {
+  //   if (_controller is VlcPlayerController) {
+  //     position = (_controller as VlcPlayerController).value.position;
+  //   } else {
+  //     position = Duration.zero; // Or handle accordingly for VLC if needed
+  //   }
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    List<String>? lastPlayedVideos =
-        prefs.getStringList('last_played_videos') ?? [];
-    String newVideoEntry =
-        "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
-    lastPlayedVideos.insert(0, newVideoEntry);
+  //   List<String>? lastPlayedVideos =
+  //       prefs.getStringList('last_played_videos') ?? [];
+  //   String newVideoEntry =
+  //       "$videoUrl|${position.inMilliseconds}|$bannerImageUrl";
+  //   lastPlayedVideos.insert(0, newVideoEntry);
 
-    if (lastPlayedVideos.length > 12) {
-      lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
-    }
+  //   if (lastPlayedVideos.length > 12) {
+  //     lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+  //   }
 
-    await prefs.setStringList('last_played_videos', lastPlayedVideos);
+  //   await prefs.setStringList('last_played_videos', lastPlayedVideos);
+  // }
+
+  // Future<void> _saveLastPlayedVideo(
+  //     String videoUrl, Duration position, String bannerImageUrl) async {
+  //   if (_controller is VlcPlayerController) {
+  //     position = (_controller as VlcPlayerController).value.position;
+  //   } else {
+  //     position = Duration.zero;
+  //   }
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  //   // Get correct video name based on source
+  //   String videoName = '';
+
+  //   if (widget.isVOD) {
+  //     // For VOD content
+  //     if (widget.channelList.isNotEmpty &&
+  //         _focusedIndex < widget.channelList.length) {
+  //       videoName = widget.channelList[_focusedIndex].name ?? 'Untitled Video';
+  //     }
+  //   } else if (widget.isBannerSlider) {
+  //     // For banner slider content
+  //     if (widget.channelList.isNotEmpty &&
+  //         _focusedIndex < widget.channelList.length) {
+  //       videoName = widget.channelList[_focusedIndex].name ?? 'Untitled Video';
+  //     }
+  //   } else if (widget.isSearch) {
+  //     // For search results
+  //     if (widget.channelList.isNotEmpty &&
+  //         _focusedIndex < widget.channelList.length) {
+  //       videoName = widget.channelList[_focusedIndex].name ?? 'Untitled Video';
+  //     }
+  //   } else {
+  //     // For regular channel content
+  //     if (widget.channelList.isNotEmpty &&
+  //         _focusedIndex < widget.channelList.length) {
+  //       var currentChannel = widget.channelList[_focusedIndex];
+  //       videoName = currentChannel.name ?? 'Untitled Video';
+  //     }
+  //   }
+
+  //   // Make sure we have the correct banner URL
+  //   String currentBannerUrl = '';
+  //   if (widget.channelList.isNotEmpty &&
+  //       _focusedIndex < widget.channelList.length) {
+  //     currentBannerUrl =
+  //         widget.channelList[_focusedIndex].banner ?? bannerImageUrl;
+  //   } else {
+  //     currentBannerUrl = bannerImageUrl;
+  //   }
+
+  //   List<String>? lastPlayedVideos =
+  //       prefs.getStringList('last_played_videos') ?? [];
+
+  //   // Create new entry with verified data
+  //   String newVideoEntry =
+  //       "$videoUrl|${position.inMilliseconds}|$currentBannerUrl|$videoName";
+
+  //   // Check if this video already exists in the list
+  //   int existingIndex =
+  //       lastPlayedVideos.indexWhere((entry) => entry.split('|')[0] == videoUrl);
+  //   if (existingIndex != -1) {
+  //     // Update existing entry
+  //     lastPlayedVideos[existingIndex] = newVideoEntry;
+  //   } else {
+  //     // Add new entry
+  //     lastPlayedVideos.insert(0, newVideoEntry);
+  //   }
+
+  //   // Maintain list size
+  //   if (lastPlayedVideos.length > 12) {
+  //     lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+  //   }
+
+  //   await prefs.setStringList('last_played_videos', lastPlayedVideos);
+  // }
+
+
+Future<void> _saveLastPlayedVideo(
+    String unUpdatedUrl, Duration position, String bannerImageUrl) async {
+  if (_controller is VlcPlayerController) {
+    position = (_controller as VlcPlayerController).value.position;
+  } else {
+    position = Duration.zero;
   }
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  String videoName = '';
+  String videoSource = widget.source;
+  String videoId = '';  // Added videoId variable
+
+  if (widget.channelList.isNotEmpty && _focusedIndex < widget.channelList.length) {
+    var currentChannel = widget.channelList[_focusedIndex];
+    
+    if (widget.isVOD) {
+      videoName = currentChannel.name ?? 'Untitled Video';
+      videoId = currentChannel.id?.toString() ?? '';  // Get ID for VOD content
+    } else if (widget.isBannerSlider) {
+      videoName = currentChannel.name ?? 'Untitled Video';
+      videoId = currentChannel.contentId?.toString() ?? '';  // Get contentId for banner slider
+    } else if (widget.isSearch) {
+      videoName = currentChannel.name ?? 'Untitled Video';
+      videoId = currentChannel.id?.toString() ?? '';  // Get ID for search results
+    } else {
+      videoName = currentChannel.name ?? 'Untitled Video';
+      videoId = currentChannel.id?.toString() ?? '';  // Get ID for regular channels
+    }
+  }
+
+  String currentBannerUrl = '';
+  if (widget.channelList.isNotEmpty && _focusedIndex < widget.channelList.length) {
+    currentBannerUrl = widget.channelList[_focusedIndex].banner ?? bannerImageUrl;
+  } else {
+    currentBannerUrl = bannerImageUrl;
+  }
+
+  List<String>? lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
+
+  // Update entry format to include id
+  String newVideoEntry = "$unUpdatedUrl|${position.inMilliseconds}|$currentBannerUrl|$videoName|$videoSource|$videoId";
+
+  // Check if video exists using both URL and ID
+  int existingIndex = lastPlayedVideos.indexWhere((entry) {
+    List<String> parts = entry.split('|');
+    return parts[0] == unUpdatedUrl || (parts.length >= 6 && parts[5] == videoId);
+  });
+
+  if (existingIndex != -1) {
+    lastPlayedVideos[existingIndex] = newVideoEntry;
+  } else {
+    lastPlayedVideos.insert(0, newVideoEntry);
+  }
+
+  if (lastPlayedVideos.length > 12) {
+    lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+  }
+
+  await prefs.setStringList('last_played_videos', lastPlayedVideos);
+}
 
   void _seekForward() {
     if (_controller != null) {
@@ -917,9 +1162,16 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowUp:
           _resetHideControlsTimer();
-          if (progressIndicatorFocusNode.hasFocus) {
+          if (playPauseButtonFocusNode.hasFocus ||
+              backwardButtonFocusNode.hasFocus ||
+              forwardButtonFocusNode.hasFocus ||
+              prevButtonFocusNode.hasFocus ||
+              nextButtonFocusNode.hasFocus ||
+              progressIndicatorFocusNode.hasFocus) {
             Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+              if (!widget.isLive) {
+                FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
+              }
             });
           } else if (_focusedIndex > 0) {
             if (widget.channelList.isEmpty) return;
@@ -933,21 +1185,29 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
 
         case LogicalKeyboardKey.arrowDown:
           _resetHideControlsTimer();
-          if (playPauseButtonFocusNode.hasFocus ||
-              backwardButtonFocusNode.hasFocus ||
-              forwardButtonFocusNode.hasFocus ||
-              prevButtonFocusNode.hasFocus ||
-              nextButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              if (!widget.isLive) {
-                FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
-              }
-            });
+          // if (
+          //   playPauseButtonFocusNode.hasFocus ||
+          //     backwardButtonFocusNode.hasFocus ||
+          //     forwardButtonFocusNode.hasFocus ||
+          //     prevButtonFocusNode.hasFocus ||
+          //     nextButtonFocusNode.hasFocus) {
+          //   Future.delayed(Duration(milliseconds: 50), () {
+          //     if (!widget.isLive) {
+          //       FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
+          //     }
+          //   });
+          // } else
+          if (progressIndicatorFocusNode.hasFocus) {
+            FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
           } else if (_focusedIndex < widget.channelList.length - 1) {
             setState(() {
               _focusedIndex++;
               FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
               _scrollToFocusedItem();
+            });
+          } else if (_focusedIndex < widget.channelList.length) {
+            Future.delayed(Duration(milliseconds: 50), () {
+              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
             });
           }
           break;
@@ -993,7 +1253,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
             });
           } else if (nextButtonFocusNode.hasFocus) {
             Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+              FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
             });
           }
           break;
@@ -1021,7 +1281,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
             });
           } else if (forwardButtonFocusNode.hasFocus) {
             Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(backwardButtonFocusNode);
+              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
             });
           } else if (backwardButtonFocusNode.hasFocus) {
             Future.delayed(Duration(milliseconds: 50), () {
@@ -1032,6 +1292,10 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
               FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
               _scrollToFocusedItem();
             });
+          } else if (focusNodes.any((node) => node.hasFocus)) {
+            Future.delayed(Duration(milliseconds: 50), () {
+              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            });
           }
           break;
 
@@ -1040,7 +1304,6 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
           _resetHideControlsTimer();
           if (nextButtonFocusNode.hasFocus) {
             _playNext();
-
             FocusScope.of(context).requestFocus(nextButtonFocusNode);
           } else if (prevButtonFocusNode.hasFocus) {
             _playPrevious();
@@ -1114,6 +1377,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
               child: VlcPlayer(
                 controller: _controller!,
                 placeholder: Center(child: CircularProgressIndicator()),
+                aspectRatio: 16 / 9,
               ),
             ),
           ),
@@ -1128,7 +1392,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
       onWillPop: () async {
         _controller!.pause();
         await _saveLastPlayedVideo(
-            widget.videoUrl,
+            widget.unUpdatedUrl ,
             _controller?.value.position ?? Duration.zero,
             widget.bannerImageUrl);
         await Future.delayed(Duration(milliseconds: 500));
@@ -1209,10 +1473,10 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
     return Positioned(
       top: MediaQuery.of(context).size.height * 0.02,
       left: MediaQuery.of(context).size.width * 0.0,
-      right: MediaQuery.of(context).size.width * 0.82,
+      right: MediaQuery.of(context).size.width * 0.78,
       child: Container(
         height: MediaQuery.of(context).size.height * 0.75,
-        color: Colors.black.withOpacity(0.3),
+        // color: Colors.black.withOpacity(0.3),
         child: ListView.builder(
           controller: _scrollController,
           itemCount: widget.channelList.length,
@@ -1231,15 +1495,23 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                     _resetHideControlsTimer();
                   },
                   child: Container(
-                    height: 80,
+                    width: screenwdt * 0.3,
+                    height: screenhgt * 0.18,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: _focusedIndex == index
-                            ? Colors.blue
-                            : Colors.transparent,
-                        width: 3.0,
+                        color: playPauseButtonFocusNode.hasFocus ||
+                                backwardButtonFocusNode.hasFocus ||
+                                forwardButtonFocusNode.hasFocus ||
+                                prevButtonFocusNode.hasFocus ||
+                                nextButtonFocusNode.hasFocus ||
+                                progressIndicatorFocusNode.hasFocus
+                            ? Colors.transparent
+                            : _focusedIndex == index
+                                ? Colors.blue
+                                : Colors.transparent,
+                        width: 5.0,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       color: _focusedIndex == index
                           ? Colors.black26
                           : Colors.transparent,
@@ -1249,30 +1521,33 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: isBase64
-                                ?
-                                // Image.memory(
-                                //     _getImageFromBase64String(
-                                //         channel.banner ?? ''),
-                                //     fit: BoxFit.cover,
-                                //     errorBuilder:
-                                //         (context, error, stackTrace) =>
-                                //             Container(color: Colors.grey[800]),
-                                //   )
-                                Image.memory(
-                                    _getCachedImage(
-                                        channel.banner ?? localImage),
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            Container(color: Colors.grey[800]),
-                                  )
-                                : CachedNetworkImage(
-                                    imageUrl: channel.banner ?? localImage,
-                                    fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) =>
-                                        localImage,
-                                  ),
+                            child: Opacity(
+                              opacity: 0.6,
+                              child: isBase64
+                                  ?
+                                  // Image.memory(
+                                  //     _getImageFromBase64String(
+                                  //         channel.banner ?? ''),
+                                  //     fit: BoxFit.cover,
+                                  //     errorBuilder:
+                                  //         (context, error, stackTrace) =>
+                                  //             Container(color: Colors.grey[800]),
+                                  //   )
+                                  Image.memory(
+                                      _getCachedImage(
+                                          channel.banner ?? localImage),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              localImage,
+                                    )
+                                  : CachedNetworkImage(
+                                      imageUrl: channel.banner ?? localImage,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (context, url, error) =>
+                                          localImage,
+                                    ),
+                            ),
                           ),
                           if (_focusedIndex == index)
                             Positioned.fill(
@@ -1283,7 +1558,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                                     end: Alignment.bottomCenter,
                                     colors: [
                                       Colors.transparent,
-                                      Colors.black.withOpacity(0.7),
+                                      Colors.black.withOpacity(0.9),
                                     ],
                                   ),
                                 ),
@@ -1322,22 +1597,36 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
 
     double bufferedProgress = (playedProgress + 0.02).clamp(0.0, 1.0);
 
-    return Stack(
-      children: [
-        // Buffered progress
-        LinearProgressIndicator(
-          value: bufferedProgress.isNaN ? 0.0 : bufferedProgress,
-          color: Colors.green, // Buffered color
-          backgroundColor: Colors.grey, // Background
+    return Container(
+        // Add padding to make the indicator more visible when focused
+        padding: EdgeInsets.all(screenhgt * 0.03),
+        // Change background color based on focus state
+        decoration: BoxDecoration(
+          color: progressIndicatorFocusNode.hasFocus
+              ? const Color.fromARGB(
+                  200, 16, 62, 99) // Blue background when focused
+              : Colors.transparent,
+          // Optional: Add rounded corners when focused
+          borderRadius: progressIndicatorFocusNode.hasFocus
+              ? BorderRadius.circular(4.0)
+              : null,
         ),
-        // Played progress
-        LinearProgressIndicator(
-          value: playedProgress.isNaN ? 0.0 : playedProgress,
-          color: Colors.blue, // Played color
-          backgroundColor: Colors.transparent, // Transparent to overlay
-        ),
-      ],
-    );
+        child: Stack(
+          children: [
+            // Buffered progress
+            LinearProgressIndicator(
+              value: bufferedProgress.isNaN ? 0.0 : bufferedProgress,
+              color: Colors.green, // Buffered color
+              backgroundColor: Colors.grey, // Background
+            ),
+            // Played progress
+            LinearProgressIndicator(
+              value: playedProgress.isNaN ? 0.0 : playedProgress,
+              color: Colors.blue, // Played color
+              backgroundColor: Colors.transparent, // Transparent to overlay
+            ),
+          ],
+        ));
   }
 
   Widget _buildControls() {
@@ -1385,6 +1674,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                     ),
                   ),
                 ),
+
                 if (!widget.isLive)
                   Expanded(
                     flex: 2,
@@ -1407,7 +1697,7 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                                   ? Colors.blue
                                   : Colors.white,
                             ),
-                            onPressed: _seekBackward,
+                            onPressed: _seekForward,
                           ),
                         ),
                       ),
@@ -1497,19 +1787,9 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            color: progressIndicatorFocusNode.hasFocus
-                ? const Color.fromARGB(200, 16, 62, 99)
-                : Colors.black54,
-            child: Row(
-              children: [
-                Expanded(flex: 1, child: Container()),
+                // Expanded(flex: 1, child: Container()),
                 Expanded(flex: 5, child: _buildVolumeIndicator()),
-                Expanded(flex: 1, child: Container()),
+                // Expanded(flex: 1, child: Container()),
                 Expanded(
                   flex: 20,
                   child: Center(
@@ -1520,7 +1800,12 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
                           // Handle focus changes if needed
                         });
                       },
-                      child: _buildCustomProgressIndicator(),
+                      child: Container(
+                          color: progressIndicatorFocusNode.hasFocus
+                              ? const Color.fromARGB(200, 16, 62,
+                                  99) // Blue background when focused
+                              : Colors.transparent,
+                          child: _buildCustomProgressIndicator()),
                     ),
                   ),
                 ),
@@ -1549,6 +1834,17 @@ Future<String> fetchHomeChannelUrl(String streamType, String initialUrl, String 
               ],
             ),
           ),
+          // Container(
+          //   padding: EdgeInsets.symmetric(vertical: 8.0),
+          //   color: progressIndicatorFocusNode.hasFocus
+          //       ? const Color.fromARGB(200, 16, 62, 99)
+          //       : Colors.black54,
+          //   child: Row(
+          //     children: [
+
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

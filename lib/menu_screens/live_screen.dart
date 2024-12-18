@@ -225,6 +225,7 @@ class _LiveScreenState extends State<LiveScreen> {
     });
 
     try {
+      String originalUrl = newsItem.url;
       if (newsItem.streamType == 'YoutubeLive') {
         // Retry fetching the updated URL if stream type is YouTube Live
         for (int i = 0; i < _maxRetries; i++) {
@@ -267,7 +268,10 @@ class _LiveScreenState extends State<LiveScreen> {
               isLive: true,
               isVOD: false,
               isBannerSlider: false,
-              source: 'isLiveScreen', isSearch: false,
+              source: 'isLiveScreen',
+              isSearch: false,
+              videoId: int.tryParse(newsItem.id),
+              unUpdatedUrl: originalUrl,
             ),
           ),
         );
@@ -292,6 +296,3 @@ class _LiveScreenState extends State<LiveScreen> {
     super.dispose();
   }
 }
-
-
-

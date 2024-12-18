@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
+// import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
 import 'package:mobi_tv_entertainment/widgets/items/news_item.dart';
 import 'package:mobi_tv_entertainment/widgets/models/news_item_model.dart';
@@ -8,8 +9,6 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
-
-
 
 class NewsGridScreen extends StatefulWidget {
   final List<NewsItemModel> newsList;
@@ -36,7 +35,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     _socketService.initSocket();
     checkServerStatus();
     _entertainmentList.addAll(widget.newsList);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       // Request focus on the first item after the screen is built
       if (firstItemFocusNode.canRequestFocus) {
         firstItemFocusNode.requestFocus();
@@ -84,14 +83,14 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
           ),
           itemCount: _entertainmentList.length,
           itemBuilder: (context, index) {
-            return _buildNewsItem(_entertainmentList[index],index);
+            return _buildNewsItem(_entertainmentList[index], index);
           },
         ),
       ],
     );
   }
 
-  Widget _buildNewsItem(NewsItemModel item,index) {
+  Widget _buildNewsItem(NewsItemModel item, index) {
     return NewsItem(
       key: Key(item.id),
       hideDescription: true,
@@ -99,7 +98,6 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
       onTap: () => _navigateToVideoScreen(item),
       onEnterPress: _handleEnterPress,
       focusNode: index == 0 ? firstItemFocusNode : FocusNode(),
-
     );
   }
 
@@ -109,37 +107,37 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     _navigateToVideoScreen(selectedItem);
   }
 
+  Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
 
+    bool shouldPlayVideo = true;
+    bool shouldPop = true;
 
+    // Show loading indicator while video is loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async {
+            shouldPlayVideo = false;
+            shouldPop = false;
+            return true;
+          },
+          child: LoadingIndicator(),
+        );
+      },
+    );
 
-Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
-  if (_isNavigating) return;
-  _isNavigating = true;
+    Timer(Duration(seconds: 10), () {
+      _isNavigating = false;
+    });
 
-  bool shouldPlayVideo = true;
-  bool shouldPop = true;
+    try {
+                String originalUrl =
+              newsItem.url;
 
-  // Show loading indicator while video is loading
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return WillPopScope(
-        onWillPop: () async {
-          shouldPlayVideo = false;
-          shouldPop = false;
-          return true;
-        },
-        child: LoadingIndicator(),
-      );
-    },
-  );
-
-  Timer(Duration(seconds: 10), () {
-    _isNavigating = false;
-  });
-
-  try {
     if (newsItem.streamType == 'YoutubeLive') {
       // Retry fetching the updated URL if stream type is YouTube Live
       for (int i = 0; i < _maxRetries; i++) {
@@ -165,12 +163,11 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
       }
     }
 
-    if (shouldPop) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
+      if (shouldPop) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
 
-    if (shouldPlayVideo) {
-
+      if (shouldPlayVideo) {
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -180,27 +177,31 @@ Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
               startAtPosition: Duration.zero,
               videoType: newsItem.streamType,
               channelList: _entertainmentList,
-              isLive: true,isVOD: false,isBannerSlider: false,
-              source: 'isLiveScreen',isSearch: false,
+              isLive: true,
+              isVOD: false,
+              isBannerSlider: false,
+              source: 'isLiveScreen',
+              isSearch: false,
+              videoId: int.tryParse(newsItem.id), unUpdatedUrl: originalUrl,
             ),
           ),
         );
-      // }
+        // }
+      }
+    } catch (e) {
+      if (shouldPop) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something Went Wrong')),
+      );
+    } finally {
+      _isNavigating = false;
     }
-  } catch (e) {
-    if (shouldPop) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Something Went Wrong')),
-    );
-  } finally {
-    _isNavigating = false;
   }
-}
-@override
+
+  @override
   void dispose() {
-    _socketService.dispose();
     firstItemFocusNode.dispose();
     super.dispose();
   }

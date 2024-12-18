@@ -165,7 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _showLoadingIndicator(context);
 
     try {
-      await _updateChannelUrlIfNeeded(searchResults, index);
+      // await _updateChannelUrlIfNeeded(searchResults, index);
       if (_shouldContinueLoading) {
         await _navigateToVideoScreen(context, searchResults, index);
       }
@@ -181,69 +181,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-//   Future<void> _onItemTap(BuildContext context, int index) async {
-//   if (_isNavigating) return;
-//   _isNavigating = true;
-//   _showLoadingIndicator(context);
 
-//   try {
-//     await _updateChannelUrlIfNeeded(searchResults, index);
-//     if (_shouldContinueLoading) {
-//       final channel = searchResults[index];
-//       final int? parsedContentType = int.tryParse(channel.contentType ?? "0");
-
-//       if (parsedContentType == 1) {
-//         // Filter the list with content_type == 1 for DetailsPage
-//         final filteredList = searchResults
-//             .where((item) => int.tryParse(item.contentType ?? "0") == 1)
-//             .toList();
-
-//         await Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => DetailsPage(
-//               channelList: filteredList,
-//               id: int.tryParse(channel.id) ?? 0,
-//               source: 'isSearchScreenViaDetailsPageChannelList',
-//             ),
-//           ),
-//         );
-//       } else {
-//         // Filter the remaining items (content_type != 1) for VideoScreen
-//         final otherList = searchResults
-//             .where((item) => int.tryParse(item.contentType ?? "0") != 1)
-//             .toList();
-
-//         await Navigator.push(
-//           context,
-//           MaterialPageRoute(
-//             builder: (context) => VideoScreen(
-//               videoUrl: channel.url,
-//               startAtPosition: Duration.zero,
-//               bannerImageUrl: channel.banner,
-//               videoType: channel.streamType,
-//               channelList: otherList, // Pass the filtered list
-//               isLive: true,
-//               isVOD: false,
-//               isBannerSlider: false,
-//               source: 'isSearchScreen',
-//               isSearch: true,
-//             ),
-//           ),
-//         );
-//       }
-//     }
-//   } catch (e) {
-//     print('Error playing video: $e');
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text('Something Went Wrong')),
-//     );
-//   } finally {
-//     _isNavigating = false;
-//     _shouldContinueLoading = true;
-//     _dismissLoadingIndicator();
-//   }
-// }
 
   void _showLoadingIndicator(BuildContext context) {
     showDialog(
@@ -331,6 +269,7 @@ class _SearchScreenState extends State<SearchScreen> {
             isBannerSlider: false,
             source: 'isSearchScreen',
             isSearch: true,
+            videoId: int.tryParse(channel.id), unUpdatedUrl: videoUrl,
           ),
         ),
       );

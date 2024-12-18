@@ -13,7 +13,6 @@ import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../video_widget/vlc_player_screen.dart';
 import '../../widgets/utils/random_light_color_widget.dart';
 import 'channels_category.dart';
 
@@ -32,9 +31,9 @@ class _MusicScreenState extends State<MusicScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   bool _isNavigating = false;
-  int _maxRetries = 3;
-  int _retryDelay = 5; // seconds
   String _selectedCategory = 'Live'; // Default category
+    int _maxRetries = 3;
+  int _retryDelay = 5; // seconds
 
   final List<String> categories = [
     'Live',
@@ -54,18 +53,7 @@ class _MusicScreenState extends State<MusicScreen> {
     super.initState();
     _socketService.initSocket();
     fetchData();
-    checkServerStatus();
-        // Update cache when the page is entered
-    // _apiService.updateCacheOnPageEnter();
-    // // Listen to updates from the ApiService stream
-    // _apiService.updateStream.listen((hasChanges) {
-    //   if (hasChanges) {
-    //     setState(() {
-    //       _isLoading = true;
-    //     });
-    //     fetchData(); // Refetch the data only when changes occur
-    //   }
-    // });
+
 
         _loadCachedDataAndFetchMusic();
     _apiService.updateStream.listen((hasChanges) {
@@ -142,16 +130,6 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  void checkServerStatus() {
-    Timer.periodic(Duration(seconds: 10), (timer) {
-      // Check if the socket is connected, otherwise attempt to reconnect
-      if (!_socketService.socket.connected) {
-        // print('YouTube server down, retrying...');
-        _socketService.initSocket(); // Re-establish the socket connection
-      }
-    });
-  }
-
   Future<void> fetchData() async {
     setState(() {
       _isLoading = true;
@@ -202,7 +180,7 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           // SizedBox(height: screenhgt * 0.03),
@@ -480,6 +458,7 @@ class _MusicScreenState extends State<MusicScreen> {
 
     bool shouldPlayVideo = true;
     bool shouldPop = true;
+    
 
     // Show loading indicator while video is loading
     showDialog(
@@ -501,11 +480,15 @@ class _MusicScreenState extends State<MusicScreen> {
       _isNavigating = false;
     });
 
+
+
     try {
+String originalUrl = newsItem.url;
       if (newsItem.streamType == 'YoutubeLive') {
         // Retry fetching the updated URL if stream type is YouTube Live
         for (int i = 0; i < _maxRetries; i++) {
           try {
+
             String updatedUrl =
                 await _socketService.getUpdatedUrl(newsItem.url);
             newsItem = NewsItemModel(
@@ -532,42 +515,18 @@ class _MusicScreenState extends State<MusicScreen> {
       }
 
       if (shouldPlayVideo) {
-        // if (newsItem.streamType == 'VLC') {
-        //   //   // Navigate to VLC Player screen when stream type is VLC
-        //   await Navigator.push(
-        //     context,
-        //     MaterialPageRoute(
-        //       builder: (context) => VlcPlayerScreen(
-        //         videoUrl: newsItem.url,
-        //         // videoTitle: newsItem.name,
-        //         channelList: _musicList,
-        //         genres: newsItem.genres,
-        //         // channels: [],
-        //         // initialIndex: 1,
-        //         bannerImageUrl: newsItem.banner,
-        //         startAtPosition: Duration.zero,
-        //         // onFabFocusChanged: (bool) {},
-        //         isLive: true,
-        //       ),
-        //     ),
-        //   );
-        // } else {
           await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => VideoScreen(
                 videoUrl: newsItem.url,
-                // videoTitle: newsItem.name,
-                // channelList: _musicList,
-                // genres: newsItem.genres,
-                // channels: [],
-                // initialIndex: 1,
                 bannerImageUrl: newsItem.banner,
                 startAtPosition: Duration.zero,
                 videoType: newsItem.streamType,
                 channelList: _musicList,
                 isLive: true,isVOD: false,isBannerSlider: false,
-                source: 'isLiveScreen',isSearch: false,
+                source: 'isLiveScreen',isSearch: false, 
+                videoId: int.tryParse(newsItem.id), unUpdatedUrl:  originalUrl,
               ),
             ),
           );
