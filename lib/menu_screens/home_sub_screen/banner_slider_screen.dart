@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
+import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
+import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
@@ -590,7 +592,6 @@ class _BannerSliderState extends State<BannerSlider> {
                 source: 'isBannerSlider',
                 isSearch: false,
                 unUpdatedUrl: originalUrl,
-                
               ),
             ),
           ).then((_) {
@@ -676,110 +677,570 @@ class _BannerSliderState extends State<BannerSlider> {
 //     }
 //   }
 
+  // Future<void> _loadLastPlayedVideos() async {
+  //   try {
+  //     SharedPreferences prefs = await SharedPreferences.getInstance();
+  //     List<String>? storedVideos = prefs.getStringList('last_played_videos');
+
+  //     if (storedVideos != null && storedVideos.isNotEmpty) {
+  //       setState(() {
+  //         lastPlayedVideos = storedVideos.map((videoEntry) {
+  //           List<String> details = videoEntry.split('|');
+
+  //           // Safely parse the position value with error handling
+  //           Duration position;
+  //           try {
+  //             position = Duration(milliseconds: int.tryParse(details[1]) ?? 0);
+  //           } catch (e) {
+  //             position = Duration.zero;
+  //           }
+
+  //           return {
+  //             'videoUrl': details.isNotEmpty ? details[0] : '',
+  //             'position': position,
+  //             'bannerImageUrl': details.length > 2 ? details[2] : '',
+  //             'videoName': details.length > 3 ? details[3] : '',
+  //             'source': details.length > 4 ? details[4] : '',
+  //             'videoId': details.length > 5 ? details[5] : '',
+  //             'focusNode': FocusNode(),
+  //           };
+  //         }).toList();
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("Error loading last played videos: $e");
+  //     // Reset to empty list in case of error
+  //     setState(() {
+  //       lastPlayedVideos = [];
+  //     });
+  //   }
+  // }
+
+
   Future<void> _loadLastPlayedVideos() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      List<String>? storedVideos = prefs.getStringList('last_played_videos');
+  try {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? storedVideos = prefs.getStringList('last_played_videos');
 
-      if (storedVideos != null && storedVideos.isNotEmpty) {
-        setState(() {
-          lastPlayedVideos = storedVideos.map((videoEntry) {
-            List<String> details = videoEntry.split('|');
-
-            // Safely parse the position value with error handling
-            Duration position;
-            try {
-              position = Duration(milliseconds: int.tryParse(details[1]) ?? 0);
-            } catch (e) {
-              position = Duration.zero;
-            }
-
-            return {
-              'videoUrl': details.isNotEmpty ? details[0] : '',
-              'position': position,
-              'bannerImageUrl': details.length > 2 ? details[2] : '',
-              'videoName': details.length > 3 ? details[3] : '',
-              'source': details.length > 4 ? details[4] : '',
-              'videoId': details.length > 5 ? details[5] : '',
-              'focusNode': FocusNode(),
-            };
-          }).toList();
-        });
-      }
-    } catch (e) {
-      print("Error loading last played videos: $e");
-      // Reset to empty list in case of error
+    if (storedVideos != null && storedVideos.isNotEmpty) {
       setState(() {
-        lastPlayedVideos = [];
+        lastPlayedVideos = storedVideos.map((videoEntry) {
+          List<String> details = videoEntry.split('|');
+          
+          // Safely parse the position value with error handling
+          Duration position;
+          try {
+            position = Duration(milliseconds: int.tryParse(details[1]) ?? 0);
+          } catch (e) {
+            position = Duration.zero;
+          }
+
+          // Safely handle videoId
+          String videoId = '';
+          if (details.length > 5) {
+            videoId = details[5].trim(); // Remove any whitespace
+            if (videoId == 'null' || videoId == '') {
+              videoId = '0';
+            }
+          }
+
+          return {
+            'videoUrl': details.isNotEmpty ? details[0] : '',
+            'position': position,
+            'bannerImageUrl': details.length > 2 ? details[2] : '',
+            'videoName': details.length > 3 ? details[3] : '',
+            'source': details.length > 4 ? details[4] : '',
+            'videoId': videoId,
+            'focusNode': FocusNode(),
+          };
+        }).toList();
       });
     }
+  } catch (e) {
+    print("Error loading last played videos: $e");
+    setState(() {
+      lastPlayedVideos = [];
+    });
   }
-
-
-
-  void _playVideo(Map<String, dynamic> videoData, Duration position) async {
-    if (videoData == null) return;
-
-    try {
-      // Convert lastPlayedVideos to a list of NewsItemModel objects
-      List<NewsItemModel> channelList = lastPlayedVideos
-          .map((video) => NewsItemModel(
-              id: video['videoId'] ?? '',
-              url: video['videoUrl'] ?? '',
-              banner: video['bannerImageUrl'] ?? '',
-              name: video['videoName'] ?? '',
-              contentId: video['videoId'] ?? '',
-              status: '1',
-              // type: '',
-              streamType: 'M3u8',
-              contentType: '1',
-              genres: ''))
-          .toList();
-
-      String source = videoData['source'] ?? '';
-      String videoId = videoData['videoId'] ?? '';
-      // String url = videoData['videoUrl'];
-      // if (source == 'isContentScreenViaDetailsPageChannelLIst') {
-      //   url = await _socketService.getUpdatedUrl(url);
-      // }
-      print('asdfghfdhkf:$source');
-      // print('asdfgh:$url');
-
-String updatedUrl = videoData['videoUrl'];
-if(source == 'isLiveScreen'){
-  updatedUrl = await _socketService.getUpdatedUrl(videoData['videoUrl']); // final हटा दिया
 }
 
+//   void _playVideo(Map<String, dynamic> videoData, Duration position) async {
+//     if (videoData == null) return;
 
+//     try {
+//       // Convert lastPlayedVideos to a list of NewsItemModel objects
+//       List<NewsItemModel> channelList = lastPlayedVideos
+//           .map((video) => NewsItemModel(
+//               id: video['videoId'] ?? '',
+//               url: video['videoUrl'] ?? '',
+//               banner: video['bannerImageUrl'] ?? '',
+//               name: video['videoName'] ?? '',
+//               contentId: video['videoId'] ?? '',
+//               status: '1',
+//               // type: '',
+//               streamType: 'M3u8',
+//               contentType: '1',
+//               genres: ''))
+//           .toList();
+
+//       String source = videoData['source'] ?? '';
+//       String videoId = videoData['videoId'] ?? '';
+//       // String url = videoData['videoUrl'];
+//       // if (source == 'isContentScreenViaDetailsPageChannelLIst') {
+//       //   url = await _socketService.getUpdatedUrl(url);
+//       // }
+//       print('asdfghfdhkf:$source');
+//       // print('asdfgh:$url');
+
+//     var selectedChannel = videoData['videoUrl'];
+// String updatedUrl = videoData['videoUrl'];
+
+//  if (source == 'isHomeCategory') {
+//         final playLink =
+//             await fetchLiveFeaturedTVById(videoId);
+
+//         if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+//           updatedUrl = playLink['url']!;
+//           if (playLink['stream_type'] == 'YoutubeLive') {
+//             updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+//           }
+//         } else {
+//           throw Exception("Invalid play link for VOD");
+//         }
+//       } else if (selectedChannel.streamType == 'YoutubeLive' ||
+//           selectedChannel.streamType == 'Youtube') {
+//         updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
+//         if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
+//       }
+
+//       if (source == 'isBannerSlider' || source == 'isLiveScreen') {
+//         final playLink =
+//             await fetchLiveFeaturedTVById(videoId);
+
+//         if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+//           updatedUrl = playLink['url']!;
+//           if (playLink['stream_type'] == 'YoutubeLive') {
+//             updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+//           }
+//         } else {
+//           throw Exception("Invalid play link for VOD");
+//         }
+//       } else if (selectedChannel.streamType == 'YoutubeLive' ||
+//           selectedChannel.streamType == 'Youtube') {
+//         updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
+//         if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
+//       }
+
+//       if (selectedChannel.contentType == '1' ||
+//           selectedChannel.contentType == 1 &&
+//               source == 'isSearchScreen') {
+//         // final playLink =
+//         //     await fetchLiveFeaturedTVById(selectedChannel.id);
+//         final playLink = await fetchMoviePlayLink(videoId as int);
+
+//         print('hellow isSearchScreen$playLink');
+//         if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+//           updatedUrl = playLink['url']!;
+//           if (playLink['type'] == 'Youtube' ||
+//               playLink['type'] == 'YoutubeLive' ||
+//               playLink['content_type'] == '1' ||
+//               playLink['content_type'] == 1) {
+//             updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+//             print('hellow isSearchScreen$updatedUrl');
+//           }
+//         }
+//       }
+
+//       if (source == 'isContentScreenViaDetailsPageChannelLIst' ||
+//               source == 'isSearchScreenViaDetailsPageChannelList'
+//           //|| widget.source == 'isSearchScreen'
+//           ) {
+//         print('hellow isVOD');
+
+//         if (selectedChannel.contentType == '1' ||
+//             selectedChannel.contentType == 1) {
+//           // final playLink =
+//           //     await fetchLiveFeaturedTVById(selectedChannel.id);
+//           final playLink = await fetchMoviePlayLink(videoId as int);
+
+//           print('hellow isVOD$playLink');
+//           if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+//             updatedUrl = playLink['url']!;
+//             if (playLink['type'] == 'Youtube' ||
+//                 playLink['type'] == 'YoutubeLive' ||
+//                 playLink['content_type'] == '1' ||
+//                 playLink['content_type'] == 1) {
+//               updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+//               print('hellow isVOD$updatedUrl');
+//             }
+//           }
+//         }
+//       }
+
+//       Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) => VideoScreen(
+//             videoUrl:
+//                 // videoData['videoUrl'],
+//                 updatedUrl,
+//             unUpdatedUrl: videoData['videoUrl'],
+//             channelList: channelList,
+//             bannerImageUrl: videoData['bannerImageUrl'],
+//             startAtPosition: videoData['position'],
+//             videoType: '',
+//             isLive: false,
+//             isVOD: source == 'isVOD',
+//             isSearch: false,
+//             isHomeCategory: source == 'isHomeCategory',
+//             isBannerSlider: source == 'isBannerSlider',
+//             videoId: videoId.isNotEmpty ? int.parse(videoId) : null,
+//             source: source,
+//           ),
+//         ),
+//       );
+//     } catch (e) {
+//       print("Error playing video: $e");
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Unable to play this content')),
+//       );
+//     }
+//   }
+
+
+bool isYoutubeUrl(String? url) {
+  if (url == null || url.isEmpty) {
+    return false;
+  }
+  
+  url = url.toLowerCase().trim();
+  
+  // First check if it's a YouTube ID (exactly 11 characters)
+  bool isYoutubeId = RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(url);
+  if (isYoutubeId) {
+    print("Matched YouTube ID pattern: $url");
+    return true;
+  }
+  
+  // Then check for regular YouTube URLs
+  bool isYoutubeUrl = url.contains('youtube.com') || 
+                      url.contains('youtu.be') ||
+                      url.contains('youtube.com/shorts/');
+  if (isYoutubeUrl) {
+    print("Matched YouTube URL pattern: $url");
+    return true;
+  }
+  
+  print("Not a YouTube URL/ID: $url");
+  return false;
+}
+
+String formatUrl(String url, {Map<String, String>? params}) {
+  if (url.isEmpty) {
+    print("Warning: Empty URL provided");
+    throw Exception("Empty URL provided");
+  }
+  
+  // Handle YouTube ID by converting to full URL if needed
+  if (RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(url)) {
+    print("Converting YouTube ID to full URL");
+    url = "https://www.youtube.com/watch?v=$url";
+  }
+
+  // Remove any existing query parameters
+  url = url.split('?')[0];
+
+  // Add new query parameters
+  if (params != null && params.isNotEmpty) {
+    url += '?' + params.entries
+        .map((e) => '${e.key}=${e.value}')
+        .join('&');
+  }
+
+  print("Formatted URL: $url");
+  return url;
+}
+
+  // void _playVideo(Map<String, dynamic> videoData, Duration position) async {
+  //   if (videoData == null) return;
+
+  //   if (_isNavigating) return;
+  //   _isNavigating = true;
+
+  //   bool shouldPlayVideo = true;
+  //   bool shouldPop = true;
+
+  //   // Show loading indicator while video is loading
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return WillPopScope(
+  //         onWillPop: () async {
+  //           shouldPlayVideo = false;
+  //           shouldPop = false;
+  //           return true;
+  //         },
+  //         child: LoadingIndicator(),
+  //       );
+  //     },
+  //   );
+
+  //   Timer(Duration(seconds: 10), () {
+  //     _isNavigating = false;
+  //   });
+
+  //   try {
+  //     // Convert lastPlayedVideos to a list of NewsItemModel objects
+  //     List<NewsItemModel> channelList = lastPlayedVideos
+  //         .map((video) => NewsItemModel(
+  //             id: video['videoId'] ?? '',
+  //             url: video['videoUrl'] ?? '',
+  //             banner: video['bannerImageUrl'] ?? '',
+  //             name: video['videoName'] ?? '',
+  //             contentId: video['videoId'] ?? '',
+  //             status: '1',
+  //             streamType: 'M3u8',
+  //             contentType: '1',
+  //             genres: ''))
+  //         .toList();
+
+  //     String source = videoData['source'] ?? '';
+  //     String videoId = videoData['videoId'] ?? '';
+  //     String updatedUrl = videoData['videoUrl'];
+
+
+  //         if (isYoutubeUrl(updatedUrl)) {
+  //     print("Processing as YouTube content");
+  //     updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+  //     print("Socket service returned URL: $updatedUrl");
+  //   }
+
+  //     // // Handle different video sources
+  //     // if (source == 'isHomeCategory' ||
+  //     //     source == 'isBannerSlider' ||
+  //     //     source == 'isLiveScreen') {
+  //     //   final playLink = await fetchLiveFeaturedTVById(videoId);
+  //     //   print('testing:$videoId');
+  //     //   if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+  //     //     updatedUrl = playLink['url']!;
+  //     //     if (playLink['stream_type'] == 'YoutubeLive' ||
+  //     //         playLink['type'] == 'YoutubeLive') {
+  //     //       updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+  //     //     }
+  //     //   } else {
+  //     //     throw Exception("Invalid play link");
+  //     //   }
+  //     // }
+  //     // // Handle VOD content
+  //     // else if (source == 'isContentScreenViaDetailsPageChannelLIst' ||
+  //     //     source == 'isSearchScreenViaDetailsPageChannelList' ||
+  //     //     source == 'isSearchScreen') {
+  //     //   try {
+  //     //     final playLink = await fetchMoviePlayLink(int.parse(videoId));
+  //     //     if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+  //     //       updatedUrl = playLink['url']!;
+  //     //       if (playLink['type'] == 'Youtube' ||
+  //     //           playLink['type'] == 'YoutubeLive' ||
+  //     //           playLink['content_type'] == '1') {
+  //     //         updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
+  //     //       }
+  //     //     }
+  //     //   } catch (e) {
+  //     //     print("Error fetching movie play link: $e");
+  //     //     throw Exception("Failed to fetch video URL");
+  //     //   }
+  //     // }
+
+  //     if (shouldPop) {
+  //       Navigator.of(context, rootNavigator: true).pop();
+  //     }
+
+  //         // Check if URL/ID is YouTube
+
+
+  //     if (shouldPlayVideo) {
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => VideoScreen(
+  //             videoUrl: updatedUrl,
+  //             unUpdatedUrl: videoData['videoUrl'],
+  //             channelList: lastPlayedVideos,
+  //             bannerImageUrl: videoData['bannerImageUrl'],
+  //             startAtPosition: position,
+  //             videoType: '',
+  //             isLive: source == 'isLiveScreen',
+  //             isVOD: source == 'isVOD',
+  //             isSearch: source == 'isSearchScreen',
+  //             isHomeCategory: source == 'isHomeCategory',
+  //             isBannerSlider: source == 'isBannerSlider',
+  //             videoId: 
+  //             videoId.isNotEmpty ? int.parse(videoId) : null
+  //             ,
+  //             source: source,
+  //           ),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print("Error playing video: $e");
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(content: Text('Unable to play this content')));
+  //     }
+  //   }
+  // }
+
+
+
+void _playVideo(Map<String, dynamic> videoData, Duration position) async {
+  if (videoData == null) return;
+
+  if (_isNavigating) return;
+  _isNavigating = true;
+
+  bool shouldPlayVideo = true;
+  bool shouldPop = true;
+
+  // Show loading indicator while video is loading
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return WillPopScope(
+        onWillPop: () async {
+          shouldPlayVideo = false;
+          shouldPop = false;
+          return true;
+        },
+        child: LoadingIndicator(),
+      );
+    },
+  );
+
+  Timer(Duration(seconds: 10), () {
+    _isNavigating = false;
+  });
+
+  try {
+    // Find the index of the current video in lastPlayedVideos
+    final currentIndex = lastPlayedVideos.indexWhere(
+      (video) => video['videoUrl'] == videoData['videoUrl']
+    );
+
+    // Create channelList with only video URLs based on index
+    List<NewsItemModel> channelList = [];
+    for (int i = 0; i < lastPlayedVideos.length; i++) {
+      String videoUrl = lastPlayedVideos[i]['videoUrl'] ?? '';
+      String videoIdString = lastPlayedVideos[i]['videoId'] ?? '0';
+      String contentIdString = lastPlayedVideos[i]['videoId'] ?? '0';
+      String streamType = isYoutubeUrl(videoUrl) ? 'YoutubeLive' : 'M3u8';
+      
+      channelList.add(NewsItemModel(
+        id: videoIdString,
+        url: videoUrl,
+        banner: lastPlayedVideos[i]['bannerImageUrl'] ?? '',
+        name: lastPlayedVideos[i]['videoName'] ?? '',
+        contentId: contentIdString,
+        status: '1',
+        streamType: streamType,
+        contentType: '1',
+        genres: ''
+      ));
+    }
+
+    String source = videoData['source'] ?? '';
+    // String videoId = videoData['videoId'] ?? '';
+        int videoId = 0;
+    if (videoData['videoId'] != null && videoData['videoId'].toString().isNotEmpty) {
+      videoId = int.tryParse(videoData['videoId'].toString()) ?? 0;
+    }
+    String originalUrl = videoData['videoUrl'];
+    String updatedUrl = videoData['videoUrl'];
+
+      print("YouTubeUrl: $updatedUrl");
+
+
+    if (isYoutubeUrl(updatedUrl)) {
+      print("Processing as YouTube content");
+      updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+      print("Socket service returned URL: $updatedUrl");
+    }
+
+      print("YouTubeUrl1: $updatedUrl");
+
+
+    if (shouldPop) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    if (shouldPlayVideo) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VideoScreen(
-            videoUrl:
-                // videoData['videoUrl'],
-                updatedUrl,
-            unUpdatedUrl: videoData['videoUrl'],
-            channelList: channelList,
+            videoUrl: updatedUrl,
+            unUpdatedUrl: originalUrl,
+            channelList: channelList,  // Pass the index-based channel list
             bannerImageUrl: videoData['bannerImageUrl'],
-            startAtPosition: videoData['position'],
+            startAtPosition: position,
             videoType: '',
-            isLive: false,
+            isLive: source == 'isLiveScreen',
             isVOD: source == 'isVOD',
-            isSearch: false,
+            isSearch: source == 'isSearchScreen',
             isHomeCategory: source == 'isHomeCategory',
             isBannerSlider: source == 'isBannerSlider',
-            videoId: videoId.isNotEmpty ? int.parse(videoId) : null,
-            source: source,
+            videoId: 
+            videoId,
+            // videoId.isNotEmpty ? int.parse(videoId) : 0,
+            source: 'isLastPlayedVideos',
           ),
         ),
       );
-    } catch (e) {
-      print("Error playing video: $e");
+    }
+  } catch (e) {
+    print("Error playing video: $e");
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to play this content')),
+        SnackBar(content: Text('Unable to play this content'))
       );
     }
+  } finally {
+    _isNavigating = false;
   }
+}
+
+// Helper method to fetch updated URL with retries
+  Future<String> _fetchUpdatedUrl(String originalUrl) async {
+    for (int i = 0; i < _maxRetries; i++) {
+      try {
+        final updatedUrl = await _socketService.getUpdatedUrl(originalUrl);
+        print("Updated URL on retry $i: $updatedUrl");
+        return updatedUrl;
+      } catch (e) {
+        print("Retry ${i + 1} failed: $e");
+        if (i == _maxRetries - 1) rethrow;
+        await Future.delayed(Duration(seconds: _retryDelay));
+      }
+    }
+    return '';
+  }
+
+  //   Future<String> _fetchUpdatedUrl(String originalUrl) async {
+  //   for (int i = 0; i < _maxRetries; i++) {
+  //     try {
+  //       final updatedUrl = await SocketService().getUpdatedUrl(originalUrl);
+  //       print("Updated URL on retry $i: $updatedUrl");
+  //       return updatedUrl;
+  //     } catch (e) {
+  //       print("Retry ${i + 1} failed: $e");
+  //       if (i == _maxRetries - 1) rethrow; // Rethrow on final failure
+  //       await Future.delayed(Duration(seconds: _retryDelay));
+  //     }
+  //   }
+  //   return ''; // Return empty string if all retries fail
+  // }
 
 // void _playVideo(Map<String, dynamic> videoData,Duration position) {
 //   if (videoData == null) return;

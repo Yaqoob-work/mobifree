@@ -196,6 +196,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     } catch (e) {
       print("Error disposing controller: $e");
     }
+
     _controller?.removeListener(() {});
     _saveLastPlayedVideo(widget.videoUrl,
         _controller?.value.position ?? Duration.zero, widget.bannerImageUrl);
@@ -425,6 +426,19 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 //   });
 // }
   bool urlUpdating = false;
+
+  String extractApiEndpoint(String url) {
+    try {
+      Uri uri = Uri.parse(url);
+      // Get the scheme, host, and path to form the API endpoint
+      String apiEndpoint = '${uri.scheme}://${uri.host}${uri.path}';
+      return apiEndpoint;
+    } catch (e) {
+      print("Error parsing URL: $e");
+      return '';
+    }
+  }
+
   Future<void> _initializeVLCController(int index) async {
     // try {
     setState(() {
@@ -537,6 +551,13 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
     // String modifiedUrl =
     //     '${updatedUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+
+    // Extract the API endpoint
+    String apiEndpoint = extractApiEndpoint(widget.videoUrl);
+    print("API Endpoint vlcinitialization: $apiEndpoint");
+
+    await _saveLastPlayedVideo(widget.unUpdatedUrl,
+        _controller?.value.position ?? Duration.zero, widget.bannerImageUrl);
 
     _controller = VlcPlayerController.network(
       modifiedUrl,
@@ -664,110 +685,148 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     print("All retries failed for URL: $url");
   }
 
+//   bool isYouTubeUrl(String url) {
+//   final youtubeRegex = RegExp(
+//       r'(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+');
+//   return youtubeRegex.hasMatch(url);
+// }
+
+  bool isYoutubeUrl(String? url) {
+    if (url == null || url.isEmpty) {
+      return false;
+    }
+
+    url = url.toLowerCase().trim();
+
+    // First check if it's a YouTube ID (exactly 11 characters)
+    bool isYoutubeId = RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(url);
+    if (isYoutubeId) {
+      print("Matched YouTube ID pattern: $url");
+      return true;
+    }
+
+    // Then check for regular YouTube URLs
+    bool isYoutubeUrl = url.contains('youtube.com') ||
+        url.contains('youtu.be') ||
+        url.contains('youtube.com/shorts/');
+    if (isYoutubeUrl) {
+      print("Matched YouTube URL pattern: $url");
+      return true;
+    }
+
+    print("Not a YouTube URL/ID: $url");
+    return false;
+  }
+
+  String formatUrl(String url, {Map<String, String>? params}) {
+    if (url.isEmpty) {
+      print("Warning: Empty URL provided");
+      throw Exception("Empty URL provided");
+    }
+
+    // Handle YouTube ID by converting to full URL if needed
+    if (RegExp(r'^[a-zA-Z0-9_-]{11}$').hasMatch(url)) {
+      print("Converting YouTube ID to full URL");
+      url = "https://www.youtube.com/watch?v=$url";
+    }
+
+    // Remove any existing query parameters
+    url = url.split('?')[0];
+
+    // Add new query parameters
+    if (params != null && params.isNotEmpty) {
+      url += '?' + params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    }
+
+    print("Formatted URL: $url");
+    return url;
+  }
+
   Future<void> _onItemTap(int index) async {
     var selectedChannel = widget.channelList[index];
     String updatedUrl = selectedChannel.url;
 
     setState(() {
-      _loadingVisible = true; // Show loading indicator
+      _loadingVisible = true;
     });
 
     try {
-      final int contentId = int.tryParse(selectedChannel.id) ?? 0;
+      if (widget.source == 'isLastPlayedVideos') {
+        // For last played videos, just use the URL from the channel list directly
+        updatedUrl = widget.channelList[index].url;
 
-      if (widget.source == 'isHomeCategory') {
-        final playLink =
-            await fetchLiveFeaturedTVById(selectedChannel.contentId);
-
-        if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
-          updatedUrl = playLink['url']!;
-          if (playLink['stream_type'] == 'YoutubeLive') {
-            updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
-          }
-        } else {
-          throw Exception("Invalid play link for VOD");
+        // Check if it's a YouTube URL
+        if (isYoutubeUrl(updatedUrl)) {
+          print("Processing YouTube URL from last played videos");
+          updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
         }
-      } else if (selectedChannel.streamType == 'YoutubeLive' ||
-          selectedChannel.streamType == 'Youtube') {
-        updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
-        if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
-      }
+      } else {
+        final int contentId = int.tryParse(selectedChannel.id) ?? 0;
 
-      if (widget.isBannerSlider) {
-        final playLink =
-            await fetchLiveFeaturedTVById(selectedChannel.contentId);
+        String apiEndpoint = extractApiEndpoint(updatedUrl);
+        print("API Endpoint onitemtap: $updatedUrl");
 
-        if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
-          updatedUrl = playLink['url']!;
-          if (playLink['stream_type'] == 'YoutubeLive') {
-            updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
-          }
-        } else {
-          throw Exception("Invalid play link for VOD");
-        }
-      } else if (selectedChannel.streamType == 'YoutubeLive' ||
-          selectedChannel.streamType == 'Youtube') {
-        updatedUrl = await _fetchUpdatedUrl(selectedChannel.url);
-        if (updatedUrl.isEmpty) throw Exception("Failed to fetch updated URL");
-      }
-
-      if (selectedChannel.contentType == '1' ||
-          selectedChannel.contentType == 1 &&
-              widget.source == 'isSearchScreen') {
-        // final playLink =
-        //     await fetchLiveFeaturedTVById(selectedChannel.id);
-        final playLink = await fetchMoviePlayLink(contentId);
-
-        print('hellow isSearchScreen$playLink');
-        if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
-          updatedUrl = playLink['url']!;
-          if (playLink['type'] == 'Youtube' ||
-              playLink['type'] == 'YoutubeLive' ||
-              playLink['content_type'] == '1' ||
-              playLink['content_type'] == 1) {
-            updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
-            print('hellow isSearchScreen$updatedUrl');
-          }
-        }
-      }
-
-      if (widget.isVOD ||
-              widget.source == 'isSearchScreenViaDetailsPageChannelList'
-          //|| widget.source == 'isSearchScreen'
-          ) {
-        print('hellow isVOD');
-
-        if (selectedChannel.contentType == '1' ||
-            selectedChannel.contentType == 1) {
-          // final playLink =
-          //     await fetchLiveFeaturedTVById(selectedChannel.id);
-          final playLink = await fetchMoviePlayLink(contentId);
-
-          print('hellow isVOD$playLink');
+        if (widget.source == 'isHomeCategory') {
+          final playLink = await fetchLiveFeaturedTVById(selectedChannel.id);
           if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
             updatedUrl = playLink['url']!;
-            if (playLink['type'] == 'Youtube' ||
-                playLink['type'] == 'YoutubeLive' ||
-                playLink['content_type'] == '1' ||
-                playLink['content_type'] == 1) {
-              updatedUrl = await _socketService.getUpdatedUrl(playLink['url']!);
-              print('hellow isVOD$updatedUrl');
+          }
+        }
+
+        if (widget.isBannerSlider) {
+          final playLink =
+              await fetchLiveFeaturedTVById(selectedChannel.contentId);
+          if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+            updatedUrl = playLink['url']!;
+          }
+        }
+
+        if (
+          // selectedChannel.contentType == '1' ||
+          //   selectedChannel.contentType == 1 &&
+                widget.source == 'isSearchScreen') {
+          final playLink = await fetchMoviePlayLink(contentId);
+          print('hello isSearchScreen$playLink');
+          if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+            updatedUrl = playLink['url']!;
+          }
+        }
+
+        if (widget.isVOD ||
+            widget.source == 'isSearchScreenViaDetailsPageChannelList') {
+          print('hello isVOD');
+          if (selectedChannel.contentType == '1' ||
+              selectedChannel.contentType == 1) {
+            final playLink = await fetchMoviePlayLink(contentId);
+            print('hello isVOD$playLink');
+            if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+              updatedUrl = playLink['url']!;
             }
           }
         }
       }
 
-      // Store modifiedUrl
+      // Save video right before YouTube check - this is when we have the proper URL
+      await _saveLastPlayedVideo(
+          updatedUrl, // Save the URL before socket service update
+          _controller?.value.position ?? Duration.zero,
+          selectedChannel.banner ?? widget.bannerImageUrl);
+      print("Saved video URL beforesocketupdate: $updatedUrl");
+
+      // Now process YouTube URL if needed
+      if (isYoutubeUrl(updatedUrl)) {
+        print("Processing as YouTube content");
+        updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+        print("Socket service returned URL: $updatedUrl");
+      }
+
+      String apiEndpoint1 = extractApiEndpoint(updatedUrl);
+      print("API Endpoint onitemtap1: $apiEndpoint1");
+
       String _currentModifiedUrl =
           '${updatedUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
 
-      // Reinitialize the VLC player
       if (_controller != null && _controller!.value.isInitialized) {
-        // String modifiedUrl =
-        //     '${updatedUrl}?network-caching=1000&live-caching=500&rtsp-tcp';
-        // _controller!.setMediaFromNetwork(_currentModifiedUrl);
-        // await _controller!.play();
-        // Attempt playback with retries
         await _retryPlayback(_currentModifiedUrl, 5);
         setState(() {
           _focusedIndex = index;
@@ -777,11 +836,11 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       }
 
       setState(() {
-        _focusedIndex = index; // Update focus index
+        _focusedIndex = index;
         _currentModifiedUrl = _currentModifiedUrl;
       });
 
-      _scrollToFocusedItem(); // Ensure the channel is visible
+      _scrollToFocusedItem();
       _resetHideControlsTimer();
     } catch (e) {
       print("Error switching channel: $e");
@@ -790,10 +849,79 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       );
     } finally {
       setState(() {
-        _loadingVisible = false; // Hide loading indicator
+        _loadingVisible = false;
       });
     }
   }
+
+
+
+// Future<void> _onItemTap(int index) async {
+//   var selectedChannel = widget.channelList[index];
+//   String updatedUrl = selectedChannel.url;
+
+//     // Debug prints to check what we're getting
+//   print("SelectedChannelData:");
+//   print("SelectedChannelDataURL: ${selectedChannel.url}");
+//   print("SelectedChannelDataType: ${selectedChannel.type}");
+//   print("SelectedChannelDataID: ${selectedChannel.id}");
+
+//   setState(() {
+//     _loadingVisible = true;
+//   });
+
+//   try {
+//     print("Original URL/ID: $updatedUrl"); // Debug print
+
+//     if (updatedUrl.isEmpty) {
+//       throw Exception("Invalid URL: URL is empty");
+//     }
+
+//     // Check if URL/ID is YouTube
+//     if (isYoutubeUrl(updatedUrl)) {
+//       print("Processing as YouTube content");
+//       // updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+//       updatedUrl = await updatedUrl;
+//       print("Socket service returned URL: $updatedUrl");
+//     }
+
+//     // Format URL with parameters only if it's not empty
+//     String _currentModifiedUrl = formatUrl(updatedUrl, params: {
+//       'network-caching': '5000',
+//       'live-caching': '500',
+//       'rtsp-tcp': ''
+//     });
+
+//     print("Final URL for VLC: $_currentModifiedUrl");
+
+//     if (_controller != null && _controller!.value.isInitialized) {
+//       await _retryPlayback(_currentModifiedUrl, 5);
+//       setState(() {
+//         _focusedIndex = index;
+//       });
+//     } else {
+//       throw Exception("VLC Controller is not initialized");
+//     }
+
+//     setState(() {
+//       _focusedIndex = index;
+//       _currentModifiedUrl = _currentModifiedUrl;
+//     });
+
+//     _scrollToFocusedItem();
+//     _resetHideControlsTimer();
+
+//   } catch (e) {
+//     print("Error switching channel: $e");
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text("Failed to switch channel: ${e.toString()}")),
+//     );
+//   } finally {
+//     setState(() {
+//       _loadingVisible = false;
+//     });
+//   }
+// }
 
   Future<String> _fetchUpdatedUrl(String originalUrl) async {
     for (int i = 0; i < _maxRetries; i++) {
@@ -1058,68 +1186,203 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   //   await prefs.setStringList('last_played_videos', lastPlayedVideos);
   // }
 
+  // Future<void> _saveLastPlayedVideo(
+  //     String unUpdatedUrl, Duration position, String bannerImageUrl) async {
+  //   print('unUpdatedUrl: $unUpdatedUrl');
+  //   try {
+  //     // Initialize variables
+  //     String lastPlayedUrl = unUpdatedUrl;
+  //     String videoName = '';
+  //     String videoSource = widget.source;
+  //     String videoId = '';
+  //     String currentBannerUrl = bannerImageUrl;
+  //     String contentType = '';
+  //     String streamType = '';
 
-Future<void> _saveLastPlayedVideo(
-    String unUpdatedUrl, Duration position, String bannerImageUrl) async {
-  if (_controller is VlcPlayerController) {
-    position = (_controller as VlcPlayerController).value.position;
-  } else {
-    position = Duration.zero;
-  }
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+  //     // Find the channel information
+  //     dynamic matchingChannel;
+  //     try {
+  //       if (widget.channelList.isNotEmpty) {
+  //         // Look for an exact URL match first
+  //         matchingChannel = widget.channelList.firstWhere(
+  //           (channel) => channel.url.toString() == unUpdatedUrl,
+  //           orElse: () => null,
+  //         );
 
-  String videoName = '';
-  String videoSource = widget.source;
-  String videoId = '';  // Added videoId variable
+  //         // If no match found and we're in banner slider mode, try matching by content ID
+  //         if (matchingChannel == null &&
+  //             widget.isBannerSlider &&
+  //             widget.videoId != null) {
+  //           matchingChannel = widget.channelList.firstWhere(
+  //             (channel) =>
+  //                 channel.contentId?.toString() == widget.videoId.toString(),
+  //             orElse: () => null,
+  //           );
+  //         }
 
-  if (widget.channelList.isNotEmpty && _focusedIndex < widget.channelList.length) {
-    var currentChannel = widget.channelList[_focusedIndex];
-    
-    if (widget.isVOD) {
-      videoName = currentChannel.name ?? 'Untitled Video';
-      videoId = currentChannel.id?.toString() ?? '';  // Get ID for VOD content
-    } else if (widget.isBannerSlider) {
-      videoName = currentChannel.name ?? 'Untitled Video';
-      videoId = currentChannel.contentId?.toString() ?? '';  // Get contentId for banner slider
-    } else if (widget.isSearch) {
-      videoName = currentChannel.name ?? 'Untitled Video';
-      videoId = currentChannel.id?.toString() ?? '';  // Get ID for search results
-    } else {
-      videoName = currentChannel.name ?? 'Untitled Video';
-      videoId = currentChannel.id?.toString() ?? '';  // Get ID for regular channels
+  //         // If still no match and we're in VOD/search mode, try matching by ID
+  //         if (matchingChannel == null &&
+  //             (widget.isVOD || widget.isSearch) &&
+  //             widget.videoId != null) {
+  //           matchingChannel = widget.channelList.firstWhere(
+  //             (channel) => channel.id?.toString() == widget.videoId.toString(),
+  //             orElse: () => null,
+  //           );
+  //         }
+  //       }
+  //     } catch (e) {
+  //       print("Error finding matching channel: $e");
+  //     }
+
+  //     // Get metadata if we found a matching channel
+  //     if (matchingChannel != null) {
+  //       try {
+  //         videoName = matchingChannel.name?.toString() ?? '';
+  //         videoId = widget.isBannerSlider
+  //             ? matchingChannel.contentId?.toString() ?? ''
+  //             : matchingChannel.id?.toString() ?? '';
+  //         contentType = matchingChannel.contentType?.toString() ?? '';
+  //         streamType = matchingChannel.streamType?.toString() ?? '';
+  //         currentBannerUrl =
+  //             matchingChannel.banner?.toString() ?? bannerImageUrl;
+  //       } catch (e) {
+  //         print("Error extracting channel metadata: $e");
+  //       }
+  //     }
+
+  //     // Get SharedPreferences instance
+  //     final prefs = await SharedPreferences.getInstance();
+
+  //     // Get existing videos or empty list if none exist
+  //     List<String> lastPlayedVideos =
+  //         prefs.getStringList('last_played_videos') ?? [];
+
+  //     // Create the new video entry string
+  //     // Make sure all fields are converted to strings and handle null values
+  //     String newVideoEntry = [
+  //       lastPlayedUrl,
+  //       position.inMilliseconds.toString(),
+  //       currentBannerUrl,
+  //       videoName,
+  //       videoSource,
+  //       videoId,
+  //       contentType,
+  //       streamType
+  //     ].join('|');
+
+  //     print("Saving video entry: $newVideoEntry"); // Debug log
+
+  //     // Look for existing entry with same URL or ID
+  //     int existingIndex = -1;
+  //     for (int i = 0; i < lastPlayedVideos.length; i++) {
+  //       List<String> parts = lastPlayedVideos[i].split('|');
+  //       if (parts[0] == lastPlayedUrl ||
+  //           (parts.length >= 6 && parts[5] == videoId)) {
+  //         existingIndex = i;
+  //         break;
+  //       }
+  //     }
+
+  //     // Update or insert the entry
+  //     if (existingIndex != -1) {
+  //       lastPlayedVideos[existingIndex] = newVideoEntry;
+  //     } else {
+  //       lastPlayedVideos.insert(0, newVideoEntry);
+  //     }
+
+  //     // Trim the list to 12 items if needed
+  //     if (lastPlayedVideos.length > 12) {
+  //       lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+  //     }
+
+  //     // Save the updated list
+  //     bool saveSuccess =
+  //         await prefs.setStringList('last_played_videos', lastPlayedVideos);
+  //     print("Save success: $saveSuccess"); // Debug log
+  //     print("Saved videos count: ${lastPlayedVideos.length}"); // Debug log
+  //   } catch (e) {
+  //     print("Error in _saveLastPlayedVideo: $e");
+  //   }
+  // }
+
+  Future<void> _saveLastPlayedVideo(
+      String unUpdatedUrl, Duration position, String bannerImageUrl) async {
+    try {
+      // Find the matching channel to get the name and ID
+      String videoName = '';
+      String videoId = '';
+      if (widget.channelList.isNotEmpty) {
+        int channelIndex = -1;
+
+        // Try finding channel by URL first
+        channelIndex = widget.channelList
+            .indexWhere((channel) => channel.url == unUpdatedUrl);
+
+        // If not found by URL and we have videoId, try finding by ID
+        if (channelIndex == -1 && widget.videoId != null) {
+          if (widget.isBannerSlider) {
+            channelIndex = widget.channelList.indexWhere((channel) =>
+                channel.contentId?.toString() == widget.videoId.toString());
+          } else {
+            channelIndex = widget.channelList.indexWhere((channel) =>
+                channel.id?.toString() == widget.videoId.toString());
+          }
+        }
+
+        // If channel found, get its name and ID
+        if (channelIndex != -1) {
+          var channel = widget.channelList[channelIndex];
+          videoName = channel.name ?? 'Untitled';
+          // Get ID based on the content type
+          if (widget.isBannerSlider ) {
+            videoId = channel.contentId?.toString() ?? '';
+          } else {
+            videoId = channel.id?.toString() ?? '';
+          }
+        }
+      }
+
+      // If we still don't have an ID, use the widget's videoId as fallback
+      if (videoId.isEmpty && widget.videoId != null) {
+        videoId = widget.videoId.toString();
+      }
+
+      // Get shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      List<String> lastPlayedVideos =
+          prefs.getStringList('last_played_videos') ?? [];
+
+      // Create new entry including name and ID
+      String newVideoEntry =
+          "$unUpdatedUrl|${position.inMilliseconds}|$bannerImageUrl|$videoName|$videoId";
+      print("Saving video with name: $videoName and ID: $videoId"); // Debug log
+      print("Full entry being saved: $newVideoEntry"); // Debug log
+
+      // Check if video already exists in list by URL or ID
+      int existingIndex = lastPlayedVideos.indexWhere((entry) {
+        List<String> parts = entry.split('|');
+        return parts[0] == unUpdatedUrl ||
+            (parts.length >= 5 && parts[4] == videoId);
+      });
+
+      if (existingIndex != -1) {
+        lastPlayedVideos[existingIndex] = newVideoEntry;
+      } else {
+        lastPlayedVideos.insert(0, newVideoEntry);
+      }
+
+      // Keep only last 12 entries
+      if (lastPlayedVideos.length > 12) {
+        lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
+      }
+
+      // Save the list
+      await prefs.setStringList('last_played_videos', lastPlayedVideos);
+      print("Saved videos count: ${lastPlayedVideos.length}");
+    } catch (e) {
+      print("Error saving last played video: $e");
     }
   }
-
-  String currentBannerUrl = '';
-  if (widget.channelList.isNotEmpty && _focusedIndex < widget.channelList.length) {
-    currentBannerUrl = widget.channelList[_focusedIndex].banner ?? bannerImageUrl;
-  } else {
-    currentBannerUrl = bannerImageUrl;
-  }
-
-  List<String>? lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
-
-  // Update entry format to include id
-  String newVideoEntry = "$unUpdatedUrl|${position.inMilliseconds}|$currentBannerUrl|$videoName|$videoSource|$videoId";
-
-  // Check if video exists using both URL and ID
-  int existingIndex = lastPlayedVideos.indexWhere((entry) {
-    List<String> parts = entry.split('|');
-    return parts[0] == unUpdatedUrl || (parts.length >= 6 && parts[5] == videoId);
-  });
-
-  if (existingIndex != -1) {
-    lastPlayedVideos[existingIndex] = newVideoEntry;
-  } else {
-    lastPlayedVideos.insert(0, newVideoEntry);
-  }
-
-  if (lastPlayedVideos.length > 12) {
-    lastPlayedVideos = lastPlayedVideos.sublist(0, 12);
-  }
-
-  await prefs.setStringList('last_played_videos', lastPlayedVideos);
-}
 
   void _seekForward() {
     if (_controller != null) {
@@ -1391,10 +1654,10 @@ Future<void> _saveLastPlayedVideo(
     return WillPopScope(
       onWillPop: () async {
         _controller!.pause();
-        await _saveLastPlayedVideo(
-            widget.unUpdatedUrl ,
-            _controller?.value.position ?? Duration.zero,
-            widget.bannerImageUrl);
+        // await _saveLastPlayedVideo(
+        //     widget.unUpdatedUrl,
+        //     _controller?.value.position ?? Duration.zero,
+        //     widget.bannerImageUrl);
         await Future.delayed(Duration(milliseconds: 500));
         GlobalEventBus.eventBus.fire(RefreshPageEvent('uniquePageId'));
         Navigator.of(context).pop(true);
