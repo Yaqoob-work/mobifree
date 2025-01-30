@@ -334,6 +334,10 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               item.genres.split(',').map((genre) => genre.trim()).toList();
           return selectedGenres.any((genre) => itemGenres.contains(genre));
         }).toList();
+          bool liveStatus = true;
+
+
+          
 
         await Navigator.push(
           context,
@@ -350,7 +354,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               source: 'isLiveScreen',
               isSearch: false,
               videoId: int.tryParse(newsItem.id),
-              unUpdatedUrl: originalUrl,
+              unUpdatedUrl: originalUrl,name: newsItem.url, liveStatus:liveStatus ,
               
             ),
           ),

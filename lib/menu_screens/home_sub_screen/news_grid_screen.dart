@@ -3,7 +3,8 @@ import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 // import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
-import 'package:mobi_tv_entertainment/widgets/items/news_item.dart';
+import 'package:mobi_tv_entertainment/widgets/items/view_all_live_grid_item.dart';
+// import 'package:mobi_tv_entertainment/widgets/items/news_item.dart';
 import 'package:mobi_tv_entertainment/widgets/models/news_item_model.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
@@ -91,7 +92,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
   }
 
   Widget _buildNewsItem(NewsItemModel item, index) {
-    return NewsItem(
+    return ViewAllLiveGridItem (
       key: Key(item.id),
       hideDescription: true,
       item: item,
@@ -167,6 +168,11 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
         Navigator.of(context, rootNavigator: true).pop();
       }
 
+
+                      bool liveStatus = true;
+
+
+
       if (shouldPlayVideo) {
         await Navigator.push(
           context,
@@ -174,6 +180,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
             builder: (context) => VideoScreen(
               videoUrl: newsItem.url,
               bannerImageUrl: newsItem.banner,
+              
               startAtPosition: Duration.zero,
               videoType: newsItem.streamType,
               channelList: _entertainmentList,
@@ -182,7 +189,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
               isBannerSlider: false,
               source: 'isLiveScreen',
               isSearch: false,
-              videoId: int.tryParse(newsItem.id), unUpdatedUrl: originalUrl,
+              videoId: int.tryParse(newsItem.id), unUpdatedUrl: originalUrl, name: newsItem.url, liveStatus: liveStatus,
             ),
           ),
         );

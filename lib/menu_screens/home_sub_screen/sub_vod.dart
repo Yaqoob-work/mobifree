@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:mobi_tv_entertainment/provider/focus_provider.dart';
+import 'package:mobi_tv_entertainment/provider/music_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../video_widget/socket_service.dart';
@@ -15,13 +18,51 @@ import '../../widgets/models/news_item_model.dart';
 import '../../widgets/small_widgets/loading_indicator.dart';
 import '../../widgets/utils/color_service.dart';
 
-void main() {
-  runApp(SubVod());
+Future<MovieDetailsApi> fetchMovieDetails(
+    BuildContext context, int contentId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final cachedMovieDetails = prefs.getString('movie_details_$contentId');
+
+  // Step 1: Return cached data immediately if available
+  if (cachedMovieDetails != null) {
+    final Map<String, dynamic> body = json.decode(cachedMovieDetails);
+    return MovieDetailsApi.fromJson(body);
+  }
+
+  // Step 2: Fetch API data if no cache is available
+  final response = await https.get(
+    Uri.parse('https://api.ekomflix.com/android/getMovieDetails/$contentId'),
+    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+  );
+
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> body = json.decode(response.body);
+    final movieDetails = MovieDetailsApi.fromJson(body);
+
+    // Step 3: Cache the fetched data
+    prefs.setString('movie_details_$contentId', response.body);
+
+    // Return the fetched data
+    return movieDetails;
+  } else {
+    throw Exception('Failed to load movie details');
+  }
 }
 
+// Future<Color> fetchPaletteColor(String imageUrl) async {
+//   return await PaletteColorService().getSecondaryColor(imageUrl);
+// }
+
+
 Future<Color> fetchPaletteColor(String imageUrl) async {
-  return await PaletteColorService().getSecondaryColor(imageUrl);
+  try {
+    return await PaletteColorService().getSecondaryColor(imageUrl);
+  } catch (e) {
+    print('Error fetching palette color for $imageUrl: $e');
+    return Colors.grey; // Fallback color
+  }
 }
+
 
 // Helper function to decode base64 images
 Uint8List _getImageFromBase64String(String base64String) {
@@ -155,37 +196,6 @@ Future<List<NewsItemModel>> fetchContent(
   return content; // Return cached data if no changes
 }
 
-Future<MovieDetailsApi> fetchMovieDetails(
-    BuildContext context, int contentId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final cachedMovieDetails = prefs.getString('movie_details_$contentId');
-
-  // Step 1: Return cached data immediately if available
-  if (cachedMovieDetails != null) {
-    final Map<String, dynamic> body = json.decode(cachedMovieDetails);
-    return MovieDetailsApi.fromJson(body);
-  }
-
-  // Step 2: Fetch API data if no cache is available
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getMovieDetails/$contentId'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
-
-  if (response.statusCode == 200) {
-    final Map<String, dynamic> body = json.decode(response.body);
-    final movieDetails = MovieDetailsApi.fromJson(body);
-
-    // Step 3: Cache the fetched data
-    prefs.setString('movie_details_$contentId', response.body);
-
-    // Return the fetched data
-    return movieDetails;
-  } else {
-    throw Exception('Failed to load movie details');
-  }
-}
-
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final prefs = await SharedPreferences.getInstance();
   final cachedPlayLink = prefs.getString('movie_playlink_$movieId');
@@ -271,7 +281,226 @@ Widget displayImage(
   }
 }
 
+
+
+// class SubVod extends StatefulWidget {
+//   final Function(bool)? onFocusChange; // Add this
+
+//   const SubVod({Key? key, this.onFocusChange, required FocusNode focusNode})
+//       : super(key: key);
+
+//   @override
+//   _SubVodState createState() => _SubVodState();
+// }
+
+// class _SubVodState extends State<SubVod> {
+//   List<NetworkApi> _networks = [];
+//   bool _isLoading = true;
+//   bool _cacheLoaded = false; // To track if cache has been loaded
+//   // FocusNode firstSubVodFocusNode = FocusNode();
+//   late FocusNode firstSubVodFocusNode;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     firstSubVodFocusNode = FocusNode();
+    
+//         // Add key event listener
+//     firstSubVodFocusNode.onKey = (node, event) {
+//       if (event is RawKeyDownEvent) {
+//         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+//           // // Get the HomeCategory focus node from provider and request focus
+//           // final homeCategoryFocusNode = context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+//           // if (homeCategoryFocusNode != null) {
+//           //   homeCategoryFocusNode.requestFocus();
+//           //   return KeyEventResult.handled;
+//           // }
+//         }
+//         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+
+//                     // if (_musicList.isNotEmpty) {
+//                     //   // Request focus for first news item
+//                     //   final firstItemId = _musicList[0].id;
+//                     //   if (newsItemFocusNodes.containsKey(firstItemId)) {
+//                     //     FocusScope.of(context)
+//                     //         .requestFocus(newsItemFocusNodes[firstItemId]);
+//                     //     return KeyEventResult.handled;
+//                     //   }
+//                     // }
+//         }
+//       }
+//       return KeyEventResult.ignored;
+//     };
+
+//     // Register the first SubVod focus node in the FocusProvider
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       context
+//           .read<FocusProvider>()
+//           .setFirstSubVodFocusNode(firstSubVodFocusNode);
+//       print("First SubVod FocusNode registered"); // Debug log
+//     });
+//     // firstItemFocusNode = FocusNode()
+
+//     // ..addListener(() {
+//     //   // if (firstItemFocusNode.hasFocus) {
+//     //   //   widget.onFocusChange?.call(true);
+//     //   // }
+
+//     //         if (firstItemFocusNode.hasFocus) {
+//     //   context.read<FocusProvider>().setSubVodFocusNode(firstItemFocusNode);
+//     // }
+//     // });
+//     // Fetch networks from cache first
+//     _loadCachedNetworks();
+//     // Fetch data from API in the background and update if necessary
+//     _fetchNetworksInBackground();
+//   }
+
+//   // Load cached data
+//   Future<void> _loadCachedNetworks() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     final cachedNetworks = prefs.getString('networks');
+
+//     if (cachedNetworks != null) {
+//       List<dynamic> cachedBody = json.decode(cachedNetworks);
+//       setState(() {
+//         _networks = cachedBody
+//             .map((dynamic item) => NetworkApi.fromJson(item))
+//             .toList();
+//         _isLoading = false; // Stop loading, show cached data
+//         _cacheLoaded = true; // Cache has been successfully loaded
+//       });
+//     } else {
+//       print('No cache found');
+//     }
+//   }
+
+//   // Fetch API data in the background
+//   Future<void> _fetchNetworksInBackground() async {
+//     try {
+//       final fetchedNetworks = await fetchNetworks(context);
+//       if (!listEquals(_networks, fetchedNetworks)) {
+//         setState(() {
+//           _networks =
+//               fetchedNetworks; // Update UI with new data if it's different
+//         });
+//       }
+//     } catch (e) {
+//       // print('Error fetching networks: $e');
+//       if (!_cacheLoaded) {
+//         // Only show error message if cache is not available
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Failed to fetch networks.')),
+//         );
+//       }
+//     } finally {
+//       if (!_cacheLoaded) {
+//         // If no cache and no API data, stop loading
+//         setState(() {
+//           _isLoading = false;
+//         });
+//       }
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+//       // Use provider's color for background
+//       Color backgroundColor = colorProvider.isItemFocused
+//           ? colorProvider.dominantColor.withOpacity(0.3)
+//           : Colors.black87;
+
+//       return Scaffold(
+//         backgroundColor: Colors.transparent,
+//         body: _isLoading
+//             ? Center(
+//                 child:
+//                     LoadingIndicator()) // Show loading only if no cached data
+//             : _buildNetworksList(),
+//       );
+//     });
+//   }
+
+//   @override
+//   void dispose() {
+//     print("SubVod disposed");
+//     super.dispose();
+//   }
+
+// // @override
+// // void didChangeDependencies() {
+// //   super.didChangeDependencies();
+// //   WidgetsBinding.instance.addPostFrameCallback((_) {
+// //     context.read<FocusProvider>().requestSubVodFocus(context);
+// //   });
+// // }
+
+//   Widget _buildNetworksList() {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
+//       children: [
+//         Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+//           // Use provider's color for text
+//           Color textColor = colorProvider.isItemFocused
+//               ? colorProvider.dominantColor
+//               : Colors.white;
+
+//           return Padding(
+//             padding:
+//                 const EdgeInsets.all(8.0), // Add some padding around the text
+//             child: Text(
+//               'Contents',
+//               style: TextStyle(
+//                 fontSize: 24.0,
+//                 fontWeight: FontWeight.bold,
+//                 color: Colors.white, // Adjust this color to match your theme
+//               ),
+//             ),
+//           );
+//         }),
+//         Expanded(
+//           child: _networks.isEmpty
+//               ? Center(child: Text('No Networks Available'))
+//               : ListView.builder(
+//                   scrollDirection: Axis.horizontal,
+//                   itemCount: _networks.length,
+//                   itemBuilder: (context, index) {
+//                     return FocusableItemWidget(
+//                       imageUrl: _networks[index].logo,
+//                       name: _networks[index].name,
+//                       focusNode: index == 0 ? firstSubVodFocusNode : null,
+//                       onTap: () async {
+//                         Navigator.push(
+//                           context,
+//                           MaterialPageRoute(
+//                             builder: (context) =>
+//                                 ContentScreen(networkId: _networks[index].id),
+//                           ),
+//                         );
+//                       },
+//                       fetchPaletteColor: fetchPaletteColor,
+//                       //                       onFocusChange: (hasFocus) {
+//                       //   if (hasFocus) {
+//                       //     print('${_networks[index].name} is focused');
+//                       //   }
+//                       // },
+//                     );
+//                   },
+//                 ),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+
 class SubVod extends StatefulWidget {
+  final Function(bool)? onFocusChange; // Add this
+
+  const SubVod({Key? key, this.onFocusChange, required FocusNode focusNode})
+      : super(key: key);
+
   @override
   _SubVodState createState() => _SubVodState();
 }
@@ -280,10 +509,51 @@ class _SubVodState extends State<SubVod> {
   List<NetworkApi> _networks = [];
   bool _isLoading = true;
   bool _cacheLoaded = false; // To track if cache has been loaded
+  // FocusNode firstSubVodFocusNode = FocusNode();
+  late FocusNode firstSubVodFocusNode;
 
   @override
   void initState() {
     super.initState();
+    firstSubVodFocusNode = FocusNode();
+    
+        // Add key event listener
+    firstSubVodFocusNode.onKey = (node, event) {
+      if (event is RawKeyDownEvent) {
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+          // Get the HomeCategory focus node from provider and request focus
+          final homeCategoryFocusNode = context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+          if (homeCategoryFocusNode != null) {
+            homeCategoryFocusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+
+
+        }
+      }
+      return KeyEventResult.ignored;
+    };
+
+    // Register the first SubVod focus node in the FocusProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<FocusProvider>()
+          .setFirstSubVodFocusNode(firstSubVodFocusNode);
+      print("First SubVod FocusNode registered"); // Debug log
+    });
+    // firstItemFocusNode = FocusNode()
+
+    // ..addListener(() {
+    //   // if (firstItemFocusNode.hasFocus) {
+    //   //   widget.onFocusChange?.call(true);
+    //   // }
+
+    //         if (firstItemFocusNode.hasFocus) {
+    //   context.read<FocusProvider>().setSubVodFocusNode(firstItemFocusNode);
+    // }
+    // });
     // Fetch networks from cache first
     _loadCachedNetworks();
     // Fetch data from API in the background and update if necessary
@@ -356,6 +626,20 @@ class _SubVodState extends State<SubVod> {
     });
   }
 
+  @override
+  void dispose() {
+    print("SubVod disposed");
+    super.dispose();
+  }
+
+// @override
+// void didChangeDependencies() {
+//   super.didChangeDependencies();
+//   WidgetsBinding.instance.addPostFrameCallback((_) {
+//     context.read<FocusProvider>().requestSubVodFocus(context);
+//   });
+// }
+
   Widget _buildNetworksList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
@@ -389,6 +673,7 @@ class _SubVodState extends State<SubVod> {
                     return FocusableItemWidget(
                       imageUrl: _networks[index].logo,
                       name: _networks[index].name,
+                      focusNode: index == 0 ? firstSubVodFocusNode : null,
                       onTap: () async {
                         Navigator.push(
                           context,
@@ -399,6 +684,11 @@ class _SubVodState extends State<SubVod> {
                         );
                       },
                       fetchPaletteColor: fetchPaletteColor,
+                      //                       onFocusChange: (hasFocus) {
+                      //   if (hasFocus) {
+                      //     print('${_networks[index].name} is focused');
+                      //   }
+                      // },
                     );
                   },
                 ),
@@ -406,7 +696,164 @@ class _SubVodState extends State<SubVod> {
       ],
     );
   }
-}
+} 
+
+
+
+
+// class SubVod extends StatefulWidget {
+//     final Function(bool)? onFocusChange; // Add this
+
+//   const SubVod({Key? key, this.onFocusChange, required FocusNode focusNode})
+//       : super(key: key);
+//   @override
+//   _SubVodState createState() => _SubVodState();
+// }
+
+// class _SubVodState extends State<SubVod> {
+//   List<NetworkApi> _networks = [];
+//   bool _isLoading = true;
+//   bool _cacheLoaded = false; // To track if cache has been loaded
+
+//   @override
+//   void initState() {
+//     super.initState();
+//         WidgetsBinding.instance.addPostFrameCallback((_) {
+//       FocusNode firstVodFocusNode = FocusNode();
+//       context
+//           .read<FocusProvider>()
+//           .setFirstVodBannerFocusNode(firstVodFocusNode);
+//     });
+//     // Fetch networks from cache first
+//     _loadCachedNetworks();
+//     // Fetch data from API in the background and update if necessary
+//     _fetchNetworksInBackground();
+//   }
+
+//   // Load cached data
+//   Future<void> _loadCachedNetworks() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     final cachedNetworks = prefs.getString('networks');
+
+//     if (cachedNetworks != null) {
+//       List<dynamic> cachedBody = json.decode(cachedNetworks);
+//       setState(() {
+//         _networks = cachedBody
+//             .map((dynamic item) => NetworkApi.fromJson(item))
+//             .toList();
+//         _isLoading = false; // Stop loading, show cached data
+//         _cacheLoaded = true; // Cache has been successfully loaded
+//       });
+//     } else {
+//       print('No cache found');
+//     }
+//   }
+
+//   // Fetch API data in the background
+//   Future<void> _fetchNetworksInBackground() async {
+//     try {
+//       final fetchedNetworks = await fetchNetworks(context);
+//       if (!listEquals(_networks, fetchedNetworks)) {
+//         setState(() {
+//           _networks =
+//               fetchedNetworks; // Update UI with new data if it's different
+//         });
+//       }
+//     } catch (e) {
+//       // print('Error fetching networks: $e');
+//       if (!_cacheLoaded) {
+//         // Only show error message if cache is not available
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Failed to fetch networks.')),
+//         );
+//       }
+//     } finally {
+//       if (!_cacheLoaded) {
+//         // If no cache and no API data, stop loading
+//         setState(() {
+//           _isLoading = false;
+//         });
+//       }
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+//       // Use provider's color for background
+//       Color backgroundColor = colorProvider.isItemFocused
+//           ? colorProvider.dominantColor.withOpacity(0.3)
+//           : Colors.black87;
+
+//       return Scaffold(
+//         backgroundColor: Colors.transparent,
+//         body: _isLoading
+//             ? Center(
+//                 child:
+//                     LoadingIndicator()) // Show loading only if no cached data
+//             : _buildNetworksList(),
+//       );
+//     });
+//   }
+
+//   Widget _buildNetworksList() {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
+//       children: [
+//         Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+//           // Use provider's color for text
+//           Color textColor = colorProvider.isItemFocused
+//               ? colorProvider.dominantColor
+//               : Colors.white;
+
+//           return Padding(
+//             padding:
+//                 const EdgeInsets.all(8.0), // Add some padding around the text
+//             child: Text(
+//               'Contents',
+//               style: TextStyle(
+//                 fontSize: 24.0,
+//                 fontWeight: FontWeight.bold,
+//                 color: Colors.white, // Adjust this color to match your theme
+//               ),
+//             ),
+//           );
+//         }),
+//         Expanded(
+//           child: _networks.isEmpty
+//               ? Center(child: Text('No Networks Available'))
+//               : ListView.builder(
+//                   scrollDirection: Axis.horizontal,
+//                   itemCount: _networks.length,
+//                   itemBuilder: (context, index) {
+//                     return FocusableItemWidget(
+//                       imageUrl: _networks[index].logo,
+//                       name: _networks[index].name,
+//                       onTap: () async {
+//                         Navigator.push(
+//                           context,
+//                           MaterialPageRoute(
+//                             builder: (context) =>
+//                                 ContentScreen(networkId: _networks[index].id),
+//                           ),
+//                         );
+//                       },
+//                       fetchPaletteColor: fetchPaletteColor,
+//                     );
+//                   },
+//                 ),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+
+
+
+
+
+
 
 class VOD extends StatefulWidget {
   @override
@@ -421,6 +868,12 @@ class _VODState extends State<VOD> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusNode firstVodFocusNode = FocusNode();
+      context
+          .read<FocusProvider>()
+          .setFirstVodBannerFocusNode(firstVodFocusNode);
+    });
     // Fetch networks from cache first
     _loadCachedNetworks();
     // Fetch data from API in the background and update if necessary
@@ -486,14 +939,19 @@ class _VODState extends State<VOD> {
   //   );
   // }
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black87,
-      body: _isLoading
-          ? Center(child: LoadingIndicator())
-          : _networks != null
-              ? _buildNetworksList()
-              : Center(child: Text('...')),
-    );
+    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+      // Get background color based on provider state
+      Color backgroundColor =
+          colorProvider.isItemFocused ? colorProvider.dominantColor : cardColor;
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: _isLoading
+            ? Center(child: LoadingIndicator())
+            : _networks != null
+                ? Container(color: Colors.black54, child: _buildNetworksList())
+                : Center(child: Text('...')),
+      );
+    });
   }
 
   Widget _buildNetworksList() {
@@ -511,6 +969,9 @@ class _VODState extends State<VOD> {
         itemCount: _networks.length,
         itemBuilder: (context, index) {
           return FocusableItemWidget(
+            focusNode: index == 0
+                ? context.read<FocusProvider>().firstVodBannerFocusNode
+                : null,
             imageUrl: _networks[index].logo,
             name: _networks[index].name,
             onTap: () async {
@@ -529,6 +990,8 @@ class _VODState extends State<VOD> {
     }
   }
 }
+
+
 
 class ContentScreen extends StatefulWidget {
   final int networkId;
@@ -649,6 +1112,8 @@ class _ContentScreenState extends State<ContentScreen> {
                       id: int.tryParse(_content[index].id) ?? 0,
                       channelList: _content,
                       source: 'isContentScreenViaDetailsPageChannelLIst',
+                      banner: _content[index].banner,
+                      name: _content[index].name ?? '',
                     ),
                   ),
                 );
@@ -667,11 +1132,15 @@ class DetailsPage extends StatefulWidget {
   final int id;
   final List<NewsItemModel> channelList;
   final String source;
+  final String banner;
+  final String name;
 
   DetailsPage({
     required this.id,
     required this.channelList,
     required this.source,
+    required this.banner,
+    required this.name,
   });
 
   @override
@@ -752,13 +1221,13 @@ class _DetailsPageState extends State<DetailsPage> {
   }
 
   Future<void> _updateUrlIfNeeded(Map<String, String> playLink) async {
-    
     if (playLink['type'] == 'Youtube' || playLink['type'] == 'YoutubeLive') {
       for (int i = 0; i < _maxRetries; i++) {
         if (!_shouldContinueLoading) break;
         try {
           String updatedUrl =
               await _socketService.getUpdatedUrl(playLink['url']!);
+          // 'https://www.youtube.com/watch?v=${playLink['url']!}';
           playLink['url'] = updatedUrl;
           playLink['type'] = 'M3u8';
           break;
@@ -867,7 +1336,7 @@ class _DetailsPageState extends State<DetailsPage> {
 
     try {
       final playLink = await fetchMoviePlayLink(widget.id);
-      String originalUrl= playLink['url']!;
+      String originalUrl = playLink['url']!;
       if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
         int retryCount = 0;
         while (retryCount < 3) {
@@ -881,6 +1350,8 @@ class _DetailsPageState extends State<DetailsPage> {
           }
         }
 
+        bool liveStatus = false;
+
         if (_shouldContinueLoading) {
           await Navigator.push(
             context,
@@ -890,13 +1361,16 @@ class _DetailsPageState extends State<DetailsPage> {
                 videoId: widget.id,
                 channelList: widget.channelList,
                 videoType: playLink['type']!,
-                bannerImageUrl: playLink['banner'] ?? '',
+                bannerImageUrl: widget.banner,
                 startAtPosition: Duration.zero,
                 isLive: false,
                 isVOD: true,
                 isBannerSlider: false,
                 source: widget.source,
-                isSearch: false, unUpdatedUrl: originalUrl,
+                isSearch: false,
+                unUpdatedUrl: originalUrl,
+                name: widget.name,
+                liveStatus: liveStatus,
               ),
             ),
           );

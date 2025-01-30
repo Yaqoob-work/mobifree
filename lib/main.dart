@@ -621,6 +621,12 @@
 //   }
 // }
 
+
+
+
+
+
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -631,6 +637,9 @@ import 'package:mobi_tv_entertainment/menu_screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/menu_screens/live_screen.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:mobi_tv_entertainment/provider/focus_provider.dart';
+import 'package:mobi_tv_entertainment/provider/music_provider.dart';
+import 'package:mobi_tv_entertainment/provider/shared_data_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -653,6 +662,9 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ColorProvider()),
+        ChangeNotifierProvider(create: (_) => FocusProvider()),
+        ChangeNotifierProvider(create: (_) => SharedDataProvider()),
+        // ChangeNotifierProvider(create: (_) => MusicProvider()),
       ],
       child: MyApp(),
     ),
@@ -748,7 +760,7 @@ class _MyAppState extends State<MyApp> {
         ],
       ),
       routes: {
-        '/notification': (context) => NotificationScreen(),
+        // '/notification': (context) => NotificationScreen(),
         '/mainscreen': (context) => HomeScreen(),
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
@@ -953,7 +965,7 @@ class _MyHomeState extends State<MyHome> {
       VOD(),
       LiveScreen(),
       SearchScreen(),
-      NotificationScreen()
+      // NotificationScreen()
     ];
 
     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {

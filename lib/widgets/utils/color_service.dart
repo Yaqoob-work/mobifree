@@ -8,13 +8,13 @@ import 'package:palette_generator/palette_generator.dart';
 
 class PaletteColorService {
 //   // Method to get the second most populated color from an image
-  Future<Color> getSecondaryColor(String imageUrl, {Color fallbackColor = Colors.grey}) async {
+  Future<Color> getSecondaryColor(String imageUrl, {Color fallbackColor = Colors.pink}) async {
     try {
       final PaletteGenerator paletteGenerator =
           await PaletteGenerator.fromImageProvider(
         CachedNetworkImageProvider(imageUrl),
         size: const Size(100, 100),
-        maximumColorCount: 50,
+        maximumColorCount: 100,
       );
       return _getSecondMostPopulatedColor(paletteGenerator) ?? fallbackColor;
     } catch (e) {

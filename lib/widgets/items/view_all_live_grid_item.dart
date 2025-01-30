@@ -9,7 +9,7 @@ import '../models/news_item_model.dart';
 
 
 
-class NewsItem extends StatefulWidget {
+class ViewAllLiveGridItem extends StatefulWidget {
   final NewsItemModel item;
   final VoidCallback onTap;
   final ValueChanged<String> onEnterPress;
@@ -19,7 +19,7 @@ class NewsItem extends StatefulWidget {
   final VoidCallback? onUpPress;
   final VoidCallback? onDownPress;
 
-  NewsItem({
+  ViewAllLiveGridItem({
     Key? key,
     required this.item,
     required this.onTap,
@@ -32,10 +32,10 @@ class NewsItem extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _NewsItemState createState() => _NewsItemState();
+  _ViewAllLiveGridItemState createState() => _ViewAllLiveGridItemState();
 }
 
-class _NewsItemState extends State<NewsItem> {
+class _ViewAllLiveGridItemState extends State<ViewAllLiveGridItem> {
     bool isFocused = false;
   Color dominantColor = Colors.white.withOpacity(0.5);
   final PaletteColorService _paletteColorService = PaletteColorService();
@@ -74,7 +74,7 @@ class _NewsItemState extends State<NewsItem> {
       onKey: (FocusNode node, RawKeyEvent event) {
         if (event is RawKeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            widget.onDownPress?.call(); // Call the callback
+            // widget.onDownPress?.call(); // Call the callback
             
             return KeyEventResult.handled;
           }else
@@ -82,7 +82,8 @@ class _NewsItemState extends State<NewsItem> {
             widget.onUpPress?.call(); // Call the callback
             return KeyEventResult.handled;
           }
-           else if (event.logicalKey == LogicalKeyboardKey.select) {
+           else 
+           if (event.logicalKey == LogicalKeyboardKey.select) {
             widget.onEnterPress(widget.item.id);
             return KeyEventResult.handled;
           }

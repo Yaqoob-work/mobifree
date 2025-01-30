@@ -6,7 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/sub_vod.dart';
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:provider/provider.dart';
 import '../main.dart';
+import '../provider/focus_provider.dart';
 import '../video_widget/socket_service.dart';
 import '../video_widget/video_screen.dart';
 import '../widgets/models/news_item_model.dart';
@@ -88,9 +91,6 @@ Future<void> fetchSettings() async {
   }
 }
 
-void main() {
-  runApp(MaterialApp(home: SearchScreen()));
-}
 
 class SearchScreen extends StatefulWidget {
   @override
@@ -122,6 +122,9 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchIconFocusNode.addListener(_onSearchIconFocusChanged);
     _socketService.initSocket();
     checkServerStatus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+    context.read<FocusProvider>().setSearchIconFocusNode(_searchIconFocusNode);
+  });
   }
 
   @override
@@ -181,8 +184,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-
-
   void _showLoadingIndicator(BuildContext context) {
     showDialog(
       context: context,
@@ -219,7 +220,6 @@ class _SearchScreenState extends State<SearchScreen> {
     final String? streamType = channel.streamType;
     final String? genres = channel.genres;
     final int? parsedContentType = int.tryParse(channel.contentType);
-
     if (parsedContentType == 1) {
       print(
           'Navigating to DetailsPage with ID: ${int.tryParse(channel.id) ?? 0}');
@@ -232,6 +232,8 @@ class _SearchScreenState extends State<SearchScreen> {
               channelList: searchResults,
               id: int.tryParse(channel.id) ?? 0,
               source: 'isSearchScreenViaDetailsPageChannelList',
+              banner: channel.banner,
+              name: channel.name,
             ),
           ),
         );
@@ -248,6 +250,17 @@ class _SearchScreenState extends State<SearchScreen> {
       //   SnackBar(content: Text('Video information is missing or invalid')),
       // );
       return;
+    }
+    bool liveStatus = false;
+
+    if (parsedContentType == 1) {
+      setState(() {
+        liveStatus = false;
+      });
+    } else {
+      setState(() {
+        liveStatus = true;
+      });
     }
 
     // print('Navigating to video with URL: $videoUrl');
@@ -269,7 +282,10 @@ class _SearchScreenState extends State<SearchScreen> {
             isBannerSlider: false,
             source: 'isSearchScreen',
             isSearch: true,
-            videoId: int.tryParse(channel.id), unUpdatedUrl: videoUrl,
+            videoId: int.tryParse(channel.id),
+            unUpdatedUrl: videoUrl,
+            name: channel.name,
+            liveStatus: liveStatus,
           ),
         ),
       );
@@ -363,19 +379,46 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Future<void> _updatePaletteColor(String imageUrl) async {
+  // Future<void> _updatePaletteColor(String imageUrl) async {
+  //   try {
+  //     Color color = await _paletteColorService.getSecondaryColor(imageUrl);
+  //     if (!mounted) return;
+  //     setState(() {
+  //       paletteColor = color;
+  //     });
+  //   } catch (e) {
+  //     print('Error updating palette color: $e');
+  //     if (!mounted) return;
+  //     setState(() {
+  //       paletteColor = Colors.grey;
+  //     });
+  //   }
+  // }
+
+  // Update the _updatePaletteColor method:
+  Future<void> _updatePaletteColor(String imageUrl, bool isFocused) async {
     try {
       Color color = await _paletteColorService.getSecondaryColor(imageUrl);
       if (!mounted) return;
+
       setState(() {
         paletteColor = color;
       });
+
+      // Update the provider with both color and focus state
+      Provider.of<ColorProvider>(context, listen: false)
+          .updateColor(color, isFocused);
     } catch (e) {
       print('Error updating palette color: $e');
       if (!mounted) return;
+
       setState(() {
         paletteColor = Colors.grey;
       });
+
+      // Update with grey color in case of error
+      Provider.of<ColorProvider>(context, listen: false)
+          .updateColor(Colors.grey, isFocused);
     }
   }
 
@@ -394,47 +437,55 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: cardColor,
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          Expanded(
-            child: isLoading
-                ? Center(
-                    child: SpinKitFadingCircle(
-                      color: borderColor,
-                      size: 50.0,
-                    ),
-                  )
-                : searchResults.isEmpty
+    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+      // Get background color based on provider state
+      Color backgroundColor =
+          colorProvider.isItemFocused ? colorProvider.dominantColor : cardColor;
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: Container(
+          color: Colors.black54,
+          child: Column(
+            children: [
+              _buildSearchBar(),
+              Expanded(
+                child: isLoading
                     ? Center(
-                        child: Text(
-                          'No results found',
-                          style: TextStyle(color: Colors.white),
+                        child: SpinKitFadingCircle(
+                          color: borderColor,
+                          size: 50.0,
                         ),
                       )
-                    : Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: screenwdt * 0.03),
-                        child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
+                    : searchResults.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No results found',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
+                        : Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: screenwdt * 0.03),
+                            child: GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 5,
+                              ),
+                              itemCount: searchResults.length,
+                              itemBuilder: (context, index) {
+                                return GestureDetector(
+                                  onTap: () => _onItemTap(context, index),
+                                  child: _buildGridViewItem(context, index),
+                                );
+                              },
+                            ),
                           ),
-                          itemCount: searchResults.length,
-                          itemBuilder: (context, index) {
-                            return GestureDetector(
-                              onTap: () => _onItemTap(context, index),
-                              child: _buildGridViewItem(context, index),
-                            );
-                          },
-                        ),
-                      ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 
   Widget _buildSearchBar() {
@@ -501,9 +552,23 @@ class _SearchScreenState extends State<SearchScreen> {
     final result = searchResults[index];
     final status = result.status;
     final bool isBase64 = result.banner.startsWith('data:image');
+    final colorProvider = Provider.of<ColorProvider>(context, listen: false);
 
     return Focus(
       focusNode: _itemFocusNodes[index],
+      onFocusChange: (hasFocus) async {
+        if (hasFocus) {
+          // Update palette color with focus state
+          await _updatePaletteColor(result.banner, true);
+        } else {
+          // Reset color when focus is lost
+          colorProvider.resetColor();
+        }
+
+        setState(() {
+          selectedIndex = hasFocus ? index : -1;
+        });
+      },
       onKeyEvent: (FocusNode node, KeyEvent event) {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
@@ -511,12 +576,6 @@ class _SearchScreenState extends State<SearchScreen> {
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
-      },
-      onFocusChange: (hasFocus) {
-        _updatePaletteColor(result.banner);
-        setState(() {
-          selectedIndex = hasFocus ? index : -1;
-        });
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -555,7 +614,6 @@ class _SearchScreenState extends State<SearchScreen> {
                             width: screenwdt * 0.19,
                             height: screenhgt * 0.2,
                             fit: BoxFit.cover,
-                            
                           )
                         : CachedNetworkImage(
                             imageUrl: result.banner ?? localImage,

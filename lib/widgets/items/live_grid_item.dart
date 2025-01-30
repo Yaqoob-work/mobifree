@@ -9,7 +9,7 @@ import '../models/news_item_model.dart';
 
 
 
-class NewsItem extends StatefulWidget {
+class LiveGridItem extends StatefulWidget {
   final NewsItemModel item;
   final VoidCallback onTap;
   final ValueChanged<String> onEnterPress;
@@ -18,8 +18,10 @@ class NewsItem extends StatefulWidget {
   final Function(bool)? onFocusChange;
   final VoidCallback? onUpPress;
   final VoidCallback? onDownPress;
+  final VoidCallback? onLeftPress;
+  final VoidCallback? onRightPress;
 
-  NewsItem({
+  LiveGridItem({
     Key? key,
     required this.item,
     required this.onTap,
@@ -29,13 +31,15 @@ class NewsItem extends StatefulWidget {
     this.onFocusChange,
     this.onUpPress,
     this.onDownPress,
+    this.onLeftPress,
+    this.onRightPress,
   }) : super(key: key);
 
   @override
-  _NewsItemState createState() => _NewsItemState();
+  _LiveGridItemState createState() => _LiveGridItemState();
 }
 
-class _NewsItemState extends State<NewsItem> {
+class _LiveGridItemState extends State<LiveGridItem> {
     bool isFocused = false;
   Color dominantColor = Colors.white.withOpacity(0.5);
   final PaletteColorService _paletteColorService = PaletteColorService();
@@ -71,24 +75,49 @@ class _NewsItemState extends State<NewsItem> {
     return Focus(
       focusNode: widget.focusNode,
       onFocusChange: _handleFocusChange,
-      onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is RawKeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            widget.onDownPress?.call(); // Call the callback
+      // onKey: (FocusNode node, RawKeyEvent event) {
+      //   if (event is RawKeyDownEvent) {
+      //     if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      //       // widget.onDownPress?.call(); // Call the callback
             
-            return KeyEventResult.handled;
-          }else
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            widget.onUpPress?.call(); // Call the callback
-            return KeyEventResult.handled;
-          }
-           else if (event.logicalKey == LogicalKeyboardKey.select) {
-            widget.onEnterPress(widget.item.id);
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
+      //       return KeyEventResult.handled;
+      //     }else
+      //     if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      //       widget.onUpPress?.call(); // Call the callback
+      //       return KeyEventResult.handled;
+      //     }
+      //      else 
+      //      if (event.logicalKey == LogicalKeyboardKey.select) {
+      //       widget.onEnterPress(widget.item.id);
+      //       return KeyEventResult.handled;
+      //     }
+      //   }
+      //   return KeyEventResult.ignored;
+      // },
+
+
+      onKey: (FocusNode node, RawKeyEvent event) {
+  if (event is RawKeyDownEvent) {
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      widget.onDownPress?.call();
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      widget.onUpPress?.call();
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      widget.onLeftPress?.call();  // Add left press callback
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      widget.onRightPress?.call();  // Add right press callback
+      return KeyEventResult.handled;
+    } else if (event.logicalKey == LogicalKeyboardKey.select) {
+      widget.onEnterPress(widget.item.id);
+      return KeyEventResult.handled;
+    }
+  }
+  return KeyEventResult.ignored;
+},
+
       child: GestureDetector(
         onTap: widget.onTap,
         child: Column(

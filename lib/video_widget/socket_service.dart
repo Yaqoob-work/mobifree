@@ -179,7 +179,7 @@ class SocketService {
 
     socket.on('disconnect', (_) {
       if (_isConnected) {
-        // print('Disconnected from socket server');
+        print('Disconnected from socket server');
         _isConnected = false; // Only log if the connection was previously active
         _scheduleReconnect();
       }
@@ -190,7 +190,7 @@ class SocketService {
     if (_reconnectTimer == null || !_reconnectTimer!.isActive) {
       _reconnectTimer = Timer(Duration(seconds: 10), () {
         if (!socket.connected) {
-          // print('Attempting to reconnect to socket...');
+          print('Attempting to reconnect to socket...');
           initSocket(); // Reconnect after a delay
         }
       });
@@ -236,7 +236,7 @@ class SocketService {
         } else {
           // print('Max retries reached for YouTube URL request');
           _pendingUrlUpdates[originalUrl]!
-              .completeError(TimeoutException('Failed to get YouTube URL'));
+              .completeError(TimeoutException('Failed to get URL'));
         }
       }
     });

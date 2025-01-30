@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/news_grid_screen.dart';
+import 'package:mobi_tv_entertainment/provider/color_provider.dart';
+import 'package:mobi_tv_entertainment/provider/focus_provider.dart';
+import 'package:mobi_tv_entertainment/provider/music_provider.dart';
+import 'package:mobi_tv_entertainment/provider/shared_data_provider.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
 import 'package:mobi_tv_entertainment/widgets/items/news_item.dart';
@@ -12,19 +17,25 @@ import 'package:mobi_tv_entertainment/widgets/services/api_service.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/empty_state.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/error_message.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/utils/random_light_color_widget.dart';
 import 'channels_category.dart';
 
-
-
 class MusicScreen extends StatefulWidget {
+  final Function(bool)? onFocusChange; // Add this
+
+  const MusicScreen(
+      {Key? key, this.onFocusChange, required FocusNode focusNode})
+      : super(key: key);
   @override
   _MusicScreenState createState() => _MusicScreenState();
 }
 
 class _MusicScreenState extends State<MusicScreen> {
   // final List<NewsItemModel> _musicList = [];
+  Map<int, Color> _nodeColors = {};
+  Map<String, FocusNode> newsItemFocusNodes = {};
   List<NewsItemModel> _musicList = [];
   final SocketService _socketService = SocketService();
   final ApiService _apiService = ApiService();
@@ -32,7 +43,7 @@ class _MusicScreenState extends State<MusicScreen> {
   String _errorMessage = '';
   bool _isNavigating = false;
   String _selectedCategory = 'Live'; // Default category
-    int _maxRetries = 3;
+  int _maxRetries = 3;
   int _retryDelay = 5; // seconds
 
   final List<String> categories = [
@@ -54,8 +65,66 @@ class _MusicScreenState extends State<MusicScreen> {
     _socketService.initSocket();
     fetchData();
 
+    // Add listeners to first category focus node
+    for (var category in categories) {
+      categoryFocusNodes[category] = FocusNode()
+        ..addListener(() {
+          if (categoryFocusNodes[category]!.hasFocus) {
+            widget.onFocusChange?.call(true);
+          }
+        });
+    }
 
-        _loadCachedDataAndFetchMusic();
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (_musicList.isNotEmpty) {
+    //     newsItemFocusNodes[_musicList[0].id] = FocusNode();
+    //   }
+    // });
+
+    // // Add this block to register first category's focus node
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   final firstNode = categoryFocusNodes[categories.first];
+    //   if (firstNode != null) {
+    //     context.read<FocusProvider>().setFirstMusicItemFocusNode(firstNode);
+    //     print("Music focus node registered"); // Debug log
+    //   }
+    // });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // if (_musicList.isNotEmpty) {
+      //   final firstItemId = _musicList[0].id;
+      //   newsItemFocusNodes[firstItemId] = FocusNode();
+      // }
+
+      final firstCategoryNode = categoryFocusNodes[categories.first];
+      if (firstCategoryNode != null) {
+        context
+            .read<FocusProvider>()
+            .setFirstMusicItemFocusNode(firstCategoryNode);
+        print("Music focus node registered");
+      }
+
+      if (_musicList.isNotEmpty) {
+        final firstItemId = _musicList[0].id;
+        if (newsItemFocusNodes.containsKey(firstItemId)) {
+          final focusNode = newsItemFocusNodes[firstItemId]!;
+          context.read<FocusProvider>().registerNewsItemFocusNode(focusNode);
+          print("Registered focus node for first news item: $firstItemId");
+        }
+      }
+
+      if (_musicList.isNotEmpty) {
+        final firstItemId = _musicList[0].id;
+        if (newsItemFocusNodes.containsKey(firstItemId)) {
+          context
+              .read<FocusProvider>()
+              .setFirstMusicItemFocusNode(newsItemFocusNodes[firstItemId]!);
+          print("Registeredfocus node for first banner: $firstItemId");
+        }
+      }
+    });
+
+    _loadCachedDataAndFetchMusic();
     _apiService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         _loadCachedDataAndFetchMusic(); // Refetch data if changes occur
@@ -69,7 +138,18 @@ class _MusicScreenState extends State<MusicScreen> {
     moreFocusNode = FocusNode();
   }
 
-    Future<void> _loadCachedDataAndFetchMusic() async {
+  // Add color generator function
+  Color _generateRandomColor() {
+    final random = Random();
+    return Color.fromRGBO(
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+      1,
+    );
+  }
+
+  Future<void> _loadCachedDataAndFetchMusic() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -99,7 +179,8 @@ class _MusicScreenState extends State<MusicScreen> {
         // Parse and load cached data
         final List<dynamic> cachedData = json.decode(cachedMusic);
         setState(() {
-          _musicList = cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+          _musicList =
+              cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
           _isLoading = false; // Show cached data immediately
         });
       }
@@ -191,10 +272,6 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
-
-
-
-
   Widget _buildCategoryButtons() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: screenhgt * 0.01),
@@ -204,12 +281,58 @@ class _MusicScreenState extends State<MusicScreen> {
           ...categories.asMap().entries.map((entry) {
             int index = entry.key;
             String category = entry.value;
+            final focusNode = categoryFocusNodes[category]!;
 
             return Focus(
-              focusNode: categoryFocusNodes[category],
+              focusNode: focusNode,
+              onFocusChange: (hasFocus) {
+                setState(() {
+                  if (hasFocus) {
+                    // Update color in the provider when category button is focused
+                    final randomColor = _generateRandomColor();
+                    context
+                        .read<ColorProvider>()
+                        .updateColor(randomColor, true);
+                  } else {
+                    // Reset color when focus is lost
+                    context.read<ColorProvider>().resetColor();
+                  }
+                });
+              },
               onKey: (FocusNode node, RawKeyEvent event) {
                 if (event is RawKeyDownEvent) {
-                  if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                    final sharedDataProvider =
+                        context.read<SharedDataProvider>();
+                    final lastPlayedVideos =
+                        sharedDataProvider.lastPlayedVideos;
+
+                    if (lastPlayedVideos.isNotEmpty) {
+                      // Request focus for the first banner in lastPlayedVideos
+                      context
+                          .read<FocusProvider>()
+                          .requestFirstLastPlayedFocus();
+                      return KeyEventResult.handled;
+                    }
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    if (_musicList.isNotEmpty) {
+                      // // Request focus for first news item
+                      // final firstItemId = _musicList[0].id;
+                      // if (newsItemFocusNodes.containsKey(firstItemId)) {
+                      //   FocusScope.of(context)
+                      //       .requestFocus(newsItemFocusNodes[firstItemId]);
+                      //   return KeyEventResult.handled;
+                      // }
+                      final firstItemId = _musicList[0].id;
+                      if (newsItemFocusNodes.containsKey(firstItemId)) {
+                        // Use FocusProvider to request focus
+                        context.read<FocusProvider>().requestNewsItemFocusNode(
+                            newsItemFocusNodes[firstItemId]!);
+                        return KeyEventResult.handled;
+                      }
+                    }
+                  } else if (event.logicalKey ==
+                      LogicalKeyboardKey.arrowRight) {
                     if (index == categories.length - 1) {
                       FocusScope.of(context).requestFocus(moreFocusNode);
                     } else {
@@ -236,10 +359,17 @@ class _MusicScreenState extends State<MusicScreen> {
               child: Builder(
                 builder: (BuildContext context) {
                   final bool hasFocus = Focus.of(context).hasFocus;
-
+                  final currentColor =
+                      context.watch<ColorProvider>().dominantColor;
                   return RandomLightColorWidget(
                     hasFocus: hasFocus,
                     childBuilder: (Color randomColor) {
+                      //                       // अगर पहले से color stored है तो वही use करें, नहीं तो नया store करें
+                      // if (categoryFocusNodes[category]!.hasFocus && !_nodeColors.containsKey(index)) {
+                      //   _nodeColors[index] = randomColor;
+                      // }
+                      // // हमेशा stored color का use करें
+                      // final Color currentColor = _nodeColors[index] ?? randomColor;
                       return Container(
                         margin: EdgeInsets.all(
                             screenwdt * 0.001), // Reduced padding
@@ -247,7 +377,7 @@ class _MusicScreenState extends State<MusicScreen> {
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: hasFocus ? randomColor : Colors.transparent,
+                            color: hasFocus ? currentColor : Colors.transparent,
                             width: 2,
                           ),
                         ),
@@ -263,7 +393,7 @@ class _MusicScreenState extends State<MusicScreen> {
                                 fontSize: menutextsz,
                                 color: _selectedCategory == category
                                     ? borderColor
-                                    : (hasFocus ? randomColor : hintColor),
+                                    : (hasFocus ? currentColor : hintColor),
                                 fontWeight:
                                     _selectedCategory == category || hasFocus
                                         ? FontWeight.bold
@@ -285,6 +415,20 @@ class _MusicScreenState extends State<MusicScreen> {
           Expanded(
             child: Focus(
               focusNode: moreFocusNode,
+              onFocusChange: (hasFocus) {
+                setState(() {
+                  if (hasFocus) {
+                    // Update color in the provider when "More" button is focused
+                    final randomColor = _generateRandomColor();
+                    context
+                        .read<ColorProvider>()
+                        .updateColor(randomColor, true);
+                  } else {
+                    // Reset color when focus is lost
+                    context.read<ColorProvider>().resetColor();
+                  }
+                });
+              },
               onKey: (FocusNode node, RawKeyEvent event) {
                 if (event is RawKeyDownEvent) {
                   if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
@@ -295,6 +439,36 @@ class _MusicScreenState extends State<MusicScreen> {
                     FocusScope.of(context)
                         .requestFocus(categoryFocusNodes[categories.last]);
                     return KeyEventResult.handled;
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                    final sharedDataProvider =
+                        context.read<SharedDataProvider>();
+                    final lastPlayedVideos =
+                        sharedDataProvider.lastPlayedVideos;
+
+                    if (lastPlayedVideos.isNotEmpty) {
+                      // Request focus for the first banner in lastPlayedVideos
+                      context
+                          .read<FocusProvider>()
+                          .requestFirstLastPlayedFocus();
+                      return KeyEventResult.handled;
+                    }
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    if (_musicList.isNotEmpty) {
+                      // // Request focus for first news item
+                      // final firstItemId = _musicList[0].id;
+                      // if (newsItemFocusNodes.containsKey(firstItemId)) {
+                      //   FocusScope.of(context)
+                      //       .requestFocus(newsItemFocusNodes[firstItemId]);
+                      //   return KeyEventResult.handled;
+                      // }
+                      final firstItemId = _musicList[0].id;
+                      if (newsItemFocusNodes.containsKey(firstItemId)) {
+                        // Use FocusProvider to request focus
+                        context.read<FocusProvider>().requestNewsItemFocusNode(
+                            newsItemFocusNodes[firstItemId]!);
+                        return KeyEventResult.handled;
+                      }
+                    }
                   } else if (event.logicalKey == LogicalKeyboardKey.enter ||
                       event.logicalKey == LogicalKeyboardKey.select) {
                     _navigateToChannelsCategory();
@@ -306,7 +480,8 @@ class _MusicScreenState extends State<MusicScreen> {
               child: Builder(
                 builder: (BuildContext context) {
                   final bool hasFocus = Focus.of(context).hasFocus;
-
+                  final Color currentColor =
+                      context.watch<ColorProvider>().dominantColor;
                   return Align(
                     alignment: Alignment.centerLeft,
                     child: RandomLightColorWidget(
@@ -320,7 +495,7 @@ class _MusicScreenState extends State<MusicScreen> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color:
-                                  hasFocus ? randomColor : Colors.transparent,
+                                  hasFocus ? currentColor : Colors.transparent,
                               width: 2,
                             ),
                           ),
@@ -334,7 +509,7 @@ class _MusicScreenState extends State<MusicScreen> {
                               'More',
                               style: TextStyle(
                                 fontSize: menutextsz,
-                                color: hasFocus ? randomColor : hintColor,
+                                color: hasFocus ? currentColor : hintColor,
                                 fontWeight: hasFocus
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -362,8 +537,6 @@ class _MusicScreenState extends State<MusicScreen> {
       ),
     );
   }
-
-  
 
   void _selectCategory(String category) {
     setState(() {
@@ -430,12 +603,24 @@ class _MusicScreenState extends State<MusicScreen> {
   }
 
   Widget _buildNewsItem(NewsItemModel item) {
+    newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
     return NewsItem(
       key: Key(item.id),
       hideDescription: true,
       item: item,
+      focusNode: newsItemFocusNodes[item.id],
       onTap: () => _navigateToVideoScreen(item),
       onEnterPress: _handleEnterPress,
+      onUpPress: () {
+        // Request focus for current category
+        FocusScope.of(context)
+            .requestFocus(categoryFocusNodes[_selectedCategory]);
+      },
+      onDownPress: () {
+        // Request focus for the first SubVod item
+        print("onDownPress called for MusicScreen");
+        context.read<FocusProvider>().requestSubVodFocus();
+      },
     );
   }
 
@@ -443,14 +628,10 @@ class _MusicScreenState extends State<MusicScreen> {
     if (itemId == 'view_all') {
       _navigateToViewAllScreen();
     } else {
-      final selectedItem =
-          _musicList.firstWhere((item) => item.id == itemId);
+      final selectedItem = _musicList.firstWhere((item) => item.id == itemId);
       _navigateToVideoScreen(selectedItem);
     }
   }
-
-
-
 
   Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     if (_isNavigating) return;
@@ -458,7 +639,6 @@ class _MusicScreenState extends State<MusicScreen> {
 
     bool shouldPlayVideo = true;
     bool shouldPop = true;
-    
 
     // Show loading indicator while video is loading
     showDialog(
@@ -480,17 +660,17 @@ class _MusicScreenState extends State<MusicScreen> {
       _isNavigating = false;
     });
 
-
-
     try {
-String originalUrl = newsItem.url;
+      String originalUrl = newsItem.url;
       if (newsItem.streamType == 'YoutubeLive') {
         // Retry fetching the updated URL if stream type is YouTube Live
         for (int i = 0; i < _maxRetries; i++) {
           try {
-
             String updatedUrl =
                 await _socketService.getUpdatedUrl(newsItem.url);
+            // await  'https://www.youtube.com/watch?v=${newsItem.url}';
+            print('updatedUrl:$updatedUrl');
+
             newsItem = NewsItemModel(
               id: newsItem.id,
               name: newsItem.name,
@@ -514,23 +694,31 @@ String originalUrl = newsItem.url;
         Navigator.of(context, rootNavigator: true).pop();
       }
 
+      bool liveStatus = true;
+
       if (shouldPlayVideo) {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VideoScreen(
-                videoUrl: newsItem.url,
-                bannerImageUrl: newsItem.banner,
-                startAtPosition: Duration.zero,
-                videoType: newsItem.streamType,
-                channelList: _musicList,
-                isLive: true,isVOD: false,isBannerSlider: false,
-                source: 'isLiveScreen',isSearch: false, 
-                videoId: int.tryParse(newsItem.id), unUpdatedUrl:  originalUrl,
-              ),
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoScreen(
+              videoUrl: newsItem.url,
+              bannerImageUrl: newsItem.banner,
+              startAtPosition: Duration.zero,
+              videoType: newsItem.streamType,
+              channelList: _musicList,
+              isLive: true,
+              isVOD: false,
+              isBannerSlider: false,
+              source: 'isLiveScreen',
+              isSearch: false,
+              videoId: int.tryParse(newsItem.id),
+              unUpdatedUrl: originalUrl,
+              name: newsItem.url,
+              liveStatus: liveStatus,
             ),
-          );
-        }
+          ),
+        );
+      }
       // }
     } catch (e) {
       if (shouldPop) {
@@ -548,22 +736,29 @@ String originalUrl = newsItem.url;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NewsGridScreen( newsList: _musicList,),
+        builder: (context) => NewsGridScreen(
+          newsList: _musicList,
+        ),
       ),
     );
   }
 
-  
-
-
+  // @override
+  // void dispose() {
+  //   _socketService.dispose();
+  //   categoryFocusNodes.values.forEach((node) => node.dispose());
+  //   moreFocusNode.dispose();
+  //   super.dispose();
+  // }
 
   @override
   void dispose() {
     _socketService.dispose();
-    categoryFocusNodes.values.forEach((node) => node.dispose());
+    categoryFocusNodes.values.forEach((node) {
+      if (node.hasFocus) node.unfocus();
+      node.dispose();
+    });
     moreFocusNode.dispose();
     super.dispose();
   }
 }
-
-
