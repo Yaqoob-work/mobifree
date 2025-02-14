@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
+import 'package:mobi_tv_entertainment/widgets/items/more_channel_item.dart';
 import 'package:mobi_tv_entertainment/widgets/items/news_item.dart';
 import 'package:mobi_tv_entertainment/widgets/models/news_item_model.dart';
 import 'package:mobi_tv_entertainment/widgets/services/api_service.dart';
@@ -247,7 +248,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
   Widget _buildNewsItem(NewsItemModel item) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: NewsItem(
+      child: MoreChannelItem(
         key: Key(item.id),
         item: item,
         hideDescription: true,
@@ -300,7 +301,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
             String updatedUrl =
                 await _socketService.getUpdatedUrl(newsItem.url);
             newsItem = NewsItemModel(
-              id: newsItem.id,
+              id: newsItem.id,videoId: '',
               name: newsItem.name,
               description: newsItem.description,
               banner: newsItem.banner,
@@ -354,7 +355,7 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               source: 'isLiveScreen',
               isSearch: false,
               videoId: int.tryParse(newsItem.id),
-              unUpdatedUrl: originalUrl,name: newsItem.url, liveStatus:liveStatus ,
+              unUpdatedUrl: originalUrl,name: newsItem.name, liveStatus:liveStatus ,
               
             ),
           ),

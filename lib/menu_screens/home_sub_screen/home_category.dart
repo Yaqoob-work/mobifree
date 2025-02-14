@@ -837,13 +837,6 @@
 // //   }
 // // }
 
-
-
-
-
-
-
-
 // import 'dart:async';
 // import 'dart:convert';
 // import 'package:flutter/material.dart';
@@ -1276,7 +1269,7 @@
 //                           padding: EdgeInsets.symmetric(horizontal: 0),
 //                           child: FocusableItemWidget(
 //                             focusNode: index == 0 ? firstBannerFocusNode : null,
-                            
+
 //                             imageUrl: filteredChannels[index].banner,
 //                             name: filteredChannels[index].name,
 //                             onTap: () async {
@@ -1381,7 +1374,6 @@
 //       }
 //     }
 //   }
-
 
 // }
 
@@ -1710,10 +1702,6 @@
 //     );
 //   }
 // }
-
-
-
-
 
 // import 'dart:async';
 // import 'dart:convert';
@@ -2554,14 +2542,10 @@
 //   }
 // }
 
-
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as https;
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
@@ -2872,11 +2856,17 @@ class _CategoryWidgetState extends State<CategoryWidget> {
   bool _shouldContinueLoading = true;
   late Future<List<Category>> _categories;
   late CategoryService _categoryService;
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, FocusNode> _focusNodes = {}; // Store focus nodes
 
   @override
   void initState() {
     super.initState();
     _socketService.initSocket();
+    for (var channel in widget.category.channels) {
+      _focusNodes[channel.id] =
+          FocusNode(); // Assign a FocusNode to each channel
+    }
     _categoryService = CategoryService(); // Initialize the service here
     _categories = _categoryService.fetchCategories();
     _categoryService.updateStream.listen((hasChanges) {
@@ -2890,8 +2880,24 @@ class _CategoryWidgetState extends State<CategoryWidget> {
 
   @override
   void dispose() {
+    for (var node in _focusNodes.values) {
+      node.dispose();
+    }
     _socketService.dispose();
     super.dispose();
+  }
+
+  void _scrollToFocusedItem(String itemId) {
+    final focusNode = _focusNodes[itemId];
+
+    if (focusNode == null || !focusNode.hasFocus) return;
+
+    Scrollable.ensureVisible(
+      focusNode.context!,
+      alignment: 0.05, // 0.0 -> left align, 1.0 -> right align, 0.5 -> center
+      duration: Duration(milliseconds: 300), // Smooth scrolling
+      curve: Curves.easeInOut,
+    );
   }
 
   void _showLoadingIndicator(BuildContext context) {
@@ -2951,34 +2957,88 @@ class _CategoryWidgetState extends State<CategoryWidget> {
                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.4,
                     child: ListView.builder(
+                      controller: _scrollController,
                       scrollDirection: Axis.horizontal,
-                      itemCount: filteredChannels.length > 5
-                          ? 6
-                          : filteredChannels.length,
+                      itemCount: filteredChannels.length > 7
+                          ? 8
+                          : filteredChannels.length + 1,
+                      // itemBuilder: (context, index) {
+                      //   if (index == 5 && filteredChannels.length > 5) {
+                      //     return Padding(
+                      //       padding: EdgeInsets.symmetric(horizontal: 10),
+                      //       child: ViewAllWidget(
+                      //         onTap: () {
+                      //           _dismissLoadingIndicator();
+                      //           Navigator.push(
+                      //             context,
+                      //             MaterialPageRoute(
+                      //               builder: (context) => CategoryGridView(
+                      //                 category: widget.category,
+                      //                 filteredChannels: filteredChannels,
+                      //               ),
+                      //             ),
+                      //           );
+                      //         },
+                      //         categoryText: widget.category.text.toUpperCase(),
+                      //       ),
+                      //     );
+                      //   }
                       itemBuilder: (context, index) {
-                        if (index == 5 && filteredChannels.length > 5) {
-                          return Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: ViewAllWidget(
-                              onTap: () {
-                                _dismissLoadingIndicator();
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CategoryGridView(
-                                      category: widget.category,
-                                      filteredChannels: filteredChannels,
+                        if (filteredChannels.length >= 7) {
+                          if (index == 7) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: ViewAllWidget(
+                                onTap: () {
+                                  _dismissLoadingIndicator();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CategoryGridView(
+                                        category: widget.category,
+                                        filteredChannels: filteredChannels,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                              categoryText: widget.category.text.toUpperCase(),
-                            ),
-                          );
+                                  );
+                                },
+                                categoryText:
+                                    widget.category.text.toUpperCase(),
+                              ),
+                            );
+                          }
+                        } else {
+                          if (index == filteredChannels.length) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: ViewAllWidget(
+                                onTap: () {
+                                  _dismissLoadingIndicator();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CategoryGridView(
+                                        category: widget.category,
+                                        filteredChannels: filteredChannels,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                categoryText:
+                                    widget.category.text.toUpperCase(),
+                              ),
+                            );
+                          }
                         }
                         return Padding(
                           padding: EdgeInsets.symmetric(horizontal: 0),
                           child: FocusableItemWidget(
+                            focusNode: _focusNodes[filteredChannels[index].id]!,
+                            onFocusChange: (hasFocus) {
+                              if (hasFocus) {
+                                _scrollToFocusedItem(
+                                    filteredChannels[index].id);
+                              }
+                            },
                             imageUrl: filteredChannels[index].banner,
                             name: filteredChannels[index].name,
                             onTap: () async {
@@ -3255,6 +3315,142 @@ class _CategoryGridViewState extends State<CategoryGridView> {
   }
 }
 
+// class ViewAllWidget extends StatefulWidget {
+//   final VoidCallback onTap;
+//   final String categoryText;
+
+//   ViewAllWidget({required this.onTap, required this.categoryText});
+
+//   @override
+//   _ViewAllWidgetState createState() => _ViewAllWidgetState();
+// }
+
+// class _ViewAllWidgetState extends State<ViewAllWidget> {
+//   bool isFocused = false;
+//   Color focusColor = highlightColor;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return FocusableActionDetector(
+//       onFocusChange: (hasFocus) {
+//         setState(() {
+//           isFocused = hasFocus;
+//         });
+//       },
+//       actions: {
+//         ActivateIntent: CallbackAction<ActivateIntent>(
+//           onInvoke: (ActivateIntent intent) {
+//             widget.onTap();
+//             return null;
+//           },
+//         ),
+//       },
+//       child: GestureDetector(
+//         onTap: widget.onTap,
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.center,
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             AnimatedContainer(
+//               width: screenwdt * 0.19,
+//               height: isFocused ? screenhgt * 0.24 : screenhgt * 0.21,
+//               duration: const Duration(milliseconds: 300),
+//               decoration: BoxDecoration(
+//                 border: isFocused
+//                     ? Border.all(
+//                         color: focusColor,
+//                         width: 4.0,
+//                       )
+//                     : Border.all(
+//                         color: Colors.transparent,
+//                         width: 4.0,
+//                       ),
+//                 color: Colors.grey[800],
+//                 boxShadow: isFocused
+//                     ? [
+//                         BoxShadow(
+//                           color: focusColor,
+//                           blurRadius: 25,
+//                           spreadRadius: 10,
+//                         )
+//                       ]
+//                     : [],
+//               ),
+//               child: Center(
+//                 child: Column(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   children: [
+//                     Text(
+//                       'View All',
+//                       style: TextStyle(
+//                         color: isFocused ? focusColor : hintColor,
+//                         fontWeight: FontWeight.bold,
+//                       ),
+//                       textAlign: TextAlign.center,
+//                     ),
+//                     Text(
+//                       widget.categoryText,
+//                       style: TextStyle(
+//                         color: isFocused ? focusColor : hintColor,
+//                         fontWeight: FontWeight.bold,
+//                         fontSize: nametextsz,
+//                       ),
+//                       textAlign: TextAlign.center,
+//                     ),
+//                     Text(
+//                       'Channels',
+//                       style: TextStyle(
+//                         color: isFocused ? focusColor : hintColor,
+//                         fontWeight: FontWeight.bold,
+//                       ),
+//                       textAlign: TextAlign.center,
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//             SizedBox(height: 10),
+//             Container(
+//               width: screenwdt * 0.17,
+//               // height: screenhgt * 0.15,
+//               child: Column(
+//                 children: [
+//                   Text(
+//                     (widget.categoryText),
+//                     style: TextStyle(
+//                       color: isFocused ? focusColor : Colors.grey,
+//                       fontWeight: FontWeight.bold,
+//                       fontSize: 15,
+//                     ),
+//                     overflow: TextOverflow.ellipsis,
+//                     maxLines: 1,
+//                     textAlign: TextAlign.center,
+//                   ),
+//                   // Text(
+//                   //   '''See all ${(widget.categoryText).toLowerCase()} channels''',
+//                   //   style: TextStyle(
+//                   //     color: isFocused ? focusColor : Colors.grey,
+//                   //     fontWeight: FontWeight.bold,
+//                   //   ),
+//                   //   overflow: TextOverflow.ellipsis,
+//                   //   maxLines: 3,
+//                   //   textAlign: TextAlign.center,
+//                   // ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class ViewAllWidget extends StatefulWidget {
   final VoidCallback onTap;
   final String categoryText;
@@ -3268,30 +3464,48 @@ class ViewAllWidget extends StatefulWidget {
 class _ViewAllWidgetState extends State<ViewAllWidget> {
   bool isFocused = false;
   Color focusColor = highlightColor;
+  FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(() {
+      setState(() {
+        isFocused = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FocusableActionDetector(
-      onFocusChange: (hasFocus) {
-        setState(() {
-          isFocused = hasFocus;
-        });
-      },
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (ActivateIntent intent) {
+    return Focus(
+      focusNode: _focusNode,
+      onKey: (FocusNode node, RawKeyEvent event) {
+        if (event is RawKeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            // ArrowRight dabane par focus retain karega
+            return KeyEventResult.handled;
+          } else if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.select) {
+            // Enter dabane par onTap() call ho
             widget.onTap();
-            return null;
-          },
-        ),
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
       },
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: () {
+          widget.onTap();
+          _focusNode
+              .requestFocus(); // Tap karne ke baad bhi focus retain karega
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -3357,7 +3571,6 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
             SizedBox(height: 10),
             Container(
               width: screenwdt * 0.17,
-              // height: screenhgt * 0.15,
               child: Column(
                 children: [
                   Text(
@@ -3371,16 +3584,6 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
                     maxLines: 1,
                     textAlign: TextAlign.center,
                   ),
-                  // Text(
-                  //   '''See all ${(widget.categoryText).toLowerCase()} channels''',
-                  //   style: TextStyle(
-                  //     color: isFocused ? focusColor : Colors.grey,
-                  //     fontWeight: FontWeight.bold,
-                  //   ),
-                  //   overflow: TextOverflow.ellipsis,
-                  //   maxLines: 3,
-                  //   textAlign: TextAlign.center,
-                  // ),
                 ],
               ),
             ),
@@ -3389,4 +3592,4 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
       ),
     );
   }
-}  
+}

@@ -53,7 +53,6 @@ Future<MovieDetailsApi> fetchMovieDetails(
 //   return await PaletteColorService().getSecondaryColor(imageUrl);
 // }
 
-
 Future<Color> fetchPaletteColor(String imageUrl) async {
   try {
     return await PaletteColorService().getSecondaryColor(imageUrl);
@@ -62,7 +61,6 @@ Future<Color> fetchPaletteColor(String imageUrl) async {
     return Colors.grey; // Fallback color
   }
 }
-
 
 // Helper function to decode base64 images
 Uint8List _getImageFromBase64String(String base64String) {
@@ -281,8 +279,6 @@ Widget displayImage(
   }
 }
 
-
-
 // class SubVod extends StatefulWidget {
 //   final Function(bool)? onFocusChange; // Add this
 
@@ -304,7 +300,7 @@ Widget displayImage(
 //   void initState() {
 //     super.initState();
 //     firstSubVodFocusNode = FocusNode();
-    
+
 //         // Add key event listener
 //     firstSubVodFocusNode.onKey = (node, event) {
 //       if (event is RawKeyDownEvent) {
@@ -495,6 +491,9 @@ Widget displayImage(
 // }
 
 
+
+
+
 class SubVod extends StatefulWidget {
   final Function(bool)? onFocusChange; // Add this
 
@@ -511,27 +510,39 @@ class _SubVodState extends State<SubVod> {
   bool _cacheLoaded = false; // To track if cache has been loaded
   // FocusNode firstSubVodFocusNode = FocusNode();
   late FocusNode firstSubVodFocusNode;
+  
 
   @override
   void initState() {
     super.initState();
     firstSubVodFocusNode = FocusNode();
-    
-        // Add key event listener
+
+    // Add key event listener
     firstSubVodFocusNode.onKey = (node, event) {
       if (event is RawKeyDownEvent) {
         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
           // Get the HomeCategory focus node from provider and request focus
-          final homeCategoryFocusNode = context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+          final homeCategoryFocusNode =
+              context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
           if (homeCategoryFocusNode != null) {
             homeCategoryFocusNode.requestFocus();
             return KeyEventResult.handled;
           }
-        }
-        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        }else
 
 
-        }
+
+if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+  print("⬆️ SubVod: Up Arrow pressed, requesting music item focus");
+
+  context.read<FocusProvider>().requestMusicItemFocus(context);
+  return KeyEventResult.handled;
+}
+
+
+
+
+
       }
       return KeyEventResult.ignored;
     };
@@ -670,10 +681,30 @@ class _SubVodState extends State<SubVod> {
                   scrollDirection: Axis.horizontal,
                   itemCount: _networks.length,
                   itemBuilder: (context, index) {
+                    final focusNode = index == 0 ? firstSubVodFocusNode : FocusNode()
+                      ..onKey = (node, event) {
+                        if (event is RawKeyDownEvent) {
+                          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                            print("⬆️ SubVod: Up Arrow pressed, requesting music item focus");
+                            context.read<FocusProvider>().requestMusicItemFocus(context);
+                            return KeyEventResult.handled;
+                          } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                            final homeCategoryFocusNode =
+                                context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+                            if (homeCategoryFocusNode != null) {
+                              homeCategoryFocusNode.requestFocus();
+                              return KeyEventResult.handled;
+                            }
+                          }
+                        }
+                        return KeyEventResult.ignored;
+                      };
+
                     return FocusableItemWidget(
                       imageUrl: _networks[index].logo,
                       name: _networks[index].name,
-                      focusNode: index == 0 ? firstSubVodFocusNode : null,
+                      // focusNode: index == 0 ? firstSubVodFocusNode : null,
+                      focusNode: focusNode,
                       onTap: () async {
                         Navigator.push(
                           context,
@@ -696,7 +727,8 @@ class _SubVodState extends State<SubVod> {
       ],
     );
   }
-} 
+}
+
 
 
 
@@ -848,13 +880,6 @@ class _SubVodState extends State<SubVod> {
 //   }
 // }
 
-
-
-
-
-
-
-
 class VOD extends StatefulWidget {
   @override
   _VODState createState() => _VODState();
@@ -864,20 +889,83 @@ class _VODState extends State<VOD> {
   List<NetworkApi> _networks = [];
   bool _isLoading = true;
   bool _cacheLoaded = false; // To track if cache has been loaded
+  late FocusNode firstVodFocusNode;
+  Map<int, FocusNode> firstRowFocusNodes = {};
+
 
   @override
   void initState() {
     super.initState();
+    // FocusNode firstVodFocusNode = FocusNode();
+
+     // Initialize focus nodes for first row items
+    for (int i = 0; i < 5; i++) {
+      final focusNode = FocusNode();
+      firstRowFocusNodes[i] = focusNode;
+      
+      // Add key event listener for each focus node in first row
+      focusNode.onKey = (node, event) {
+        if (event is RawKeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            context.read<FocusProvider>().requestVodMenuFocus();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      };
+    }
+
+    // Set first item's focus node in provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusNode firstVodFocusNode = FocusNode();
-      context
-          .read<FocusProvider>()
-          .setFirstVodBannerFocusNode(firstVodFocusNode);
+      if (firstRowFocusNodes.containsKey(0)) {
+        context
+            .read<FocusProvider>()
+            .setFirstVodBannerFocusNode(firstRowFocusNodes[0]!);
+            
+        // Request focus for first item
+        firstRowFocusNodes[0]?.requestFocus();
+      }
     });
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   context
+    //       .read<FocusProvider>()
+    //       .setFirstVodBannerFocusNode(firstVodFocusNode);
+    // });
+
+
     // Fetch networks from cache first
     _loadCachedNetworks();
     // Fetch data from API in the background and update if necessary
     _fetchNetworksInBackground();
+
+    // Add key event listener
+    // firstVodFocusNode.onKey = (node, event) {
+    //   if (event is RawKeyDownEvent) {
+    //     // if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+    //     //   // // Get the HomeCategory focus node from provider and request focus
+    //     //   // final homeCategoryFocusNode = context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+    //     //   // if (homeCategoryFocusNode != null) {
+    //     //   //   homeCategoryFocusNode.requestFocus();
+    //     //   //   return KeyEventResult.handled;
+    //     //   // }
+    //     // }
+    //     if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+    //       context.read<FocusProvider>().requestVodMenuFocus();
+
+    //       // if (_musicList.isNotEmpty) {
+    //       //   // Request focus for first news item
+    //       //   final firstItemId = _musicList[0].id;
+    //       //   if (newsItemFocusNodes.containsKey(firstItemId)) {
+    //       //     FocusScope.of(context)
+    //       //         .requestFocus(newsItemFocusNodes[firstItemId]);
+    //       //     return KeyEventResult.handled;
+    //       //   }
+    //       // }
+    //     }
+    //   }
+    //   return KeyEventResult.ignored;
+    // };
   }
 
   // Load cached data
@@ -954,6 +1042,12 @@ class _VODState extends State<VOD> {
     });
   }
 
+    @override
+  void dispose() {
+    firstRowFocusNodes.values.forEach((node) => node.dispose());
+    super.dispose();
+  }
+
   Widget _buildNetworksList() {
     if (_networks.isEmpty) {
       return Center(child: Text('No Networks Available'));
@@ -968,10 +1062,12 @@ class _VODState extends State<VOD> {
         ),
         itemCount: _networks.length,
         itemBuilder: (context, index) {
+          final isFirstRow = index < 5;
           return FocusableItemWidget(
-            focusNode: index == 0
-                ? context.read<FocusProvider>().firstVodBannerFocusNode
-                : null,
+            // focusNode: index == 0
+            //     ? context.read<FocusProvider>().firstVodBannerFocusNode
+            //     : null,
+            focusNode: isFirstRow ? firstRowFocusNodes[index] : null,
             imageUrl: _networks[index].logo,
             name: _networks[index].name,
             onTap: () async {
@@ -990,8 +1086,6 @@ class _VODState extends State<VOD> {
     }
   }
 }
-
-
 
 class ContentScreen extends StatefulWidget {
   final int networkId;

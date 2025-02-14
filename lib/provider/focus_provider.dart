@@ -34,6 +34,9 @@ class FocusProvider extends ChangeNotifier {
   // }
 
 
+  
+
+
   FocusNode? _firstLastPlayedFocusNode;
 
   void setFirstLastPlayedFocusNode(FocusNode node) {
@@ -81,6 +84,18 @@ class FocusProvider extends ChangeNotifier {
   void requestSearchIconFocus() {
     if (_searchIconFocusNode != null && _searchIconFocusNode!.canRequestFocus) {
       _searchIconFocusNode!.requestFocus();
+    }
+  }
+
+  FocusNode? _youtubeSearchIconFocusNode;
+
+  void setYoutubeSearchIconFocusNode(FocusNode focusNode) {
+    _youtubeSearchIconFocusNode = focusNode;
+  }
+
+  void requestYoutubeSearchIconFocus() {
+    if (_youtubeSearchIconFocusNode != null && _youtubeSearchIconFocusNode!.canRequestFocus) {
+      _youtubeSearchIconFocusNode!.requestFocus();
     }
   }
 
@@ -147,8 +162,6 @@ void scrollToElement(String identifier) {
 
 
 
-
-
  FocusNode? _firstMusicItemFocusNode;
 
   // Register focus node for the first music item
@@ -156,14 +169,24 @@ void scrollToElement(String identifier) {
   //   _firstMusicItemFocusNode = focusNode;
   // }
 
+  FocusNode? getFirstMusicItemFocusNode() {
+    return _firstMusicItemFocusNode;
+  }
+
+
+
+
 
     void setFirstMusicItemFocusNode(FocusNode node) {
+      
     firstMusicItemFocusNode = node;
+    print("🎯 FocusProvider: First music item focus node SET!");
     node.addListener(() {
       if (node.hasFocus) {
         scrollToElement('musicItem');
       }
     });
+    notifyListeners();
   }
 
 
@@ -176,17 +199,36 @@ void scrollToElement(String identifier) {
   //   }
   // }
 
-  
+
   void requestMusicItemFocus(BuildContext context) {
-    if (firstMusicItemFocusNode != null) {
-       print("Requesting focus for first music item.");
-       
-      firstMusicItemFocusNode!.requestFocus();
-      // FocusScope.of(context).requestFocus(_firstMusicItemFocusNode);
-      resetFocus();
+  if (firstMusicItemFocusNode != null) {
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (firstMusicItemFocusNode!.canRequestFocus) {
+        print("🎯 Delayed Focus Request for First Music Item.");
+        firstMusicItemFocusNode!.requestFocus();
+              resetFocus();
       scrollToElement('musicItem');
-    }
+      } else {
+        print("⚠️ First Music Item FocusNode cannot request focus even after delay!");
+      }
+    });
+  } else {
+    print("⚠️ First Music Item FocusNode is NULL!");
   }
+}
+
+
+  
+  // void requestMusicItemFocus(BuildContext context) {
+  //   if (firstMusicItemFocusNode != null) {
+  //      print("Requesting focus for first music item.");
+       
+  //     firstMusicItemFocusNode!.requestFocus();
+  //     // FocusScope.of(context).requestFocus(_firstMusicItemFocusNode);
+  //     resetFocus();
+  //     scrollToElement('musicItem');
+  //   }
+  // }
 
 
   
@@ -199,15 +241,54 @@ void scrollToElement(String identifier) {
       focusNode.requestFocus();
     }
   }
+
+
+
+   // News items ke focus nodes store karne ke liye map
+  final Map<String, FocusNode> _newsItemFocusNodes = {};
+
+  // Pehla focus node ka ID store karne ke liye variable
+  String? _firstNewsItemId;
+
+  // Register news item focus node
+  void registerNewsItemFocusNode(String id, FocusNode node) {
+    _newsItemFocusNodes[id] = node;
+    _firstNewsItemId ??= id; // Pehla item ID store karein
+    notifyListeners();
+  }
+
+  // Get news item focus node
+  FocusNode? getNewsItemFocusNode(String id) {
+    return _newsItemFocusNodes[id];
+  }
+
+  // Get first news item focus node
+  FocusNode? getFirstNewsItemFocusNode() {
+    if (_firstNewsItemId != null) {
+      return _newsItemFocusNodes[_firstNewsItemId];
+    }
+    return null;
+  }
+
+  // Remove a focus node (optional)
+  void unregisterNewsItemFocusNode(String id) {
+    _newsItemFocusNodes.remove(id);
+    notifyListeners();
+  }
   
+
+
+
+
 
 
 
  FocusNode? _newsItemFocusNode;
 
-  void registerNewsItemFocusNode(FocusNode node) {
-    _newsItemFocusNode = node;
-  }
+  // void registerNewsItemFocusNode(FocusNode node) {
+  //   _newsItemFocusNode = node;
+  //   notifyListeners(); 
+  // }
 
   void requestNewsItemFocus() {
     if (_newsItemFocusNode?.context != null) {
@@ -267,6 +348,39 @@ void requestLiveScreenFocus() {
     _liveTvFocusNode?.requestFocus();
   }
 
+  FocusNode? _searchNavigationFocusNode;
+
+  void setSearchNavigationFocusNode(FocusNode node) {
+    _searchNavigationFocusNode = node;
+  }
+
+  void requestSearchNavigationFocus() {
+    _searchNavigationFocusNode?.requestFocus();
+  }
+
+
+  FocusNode? _youtubeSearchNavigationFocusNode;
+
+  void setYoutubeSearchNavigationFocusNode(FocusNode node) {
+    _youtubeSearchNavigationFocusNode = node;
+  }
+
+  void requestYoutubeSearchNavigationFocus() {
+    _youtubeSearchNavigationFocusNode?.requestFocus();
+  }
+
+
+
+  FocusNode? _VodMenuFocusNode;
+
+  void setVodMenuFocusNode(FocusNode node) {
+    _VodMenuFocusNode = node;
+  }
+
+  void requestVodMenuFocus() {
+    _VodMenuFocusNode?.requestFocus();
+  }
+
 
   // Focus node setters with scroll behavior
   void setWatchNowFocusNode(FocusNode node) {
@@ -310,6 +424,9 @@ void requestLiveScreenFocus() {
   //   }
   // }
 
+
+  
+
   FocusNode? firstVodBannerFocusNode;
 
   void setFirstVodBannerFocusNode(FocusNode node) {
@@ -341,6 +458,7 @@ void requestLiveScreenFocus() {
       topNavigationFocusNode!.requestFocus();
       setTopNavigationFocusNode(topNavigationFocusNode!);
       // scrollToElement('topNavigation'); // Optional, scroll if necessary
+
     } else {
       print("Top Navigation FocusNode is not registered.");
     }
@@ -350,6 +468,7 @@ void requestLiveScreenFocus() {
 
   void setFirstSubVodFocusNode(FocusNode node) {
     firstSubVodFocusNode = node;
+    print("✅ FocusProvider: First SubVod focus node registered.");
     node.addListener(() {
       if (node.hasFocus) {
         // Only scroll if explicitly requested
@@ -377,12 +496,17 @@ void requestLiveScreenFocus() {
     }
   }
 
-  
+
+
+  FocusNode? getFirstSubVodFocusNode() {
+    return _firstSubVodFocusNode;
+  }
 
   void requestSubVodFocus() {
     if (firstSubVodFocusNode != null) {
       setVodFirstBannerFocus(true); // Ensure scroll only happens when requested
       firstSubVodFocusNode!.requestFocus();
+       print("✅ FocusProvider: First SubVod banner focus requested.");
       scrollToElement('subVod');
     } else {
       print("First SubVod FocusNode is not registered."); // Debug log

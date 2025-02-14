@@ -9,7 +9,7 @@ import '../models/news_item_model.dart';
 
 
 
-class ViewAllLiveGridItem extends StatefulWidget {
+class MoreChannelItem extends StatefulWidget {
   final NewsItemModel item;
   final VoidCallback onTap;
   final ValueChanged<String> onEnterPress;
@@ -19,7 +19,7 @@ class ViewAllLiveGridItem extends StatefulWidget {
   final VoidCallback? onUpPress;
   final VoidCallback? onDownPress;
 
-  ViewAllLiveGridItem({
+  MoreChannelItem({
     Key? key,
     required this.item,
     required this.onTap,
@@ -32,10 +32,10 @@ class ViewAllLiveGridItem extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ViewAllLiveGridItemState createState() => _ViewAllLiveGridItemState();
+  _MoreChannelItemState createState() => _MoreChannelItemState();
 }
 
-class _ViewAllLiveGridItemState extends State<ViewAllLiveGridItem> {
+class _MoreChannelItemState extends State<MoreChannelItem> {
     bool isFocused = false;
   Color dominantColor = Colors.white.withOpacity(0.5);
   final PaletteColorService _paletteColorService = PaletteColorService();
@@ -73,7 +73,6 @@ class _ViewAllLiveGridItemState extends State<ViewAllLiveGridItem> {
       onFocusChange: _handleFocusChange,
       onKey: (FocusNode node, RawKeyEvent event) {
         if (event is RawKeyDownEvent) {
-
            if (event.logicalKey == LogicalKeyboardKey.select) {
             widget.onEnterPress(widget.item.id);
             return KeyEventResult.handled;

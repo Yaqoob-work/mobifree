@@ -15,8 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
-
 class LiveScreen extends StatefulWidget {
   @override
   _LiveScreenState createState() => _LiveScreenState();
@@ -35,21 +33,20 @@ class _LiveScreenState extends State<LiveScreen> {
   int _retryDelay = 5; // seconds
   Timer? _timer;
 
-    // Track current focus position
+  // Track current focus position
   int _currentRow = 0;
   int _currentCol = 0;
   final int _crossAxisCount = 5;
   final List<List<FocusNode>> _focusNodes = [];
   final ScrollController _scrollController = ScrollController();
 
-
-    @override
+  @override
   void initState() {
     super.initState();
     _socketService.initSocket();
     checkServerStatus();
     _loadCachedDataAndFetchLive();
-    
+
     _apiService.updateStream.listen((hasChanges) {
       if (hasChanges) {
         _loadCachedDataAndFetchLive();
@@ -57,7 +54,7 @@ class _LiveScreenState extends State<LiveScreen> {
     });
   }
 
-    @override
+  @override
   void dispose() {
     _scrollController.dispose();
     for (var row in _focusNodes) {
@@ -72,22 +69,18 @@ class _LiveScreenState extends State<LiveScreen> {
 
   final List<GlobalKey> _itemKeys = [];
 
-
-
-void _initializeKeys() {
-  _itemKeys.clear();
-  for (var i = 0; i < _musicList.length; i++) {
-    _itemKeys.add(GlobalKey());
+  void _initializeKeys() {
+    _itemKeys.clear();
+    for (var i = 0; i < _musicList.length; i++) {
+      _itemKeys.add(GlobalKey());
+    }
+    print('Initialized ${_itemKeys.length} keys');
   }
-  print('Initialized ${_itemKeys.length} keys');
-}
-
-
 
   // void _initializeFocusNodes() {
   //   _focusNodes.clear();
   //   final rowCount = (_musicList.length / _crossAxisCount).ceil();
-    
+
   //   for (int i = 0; i < rowCount; i++) {
   //     List<FocusNode> row = [];
   //     for (int j = 0; j < _crossAxisCount; j++) {
@@ -140,38 +133,33 @@ void _initializeKeys() {
 //   }
 // }
 
+  void _initializeFocusNodes() {
+    _initializeKeys(); // Initialize keys for all items
+    _focusNodes.clear();
+    final rowCount = (_musicList.length / _crossAxisCount).ceil();
 
-
-void _initializeFocusNodes() {
-  _initializeKeys(); // Initialize keys for all items
-  _focusNodes.clear();
-  final rowCount = (_musicList.length / _crossAxisCount).ceil();
-
-  for (int i = 0; i < rowCount; i++) {
-    List<FocusNode> row = [];
-    for (int j = 0; j < _crossAxisCount; j++) {
-      if (i * _crossAxisCount + j < _musicList.length) {
-        row.add(FocusNode());
-        final identifier = 'item_${i}_${j}';
-        context.read<FocusProvider>().registerElementKey(
-          identifier,
-          _itemKeys[i * _crossAxisCount + j],
-        );
+    for (int i = 0; i < rowCount; i++) {
+      List<FocusNode> row = [];
+      for (int j = 0; j < _crossAxisCount; j++) {
+        if (i * _crossAxisCount + j < _musicList.length) {
+          row.add(FocusNode());
+          final identifier = 'item_${i}_${j}';
+          context.read<FocusProvider>().registerElementKey(
+                identifier,
+                _itemKeys[i * _crossAxisCount + j],
+              );
+        }
       }
+      _focusNodes.add(row);
     }
-    _focusNodes.add(row);
+
+    if (_focusNodes.isNotEmpty && _focusNodes[0].isNotEmpty) {
+      context.read<FocusProvider>().setLiveScreenFocusNode(_focusNodes[0][0]);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNodes[0][0].requestFocus();
+      });
+    }
   }
-
-  if (_focusNodes.isNotEmpty && _focusNodes[0].isNotEmpty) {
-    context.read<FocusProvider>().setLiveScreenFocusNode(_focusNodes[0][0]);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNodes[0][0].requestFocus();
-    });
-  }
-}
-
-
-
 
 //   void _scrollToFocusedItem(int row, int col) {
 //   final itemHeight = screenhgt * 0.1; // Approximate height of each grid item
@@ -187,7 +175,6 @@ void _initializeFocusNodes() {
 //     );
 //   }
 // }
-
 
   // void _handleUpPress(int row, int col) {
   //   if (row > 0 && _focusNodes[row - 1].length > col) {
@@ -223,121 +210,121 @@ void _initializeFocusNodes() {
 //   );
 // }
 
+  Widget _buildNewsList() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate item height based on aspect ratio
+          final itemWidth = constraints.maxWidth / _crossAxisCount;
+          final itemHeight = itemWidth * 0.00001; // 16:9 aspect ratio
 
-Widget _buildNewsList() {
-  return Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate item height based on aspect ratio
-        final itemWidth = constraints.maxWidth / _crossAxisCount;
-        final itemHeight = itemWidth * 0.00001; // 16:9 aspect ratio
-        
-        // Add extra padding for focus effect
-        final focusPadding = itemHeight * 0.0; // 15% of item height for focus effect
-        
-        return Container(
-          // Add padding at top and bottom to prevent cutoff
-          padding: EdgeInsets.only(
-            top: focusPadding,
-            bottom: focusPadding
-          ),
-          child: GridView.builder(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            clipBehavior: Clip.none, // Allow items to overflow their bounds
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: _crossAxisCount,
-              mainAxisSpacing: 20.0, // Increased spacing between rows
-              crossAxisSpacing: 10.0,
-              // childAspectRatio: 16/9,
+          // Add extra padding for focus effect
+          final focusPadding =
+              itemHeight * 0.0; // 15% of item height for focus effect
+
+          return Container(
+            // Add padding at top and bottom to prevent cutoff
+            padding: EdgeInsets.only(top: focusPadding, bottom: focusPadding),
+            child: GridView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              clipBehavior: Clip.none, // Allow items to overflow their bounds
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _crossAxisCount,
+                mainAxisSpacing: 20.0, // Increased spacing between rows
+                crossAxisSpacing: 10.0,
+                // childAspectRatio: 16/9,
+              ),
+              itemCount: _musicList.length,
+              itemBuilder: (context, index) {
+                final row = index ~/ _crossAxisCount;
+                final col = index % _crossAxisCount;
+                return LiveGridItem(
+                  key: _itemKeys[row * _crossAxisCount + col],
+                  item: _musicList[index],
+                  hideDescription: true,
+                  onTap: () => _navigateToVideoScreen(_musicList[index]),
+                  onEnterPress: _handleEnterPress,
+                  focusNode: _focusNodes[row][col],
+                  onUpPress: () => _handleUpPress(row, col),
+                  onDownPress: () => _handleDownPress(row, col),
+
+                  onLeftPress: () =>
+                      _handleLeftPress(row, col), // Add Left Navigation
+                  onRightPress: () =>
+                      _handleRightPress(row, col), // Add Right Navigation
+                );
+              },
             ),
-            itemCount: _musicList.length,
-            itemBuilder: (context, index) {
-              final row = index ~/ _crossAxisCount;
-              final col = index % _crossAxisCount;
-              return LiveGridItem (
-                key: _itemKeys[row * _crossAxisCount + col],
-                item: _musicList[index],
-                hideDescription: true,
-                onTap: () => _navigateToVideoScreen(_musicList[index]),
-                onEnterPress: _handleEnterPress,
-                focusNode: _focusNodes[row][col],
-                onUpPress: () => _handleUpPress(row, col),
-                onDownPress: () => _handleDownPress(row, col),
-
-    onLeftPress: () => _handleLeftPress(row, col),   // Add Left Navigation
-    onRightPress: () => _handleRightPress(row, col), // Add Right Navigation
-              );
-            },
-          ),
-        );
-      },
-    ),
-  );
-}
-
-
-void _handleLeftPress(int row, int col) {
-  if (col > 0) { // Ensure it's not the first column
-    _focusNodes[row][col - 1].requestFocus();
-    setState(() {
-      _currentCol = col - 1;
-    });
-  }
-}
-
-void _handleRightPress(int row, int col) {
-  if (col < _crossAxisCount - 1 && col + 1 < _focusNodes[row].length) { // Ensure it's not the last column
-    _focusNodes[row][col + 1].requestFocus();
-    setState(() {
-      _currentCol = col + 1;
-    });
-  }
-}
-
-
-// Update the scroll method to handle scrolling properly
-void _scrollToFocusedItem(int row, int col) {
-  final itemIndex = row * _crossAxisCount + col;
-  final viewportHeight = _scrollController.position.viewportDimension;
-  final itemHeight = viewportHeight / (_crossAxisCount / 2); // Approximate height
-
-  final targetOffset = (itemIndex ~/ _crossAxisCount) * itemHeight;
-
-  if (_scrollController.hasClients) {
-    _scrollController.animateTo(
-      targetOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+          );
+        },
+      ),
     );
   }
-}
+
+  void _handleLeftPress(int row, int col) {
+    if (col > 0) {
+      // Ensure it's not the first column
+      _focusNodes[row][col - 1].requestFocus();
+      setState(() {
+        _currentCol = col - 1;
+      });
+    }
+  }
+
+  void _handleRightPress(int row, int col) {
+    if (col < _crossAxisCount - 1 && col + 1 < _focusNodes[row].length) {
+      // Ensure it's not the last column
+      _focusNodes[row][col + 1].requestFocus();
+      setState(() {
+        _currentCol = col + 1;
+      });
+    }
+  }
+
+// Update the scroll method to handle scrolling properly
+  void _scrollToFocusedItem(int row, int col) {
+    final itemIndex = row * _crossAxisCount + col;
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final itemHeight =
+        viewportHeight / (_crossAxisCount / 2); // Approximate height
+
+    final targetOffset = (itemIndex ~/ _crossAxisCount) * itemHeight;
+
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
 // Update the focus handlers to include scrolling
-void _handleUpPress(int row, int col) {
-  if (row == 0) {
-    context.read<FocusProvider>().requestLiveTvFocus();
-  } else if (row > 0 && _focusNodes[row - 1].length > col) {
-    _scrollToFocusedItem(row - 1, col);
-    _focusNodes[row - 1][col].requestFocus();
-    setState(() {
-      _currentRow = row - 1;
-      _currentCol = col;
-    });
+  void _handleUpPress(int row, int col) {
+    if (row == 0) {
+      context.read<FocusProvider>().requestLiveTvFocus();
+    } else if (row > 0 && _focusNodes[row - 1].length > col) {
+      _scrollToFocusedItem(row - 1, col);
+      _focusNodes[row - 1][col].requestFocus();
+      setState(() {
+        _currentRow = row - 1;
+        _currentCol = col;
+      });
+    }
   }
-}
 
-void _handleDownPress(int row, int col) {
-  if (row < _focusNodes.length - 1 && _focusNodes[row + 1].length > col) {
-    _scrollToFocusedItem(row + 1, col);
-    _focusNodes[row + 1][col].requestFocus();
-    setState(() {
-      _currentRow = row + 1;
-      _currentCol = col;
-    });
+  void _handleDownPress(int row, int col) {
+    if (row < _focusNodes.length - 1 && _focusNodes[row + 1].length > col) {
+      _scrollToFocusedItem(row + 1, col);
+      _focusNodes[row + 1][col].requestFocus();
+      setState(() {
+        _currentRow = row + 1;
+        _currentCol = col;
+      });
+    }
   }
-}
 
 //   void _handleUpPress(int row, int col) {
 //   if (row == 0) {
@@ -421,7 +408,7 @@ void _handleDownPress(int row, int col) {
           _isLoading = false; // Show cached data immediately
         });
 
-        _initializeFocusNodes();  
+        _initializeFocusNodes();
         return true; // Cache was found and loaded
       }
     } catch (e) {
@@ -448,7 +435,7 @@ void _handleDownPress(int row, int col) {
         });
       }
 
-      _initializeFocusNodes();  
+      _initializeFocusNodes();
 
       setState(() {
         _isLoading =
@@ -568,7 +555,6 @@ void _handleDownPress(int row, int col) {
 //   );
 // }
 
-
 // Widget _buildNewsList() {
 //   return Padding(
 //     padding: const EdgeInsets.all(8.0),
@@ -592,9 +578,6 @@ void _handleDownPress(int row, int col) {
 //   );
 // }
 
-
-
-
   // Widget _buildNewsItem(NewsItemModel item, int row, int col) {
   //   return NewsItem(
   //     key: Key(item.id),
@@ -608,33 +591,30 @@ void _handleDownPress(int row, int col) {
   //   );
   // }
 
-Widget _buildNewsItem(NewsItemModel item, int row, int col) {
-  final identifier = 'item_${row}_${col}';
-  return NewsItem(
-    key: _itemKeys[row * _crossAxisCount + col],
-    item: item,
-    hideDescription: true,
-    onTap: () => _navigateToVideoScreen(item),
-    onEnterPress: _handleEnterPress,
-    focusNode: _focusNodes[row][col],
-    onUpPress: () => _handleUpPress(row, col),
-    onDownPress: () => _handleDownPress(row, col),
-    onFocusChange: (hasFocus) {
-      if (hasFocus) {
-        print('Focus gained for $identifier');
-        context.read<FocusProvider>().scrollToElement(identifier);
-      }
-    },
-  );
-}
-
-
+  Widget _buildNewsItem(NewsItemModel item, int row, int col) {
+    final identifier = 'item_${row}_${col}';
+    return NewsItem(
+      key: _itemKeys[row * _crossAxisCount + col],
+      item: item,
+      hideDescription: true,
+      onTap: () => _navigateToVideoScreen(item),
+      onEnterPress: _handleEnterPress,
+      focusNode: _focusNodes[row][col],
+      onUpPress: () => _handleUpPress(row, col),
+      onDownPress: () => _handleDownPress(row, col),
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          print('Focus gained for $identifier');
+          context.read<FocusProvider>().scrollToElement(identifier);
+        }
+      },
+    );
+  }
 
   void _handleEnterPress(String itemId) {
     final selectedItem = _musicList.firstWhere((item) => item.id == itemId);
     _navigateToVideoScreen(selectedItem);
   }
-
 
   Future<void> _navigateToVideoScreen(NewsItemModel newsItem) async {
     if (_isNavigating) return;
@@ -672,7 +652,7 @@ Widget _buildNewsItem(NewsItemModel item, int row, int col) {
             String updatedUrl =
                 await _socketService.getUpdatedUrl(newsItem.url);
             newsItem = NewsItemModel(
-              id: newsItem.id,
+              id: newsItem.id,videoId: '',
               name: newsItem.name,
               description: newsItem.description,
               banner: newsItem.banner,
@@ -694,9 +674,7 @@ Widget _buildNewsItem(NewsItemModel item, int row, int col) {
         Navigator.of(context, rootNavigator: true).pop();
       }
 
-                bool liveStatus = true;
-
-
+      bool liveStatus = true;
 
       if (shouldPlayVideo) {
         await Navigator.push(
@@ -705,7 +683,6 @@ Widget _buildNewsItem(NewsItemModel item, int row, int col) {
             builder: (context) => VideoScreen(
               videoUrl: newsItem.url,
               bannerImageUrl: newsItem.banner,
-              
               startAtPosition: Duration.zero,
               videoType: newsItem.streamType,
               channelList: _musicList,
@@ -715,7 +692,9 @@ Widget _buildNewsItem(NewsItemModel item, int row, int col) {
               source: 'isLiveScreen',
               isSearch: false,
               videoId: int.tryParse(newsItem.id),
-              unUpdatedUrl: originalUrl,name: newsItem.url, liveStatus: liveStatus,
+              unUpdatedUrl: originalUrl,
+              name: newsItem.url,
+              liveStatus: liveStatus,
             ),
           ),
         );

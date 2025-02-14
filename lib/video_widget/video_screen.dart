@@ -925,14 +925,41 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         _playNext(); // Automatically play next video
       }
 
-            if (
-          _controller!.value.hasError 
-          // || e.toString().contains('LateInitializationError')
-          || e.toString().contains('Exception')
-      ) {
-        print("Playback error or video ended. Playing next...");
-        _playNext();
-      }
+      //       if (
+      //     _controller!.value.hasError 
+      //     // || e.toString().contains('LateInitializationError')
+      //     || e.toString().contains('Exception')
+      // ) {
+      //   print("Playback error or video ended. Playing next...");
+      //   _playNext();
+      // }
+
+      if (_controller!.value.hasError || e.toString().contains('Exception')) {
+  print("Playback error detected. Waiting for 5 seconds before deciding...");
+  
+  bool playbackRecovered = false;
+
+  // Listen to video controller updates
+  void checkPlaybackStatus() {
+    if (_controller!.value.isPlaying && !_controller!.value.hasError) {
+      playbackRecovered = true;
+    }
+  }
+
+  _controller!.addListener(checkPlaybackStatus);
+
+  // Wait for 5 seconds
+  Future.delayed(Duration(seconds: 10), () {
+    _controller!.removeListener(checkPlaybackStatus);
+    if (!playbackRecovered) {
+      print("Playback did not recover. Playing next...");
+      _playNext();
+    } else {
+      print("Playback recovered. Continuing...");
+    }
+  });
+}
+
 
       // Check for playback errors
     });
@@ -1097,10 +1124,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       }
 
       GlobalVariables.unUpdatedUrl = updatedUrl;
-      GlobalVariables.name = selectedChannel.name ?? '';
       GlobalVariables.position = _controller!.value.position;
       GlobalVariables.duration = _controller!.value.duration;
       GlobalVariables.banner = selectedChannel.banner ?? '';
+      GlobalVariables.name = selectedChannel.name ?? '';
 
       if (
           // selectedChannel.streamType == 'YoutubeLive' ||
@@ -1377,71 +1404,141 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
-  Future<void> _saveLastPlayedVideo(
-    String unUpdatedUrl,
-    Duration position,
-    Duration duration,
-    String bannerImageUrl,
-    String name,
-    bool liveStatus,
-  ) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> lastPlayedVideos =
-          prefs.getStringList('last_played_videos') ?? [];
+  // Future<void> _saveLastPlayedVideo(
+  //   String unUpdatedUrl,
+  //   Duration position,
+  //   Duration duration,
+  //   String bannerImageUrl,
+  //   String name,
+  //   bool liveStatus,
+  // ) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     List<String> lastPlayedVideos =
+  //         prefs.getStringList('last_played_videos') ?? [];
 
-      if (duration <= Duration(seconds: 5) &&
-          position <= Duration(seconds: 5)) {
-        print("Invalid duration or position. Skipping save.");
-        return;
-      }
+  //     if (duration <= Duration(seconds: 5) &&
+  //         position <= Duration(seconds: 5)) {
+  //       print("Invalid duration or position. Skipping save.");
+  //       return;
+  //     }
 
-      // Channel se videoName aur videoId fetch karna
-      String videoName = '';
-      String videoId = widget.videoId?.toString() ?? '';
+  //     // Channel se videoName aur videoId fetch karna
+  //     String videoName = '';
+  //     String videoId = widget.videoId?.toString() ?? '';
 
-      if (widget.channelList.isNotEmpty) {
-        int index = widget.channelList.indexWhere((channel) =>
-            channel.url == unUpdatedUrl ||
-            channel.id == widget.videoId.toString());
-        if (index != -1) {
-          // videoName = widget.channelList[index].name ?? '';
-          videoId = widget.channelList[index].id ?? '';
-        }
-      }
+  //     if (widget.channelList.isNotEmpty) {
+  //       int index = widget.channelList.indexWhere((channel) =>
+  //           channel.url == unUpdatedUrl ||
+  //           channel.id == widget.videoId.toString());
+  //       if (index != -1) {
+  //         // videoName = widget.channelList[index].name ?? '';
+  //         videoId = widget.channelList[index].id ?? '';
+  //       }
+  //     }
 
-      // Video entry format
-      String newVideoEntry =
-          "$unUpdatedUrl|${position.inMilliseconds}|${duration.inMilliseconds}|$liveStatus|$bannerImageUrl|$videoId|$name";
+  //     // Video entry format
+  //     String newVideoEntry =
+  //         "$unUpdatedUrl|${position.inMilliseconds}|${duration.inMilliseconds}|$liveStatus|$bannerImageUrl|$videoId|$name";
 
-      print(
-          "Saving video with position: ${position.inMilliseconds} ms and duration: ${duration.inMilliseconds} ms");
+  //     print(
+  //         "Saving video with position: ${position.inMilliseconds} ms and duration: ${duration.inMilliseconds} ms");
 
-      // Remove duplicate entries
-      lastPlayedVideos.removeWhere((entry) {
-        List<String> parts = entry.split('|');
-        return parts[0] == unUpdatedUrl || parts[4] == videoId;
-      });
+  //     // Remove duplicate entries
+  //     lastPlayedVideos.removeWhere((entry) {
+  //       List<String> parts = entry.split('|');
+  //       return parts[0] == unUpdatedUrl || parts[4] == videoId;
+  //     });
 
-      // Add naya video entry
-      lastPlayedVideos.insert(0, newVideoEntry);
+  //     // Add naya video entry
+  //     lastPlayedVideos.insert(0, newVideoEntry);
 
-      // List ko limit karna
-      if (lastPlayedVideos.length > 25) {
-        lastPlayedVideos = lastPlayedVideos.sublist(0, 25);
-      }
+  //     // List ko limit karna
+  //     if (lastPlayedVideos.length > 25) {
+  //       lastPlayedVideos = lastPlayedVideos.sublist(0, 25);
+  //     }
 
-      // SharedPreferences mein save karna
-      await prefs.setStringList('last_played_videos', lastPlayedVideos);
-      await prefs.setInt('last_video_duration', duration.inMilliseconds);
-      await prefs.setInt('last_video_position', position.inMilliseconds);
+  //     // SharedPreferences mein save karna
+  //     await prefs.setStringList('last_played_videos', lastPlayedVideos);
+  //     await prefs.setInt('last_video_duration', duration.inMilliseconds);
+  //     await prefs.setInt('last_video_position', position.inMilliseconds);
 
-      print("Savedvideo entrysuccessfully: $newVideoEntry");
-      print("Savedvideo entrysuccessfully: $lastPlayedVideos");
-    } catch (e) {
-      print("Error saving last played video: $e");
+  //     print("Savedvideo entrysuccessfully: $newVideoEntry");
+  //     print("Savedvideo entrysuccessfully: $lastPlayedVideos");
+  //   } catch (e) {
+  //     print("Error saving last played video: $e");
+  //   }
+  // }
+
+
+Future<void> _saveLastPlayedVideo(
+  String unUpdatedUrl,
+  Duration position,
+  Duration duration,
+  String bannerImageUrl,
+  String name,
+  bool liveStatus,
+) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
+
+    // 🔹 Debugging: Print existing list before modification
+    print("Existing lastPlayedVideos: $lastPlayedVideos");
+    
+    if (duration <= Duration(seconds: 5) && position <= Duration(seconds: 5)) {
+      print("Invalid duration or position. Skipping save.");
+      return;
     }
+
+    // 🔹 Check if video ID is valid
+    String videoId = widget.videoId?.toString() ?? '';
+
+    if (widget.channelList.isNotEmpty) {
+      int index = widget.channelList.indexWhere((channel) =>
+          channel.url == unUpdatedUrl || channel.id == widget.videoId.toString());
+      if (index != -1) {
+        videoId = widget.channelList[index].id ?? '';
+      }
+    }
+
+    // 🔹 Debugging: Check if video ID exists
+    print("Video ID for saving: $videoId");
+
+    // 🔹 Video entry format
+    String newVideoEntry =
+        "$unUpdatedUrl|${position.inMilliseconds}|${duration.inMilliseconds}|$liveStatus|$bannerImageUrl|$videoId|$name";
+
+    print("Saving video: $newVideoEntry");
+
+    // 🔹 Remove duplicate entries safely
+    lastPlayedVideos.removeWhere((entry) {
+      List<String> parts = entry.split('|');
+      return parts.isNotEmpty && (parts[0] == unUpdatedUrl || parts.length > 4 && parts[4] == videoId);
+    });
+
+    // 🔹 Ensure list has elements before accessing indices
+    if (lastPlayedVideos.isEmpty) {
+      print("List was empty, adding first video.");
+    }
+
+    lastPlayedVideos.insert(0, newVideoEntry);
+
+    // 🔹 Avoid RangeError by limiting size safely
+    if (lastPlayedVideos.length > 25) {
+      lastPlayedVideos = lastPlayedVideos.sublist(0, lastPlayedVideos.length.clamp(0, 25));
+    }
+
+    // 🔹 Save to SharedPreferences
+    await prefs.setStringList('last_played_videos', lastPlayedVideos);
+    await prefs.setInt('last_video_duration', duration.inMilliseconds);
+    await prefs.setInt('last_video_position', position.inMilliseconds);
+
+    print("Saved successfully: $lastPlayedVideos");
+  } catch (e) {
+    print("Error saving last played video: $e");
   }
+}
 
 
   int _accumulatedSeekForward = 0;

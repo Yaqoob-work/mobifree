@@ -45,6 +45,7 @@ class _MusicScreenState extends State<MusicScreen> {
   String _selectedCategory = 'Live'; // Default category
   int _maxRetries = 3;
   int _retryDelay = 5; // seconds
+  final ScrollController _scrollController = ScrollController();
 
   final List<String> categories = [
     'Live',
@@ -90,36 +91,57 @@ class _MusicScreenState extends State<MusicScreen> {
     //   }
     // });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // if (_musicList.isNotEmpty) {
-      //   final firstItemId = _musicList[0].id;
-      //   newsItemFocusNodes[firstItemId] = FocusNode();
-      // }
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   // if (_musicList.isNotEmpty) {
+    //   //   final firstItemId = _musicList[0].id;
+    //   //   newsItemFocusNodes[firstItemId] = FocusNode();
+    //   // }
 
+    //   final firstCategoryNode = categoryFocusNodes[categories.first];
+    //   if (firstCategoryNode != null) {
+    //     context
+    //         .read<FocusProvider>()
+    //         .setFirstMusicItemFocusNode(firstCategoryNode);
+    //     print("Music focus node registered");
+    //   }
+
+    //   if (_musicList.isNotEmpty) {
+    //     final firstItemId = _musicList[0].id;
+    //     if (newsItemFocusNodes.containsKey(firstItemId)) {
+    //       final focusNode = newsItemFocusNodes[firstItemId]!;
+    //       context.read<FocusProvider>().registerNewsItemFocusNode(focusNode);
+    //       print("✅ MusicScreen: First banner focus node registered: $firstItemId");
+    //     }
+    //   }
+
+    //   // if (_musicList.isNotEmpty) {
+    //   //   final firstItemId = _musicList[0].id;
+    //   //   if (newsItemFocusNodes.containsKey(firstItemId)) {
+    //   //     context
+    //   //         .read<FocusProvider>()
+    //   //         .setFirstMusicItemFocusNode(newsItemFocusNodes[firstItemId]!);
+    //   //     print("Registeredfocus node for first banner: $firstItemId");
+    //   //   }
+    //   // }
+    // });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Agar koi banner available nahi hai, tab category button focus set karein
       final firstCategoryNode = categoryFocusNodes[categories.first];
       if (firstCategoryNode != null) {
         context
             .read<FocusProvider>()
             .setFirstMusicItemFocusNode(firstCategoryNode);
-        print("Music focus node registered");
-      }
-
-      if (_musicList.isNotEmpty) {
+        print("✅ MusicScreen: First category focus node registered.");
+      } else if (_musicList.isNotEmpty) {
         final firstItemId = _musicList[0].id;
         if (newsItemFocusNodes.containsKey(firstItemId)) {
           final focusNode = newsItemFocusNodes[firstItemId]!;
-          context.read<FocusProvider>().registerNewsItemFocusNode(focusNode);
-          print("Registered focus node for first news item: $firstItemId");
-        }
-      }
-
-      if (_musicList.isNotEmpty) {
-        final firstItemId = _musicList[0].id;
-        if (newsItemFocusNodes.containsKey(firstItemId)) {
-          context
-              .read<FocusProvider>()
-              .setFirstMusicItemFocusNode(newsItemFocusNodes[firstItemId]!);
-          print("Registeredfocus node for first banner: $firstItemId");
+          context.read<FocusProvider>().setFirstMusicItemFocusNode(focusNode);
+          print(
+              "✅ MusicScreen: First music item focus node registered: $firstItemId");
+        } else {
+          print("⚠️ MusicScreen: First music item NOT registered!");
         }
       }
     });
@@ -132,11 +154,58 @@ class _MusicScreenState extends State<MusicScreen> {
     });
 
     // Initialize focus nodes for each category
-    for (var category in categories) {
-      categoryFocusNodes[category] = FocusNode();
-    }
-    moreFocusNode = FocusNode();
+    // for (var category in categories) {
+    //   categoryFocusNodes[category] = FocusNode();
+    // }
+    // moreFocusNode = FocusNode();
+
+      // Ensure category focus nodes are initialized
+  for (var category in categories) {
+    categoryFocusNodes.putIfAbsent(category, () => FocusNode());
   }
+
+  // Ensure focus listener is added
+  categoryFocusNodes[categories.first]!.addListener(() {
+    if (categoryFocusNodes[categories.first]!.hasFocus) {
+      widget.onFocusChange?.call(true);
+    }
+  });
+
+  // Ensure more button focus node is initialized
+  moreFocusNode = FocusNode();
+
+  // Ensure news item focus nodes are properly initialized
+  for (var item in _musicList) {
+    newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
+  }
+  }
+
+// void _scrollToFocusedItem(String itemId) {
+//   final focusNode = newsItemFocusNodes[itemId];
+
+//   if (focusNode == null || !focusNode.hasFocus) return;
+
+//   Scrollable.ensureVisible(
+//     focusNode.context!,
+//     alignment: 0.05, // 0.0 -> left align, 1.0 -> right align, 0.5 -> center align
+//     duration: Duration(milliseconds: 300), // Smooth scrolling
+//     curve: Curves.easeInOut,
+//   );
+// }
+
+
+void _scrollToFocusedItem(String itemId) {
+  if (newsItemFocusNodes[itemId] != null && newsItemFocusNodes[itemId]!.hasFocus) {
+    Scrollable.ensureVisible(
+      newsItemFocusNodes[itemId]!.context!,
+      alignment: 0.05, // Adjust alignment for better UX
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+}
+
+
 
   // Add color generator function
   Color _generateRandomColor() {
@@ -562,13 +631,15 @@ class _MusicScreenState extends State<MusicScreen> {
     bool showViewAll = totalItems > 10;
 
     return ListView.builder(
+
       scrollDirection: Axis.horizontal,
+      controller: _scrollController,
       itemCount: showViewAll ? 11 : totalItems,
       itemBuilder: (context, index) {
         if (showViewAll && index == 10) {
           return _buildViewAllItem();
         }
-        return _buildNewsItem(_musicList[index]);
+        return _buildNewsItem(_musicList[index], index);
       },
     );
   }
@@ -595,6 +666,7 @@ class _MusicScreenState extends State<MusicScreen> {
           streamType: '',
           genres: '',
           status: '',
+          videoId: '',
         ),
         onTap: _navigateToViewAllScreen,
         onEnterPress: _handleEnterPress,
@@ -602,8 +674,13 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
-  Widget _buildNewsItem(NewsItemModel item) {
-    newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
+  Widget _buildNewsItem(NewsItemModel item, int index) {
+    // newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
+      newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode()..addListener(() {
+    if (newsItemFocusNodes[item.id]!.hasFocus) {
+      _scrollToFocusedItem(item.id);
+    }
+  }));
     return NewsItem(
       key: Key(item.id),
       hideDescription: true,
@@ -673,6 +750,7 @@ class _MusicScreenState extends State<MusicScreen> {
 
             newsItem = NewsItemModel(
               id: newsItem.id,
+              videoId: '',
               name: newsItem.name,
               description: newsItem.description,
               banner: newsItem.banner,
@@ -713,7 +791,7 @@ class _MusicScreenState extends State<MusicScreen> {
               isSearch: false,
               videoId: int.tryParse(newsItem.id),
               unUpdatedUrl: originalUrl,
-              name: newsItem.url,
+              name: newsItem.name,
               liveStatus: liveStatus,
             ),
           ),
@@ -754,11 +832,20 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   void dispose() {
     _socketService.dispose();
-    categoryFocusNodes.values.forEach((node) {
-      if (node.hasFocus) node.unfocus();
-      node.dispose();
-    });
-    moreFocusNode.dispose();
+    // categoryFocusNodes.values.forEach((node) {
+    //   if (node.hasFocus) node.unfocus();
+    //   node.dispose();
+    // });
+    // moreFocusNode.dispose();
+     for (var node in categoryFocusNodes.values) {
+    node.dispose();
+  }
+  
+  for (var node in newsItemFocusNodes.values) {
+    node.dispose();
+  }
+
+  moreFocusNode.dispose();
     super.dispose();
   }
 }

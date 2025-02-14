@@ -191,8 +191,10 @@ class NewsItemModel {
   final String id;
   final String name;
   final String description; // Optional in NewsItemModel
+  final String thumbnail; // Optional in NewsItemModel
   final String banner;
   final String url;
+  final String videoId;
   final String streamType;
   final String genres;
   final String status;
@@ -206,8 +208,10 @@ class NewsItemModel {
     required this.id,
     required this.name,
     this.description = '', // Default value
+    this.thumbnail = '', // Default value
     required this.banner,
     required this.url,
+     required this.videoId,
     required this.streamType,
     required this.genres,
     required this.status,
@@ -224,8 +228,10 @@ class NewsItemModel {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '', // Field from NewsItemModel
+      thumbnail: json['thumbnail'] ?? '', // Field from NewsItemModel
       banner: json['banner'] ?? '',
       url: json['url'] ?? '',
+      videoId: json['videoId'] ?? '',
       streamType: json['stream_type'] ?? '',
       genres: json['genres'] ?? '',
       status: json['status'] ?? '',
@@ -243,8 +249,10 @@ class NewsItemModel {
       'id': id,
       'name': name,
       'description': description,
+      'thumbnail': thumbnail,
       'banner': banner,
       'url': url,
+      'videoId': videoId,
       'stream_type': streamType,
       'genres': genres,
       'status': status,
@@ -261,8 +269,10 @@ class NewsItemModel {
     String? id,
     String? name,
     String? description,
+    String? thumbnail,
     String? banner,
     String? url,
+    String? videoId,
     String? streamType,
     String? genres,
     String? status,
@@ -276,8 +286,10 @@ class NewsItemModel {
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
+      thumbnail: thumbnail ?? this.thumbnail,
       banner: banner ?? this.banner,
       url: url ?? this.url,
+      videoId: url ?? this.videoId,
       streamType: streamType ?? this.streamType,
       genres: genres ?? this.genres,
       status: status ?? this.status,

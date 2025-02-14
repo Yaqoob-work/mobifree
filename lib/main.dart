@@ -632,7 +632,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_screen.dart';
-import 'package:mobi_tv_entertainment/menu_screens/notification_screen.dart';
+import 'package:mobi_tv_entertainment/menu_screens/youtube_search_screen.dart';
 import 'package:mobi_tv_entertainment/menu_screens/search_screen.dart';
 import 'package:mobi_tv_entertainment/menu_screens/live_screen.dart';
 import 'package:http/http.dart' as https;
@@ -765,6 +765,7 @@ class _MyAppState extends State<MyApp> {
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
         '/live': (context) => LiveScreen(),
+        '/youtubeSearch': (context) => YoutubeSearchScreen (),
       },
     );
   }
@@ -965,7 +966,7 @@ class _MyHomeState extends State<MyHome> {
       VOD(),
       LiveScreen(),
       SearchScreen(),
-      // NotificationScreen()
+      YoutubeSearchScreen()
     ];
 
     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {

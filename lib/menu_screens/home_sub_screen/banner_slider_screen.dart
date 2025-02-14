@@ -531,6 +531,26 @@ class _BannerSliderState extends State<BannerSlider> {
                                 // key: context.read<FocusProvider>().watchNowKey,
                                 focusNode: _buttonFocusNode,
                                 onKeyEvent: (node, event) {
+                                   if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+          // Move to the next banner
+          if (_pageController.page != null &&
+              _pageController.page! < bannerList.length - 1) {
+            _pageController.nextPage(
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+            return KeyEventResult.handled;
+          }
+        } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+          // Move to the previous banner
+          if (_pageController.page != null && _pageController.page! > 0) {
+            _pageController.previousPage(
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+            return KeyEventResult.handled;
+          }
+        } else
                                   if (event is KeyDownEvent) {
                                     if (event.logicalKey ==
                                         LogicalKeyboardKey.arrowDown) {
@@ -1278,6 +1298,7 @@ class _BannerSliderState extends State<BannerSlider> {
         String streamType = isYoutubeUrl(videoUrl) ? 'YoutubeLive' : 'M3u8';
 
         return NewsItemModel(
+          videoId: '',
           id: videoIdString,
           url: videoUrl,
           banner: video['bannerImageUrl'] ?? '',

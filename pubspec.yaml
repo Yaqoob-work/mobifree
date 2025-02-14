@@ -55,6 +55,7 @@ dependencies:
   synchronized: ^3.3.0+3
   youtube_explode_dart: ^2.3.6
   image: ^4.5.2
+  youtube_player_flutter: ^9.1.1
 
   # better_player: ^0.0.84
   # chewie: ^1.8.1

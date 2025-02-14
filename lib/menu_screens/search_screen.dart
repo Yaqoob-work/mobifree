@@ -525,6 +525,15 @@ class _SearchScreenState extends State<SearchScreen> {
           Focus(
             focusNode: _searchIconFocusNode,
             onKey: (node, event) {
+                       if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowUp) {
+
+                      context
+                          .read<FocusProvider>()
+                          .requestSearchNavigationFocus();
+                      return KeyEventResult.handled;
+                    }
+                  
+       else
               if (event is RawKeyDownEvent &&
                   event.logicalKey == LogicalKeyboardKey.select) {
                 _toggleSearchField();
@@ -570,7 +579,7 @@ class _SearchScreenState extends State<SearchScreen> {
         });
       },
       onKeyEvent: (FocusNode node, KeyEvent event) {
-        if (event is KeyDownEvent &&
+ if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
           _onItemTap(context, index);
           return KeyEventResult.handled;

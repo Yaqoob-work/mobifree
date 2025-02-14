@@ -92,7 +92,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
   }
 
   Widget _buildNewsItem(NewsItemModel item, index) {
-    return ViewAllLiveGridItem (
+    return ViewAllLiveGridItem(
       key: Key(item.id),
       hideDescription: true,
       item: item,
@@ -136,43 +136,37 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
     });
 
     try {
-                String originalUrl =
-              newsItem.url;
+      String originalUrl = newsItem.url;
 
-    if (newsItem.streamType == 'YoutubeLive') {
-      // Retry fetching the updated URL if stream type is YouTube Live
-      for (int i = 0; i < _maxRetries; i++) {
-        try {
-          String updatedUrl =
-              await _socketService.getUpdatedUrl(newsItem.url);
-          newsItem = NewsItemModel(
-            id: newsItem.id,
-            name: newsItem.name,
-            description: newsItem.description,
-            banner: newsItem.banner,
-            url: updatedUrl,
-            streamType: 'M3u8',
-            genres: newsItem.genres,
-            status: newsItem.status,
-          );
-          break; // Exit loop when URL is successfully updated
-        } catch (e) {
-          if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
-          await Future.delayed(
-              Duration(seconds: _retryDelay)); // Delay before next retry
+      if (newsItem.streamType == 'YoutubeLive') {
+        // Retry fetching the updated URL if stream type is YouTube Live
+        for (int i = 0; i < _maxRetries; i++) {
+          try {
+            String updatedUrl =
+                await _socketService.getUpdatedUrl(newsItem.url);
+            newsItem = NewsItemModel(
+              id: newsItem.id,videoId: '',
+              name: newsItem.name,
+              description: newsItem.description,
+              banner: newsItem.banner,
+              url: updatedUrl,
+              streamType: 'M3u8',
+              genres: newsItem.genres,
+              status: newsItem.status,
+            );
+            break; // Exit loop when URL is successfully updated
+          } catch (e) {
+            if (i == _maxRetries - 1) rethrow; // Rethrow error on last retry
+            await Future.delayed(
+                Duration(seconds: _retryDelay)); // Delay before next retry
+          }
         }
       }
-    }
 
       if (shouldPop) {
         Navigator.of(context, rootNavigator: true).pop();
       }
-
-
-                      bool liveStatus = true;
-
-
-
+      bool liveStatus = true;
       if (shouldPlayVideo) {
         await Navigator.push(
           context,
@@ -180,7 +174,6 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
             builder: (context) => VideoScreen(
               videoUrl: newsItem.url,
               bannerImageUrl: newsItem.banner,
-              
               startAtPosition: Duration.zero,
               videoType: newsItem.streamType,
               channelList: _entertainmentList,
@@ -189,7 +182,10 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
               isBannerSlider: false,
               source: 'isLiveScreen',
               isSearch: false,
-              videoId: int.tryParse(newsItem.id), unUpdatedUrl: originalUrl, name: newsItem.url, liveStatus: liveStatus,
+              videoId: int.tryParse(newsItem.id),
+              unUpdatedUrl: originalUrl,
+              name: newsItem.name,
+              liveStatus: liveStatus,
             ),
           ),
         );
