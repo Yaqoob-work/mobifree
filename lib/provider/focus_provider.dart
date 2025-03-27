@@ -146,8 +146,8 @@ void scrollToElement(String identifier) {
     Scrollable.ensureVisible(
       context,
       alignment: 0.0, // Align the element at the top
-      duration: const Duration(milliseconds: 300), // Animation duration
-      curve: Curves.easeInOut, // Smooth scrolling
+      duration: const Duration(milliseconds: 1000), // Animation duration
+      curve: Curves.linear, // Smooth scrolling
     );
   } else {
     print('Context not found for $identifier!');
@@ -156,7 +156,15 @@ void scrollToElement(String identifier) {
 
 
 
+FocusNode? _homeCategoryFirstBannerFocusNode;
 
+  void setHomeCategoryFirstBannerFocusNode(FocusNode focusNode) {
+    _homeCategoryFirstBannerFocusNode = focusNode;
+  }
+
+  FocusNode? getHomeCategoryFirstBannerFocusNode() {
+    return _homeCategoryFirstBannerFocusNode;
+  }
 
 
 

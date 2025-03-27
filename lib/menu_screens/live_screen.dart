@@ -295,7 +295,7 @@ class _LiveScreenState extends State<LiveScreen> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         targetOffset,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(seconds: 1),
         curve: Curves.easeInOut,
       );
     }
@@ -658,8 +658,10 @@ class _LiveScreenState extends State<LiveScreen> {
               banner: newsItem.banner,
               url: updatedUrl,
               streamType: 'M3u8',
+              type: 'M3u8',
               genres: newsItem.genres,
-              status: newsItem.status,
+              status: newsItem.status, 
+              index: newsItem.index,
             );
             break; // Exit loop when URL is successfully updated
           } catch (e) {
@@ -693,7 +695,7 @@ class _LiveScreenState extends State<LiveScreen> {
               isSearch: false,
               videoId: int.tryParse(newsItem.id),
               unUpdatedUrl: originalUrl,
-              name: newsItem.url,
+              name: newsItem.name,
               liveStatus: liveStatus,
             ),
           ),

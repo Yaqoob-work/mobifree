@@ -7,7 +7,6 @@ import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/news_grid_screen.dart';
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
 import 'package:mobi_tv_entertainment/provider/focus_provider.dart';
-import 'package:mobi_tv_entertainment/provider/music_provider.dart';
 import 'package:mobi_tv_entertainment/provider/shared_data_provider.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/video_widget/video_screen.dart';
@@ -66,66 +65,28 @@ class _MusicScreenState extends State<MusicScreen> {
     _socketService.initSocket();
     fetchData();
 
-    // Add listeners to first category focus node
-    for (var category in categories) {
-      categoryFocusNodes[category] = FocusNode()
-        ..addListener(() {
-          if (categoryFocusNodes[category]!.hasFocus) {
-            widget.onFocusChange?.call(true);
-          }
-        });
-    }
+    // // Add listeners to first category focus node
+    // for (var category in categories) {
+    //   categoryFocusNodes[category] = FocusNode()
+    //     ..addListener(() {
+    //       if (categoryFocusNodes[category]!.hasFocus) {
+    //         widget.onFocusChange?.call(true);
+    //       }
+    //     });
+    // }
 
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (_musicList.isNotEmpty) {
-    //     newsItemFocusNodes[_musicList[0].id] = FocusNode();
-    //   }
-    // });
 
-    // // Add this block to register first category's focus node
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   final firstNode = categoryFocusNodes[categories.first];
-    //   if (firstNode != null) {
-    //     context.read<FocusProvider>().setFirstMusicItemFocusNode(firstNode);
-    //     print("Music focus node registered"); // Debug log
-    //   }
-    // });
-
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   // if (_musicList.isNotEmpty) {
-    //   //   final firstItemId = _musicList[0].id;
-    //   //   newsItemFocusNodes[firstItemId] = FocusNode();
-    //   // }
-
-    //   final firstCategoryNode = categoryFocusNodes[categories.first];
-    //   if (firstCategoryNode != null) {
-    //     context
-    //         .read<FocusProvider>()
-    //         .setFirstMusicItemFocusNode(firstCategoryNode);
-    //     print("Music focus node registered");
-    //   }
-
-    //   if (_musicList.isNotEmpty) {
-    //     final firstItemId = _musicList[0].id;
-    //     if (newsItemFocusNodes.containsKey(firstItemId)) {
-    //       final focusNode = newsItemFocusNodes[firstItemId]!;
-    //       context.read<FocusProvider>().registerNewsItemFocusNode(focusNode);
-    //       print("✅ MusicScreen: First banner focus node registered: $firstItemId");
-    //     }
-    //   }
-
-    //   // if (_musicList.isNotEmpty) {
-    //   //   final firstItemId = _musicList[0].id;
-    //   //   if (newsItemFocusNodes.containsKey(firstItemId)) {
-    //   //     context
-    //   //         .read<FocusProvider>()
-    //   //         .setFirstMusicItemFocusNode(newsItemFocusNodes[firstItemId]!);
-    //   //     print("Registeredfocus node for first banner: $firstItemId");
-    //   //   }
-    //   // }
-    // });
+  //     categories.forEach((category) {
+  //   categoryFocusNodes[category] = FocusNode()
+  //     ..addListener(() {
+  //       if (categoryFocusNodes[category]!.hasFocus) {
+  //         widget.onFocusChange?.call(true);
+  //       }
+  //     });
+  // });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      
       // Agar koi banner available nahi hai, tab category button focus set karein
       final firstCategoryNode = categoryFocusNodes[categories.first];
       if (firstCategoryNode != null) {
@@ -159,53 +120,38 @@ class _MusicScreenState extends State<MusicScreen> {
     // }
     // moreFocusNode = FocusNode();
 
-      // Ensure category focus nodes are initialized
-  for (var category in categories) {
-    categoryFocusNodes.putIfAbsent(category, () => FocusNode());
-  }
-
-  // Ensure focus listener is added
-  categoryFocusNodes[categories.first]!.addListener(() {
-    if (categoryFocusNodes[categories.first]!.hasFocus) {
-      widget.onFocusChange?.call(true);
+    // Ensure category focus nodes are initialized
+    for (var category in categories) {
+      categoryFocusNodes.putIfAbsent(category, () => FocusNode());
     }
-  });
 
-  // Ensure more button focus node is initialized
-  moreFocusNode = FocusNode();
+    // Ensure focus listener is added
+    categoryFocusNodes[categories.first]!.addListener(() {
+      if (categoryFocusNodes[categories.first]!.hasFocus) {
+        widget.onFocusChange?.call(true);
+      }
+    });
 
-  // Ensure news item focus nodes are properly initialized
-  for (var item in _musicList) {
-    newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
+    // Ensure more button focus node is initialized
+    moreFocusNode = FocusNode();
+
+    // Ensure news item focus nodes are properly initialized
+    for (var item in _musicList) {
+      newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
+    }
   }
+
+  void _scrollToFocusedItem(String itemId) {
+    if (newsItemFocusNodes[itemId] != null &&
+        newsItemFocusNodes[itemId]!.hasFocus) {
+      Scrollable.ensureVisible(
+        newsItemFocusNodes[itemId]!.context!,
+        alignment: 0.05, // Adjust alignment for better UX
+        duration: Duration(milliseconds: 1000),
+        curve: Curves.linear,
+      );
+    }
   }
-
-// void _scrollToFocusedItem(String itemId) {
-//   final focusNode = newsItemFocusNodes[itemId];
-
-//   if (focusNode == null || !focusNode.hasFocus) return;
-
-//   Scrollable.ensureVisible(
-//     focusNode.context!,
-//     alignment: 0.05, // 0.0 -> left align, 1.0 -> right align, 0.5 -> center align
-//     duration: Duration(milliseconds: 300), // Smooth scrolling
-//     curve: Curves.easeInOut,
-//   );
-// }
-
-
-void _scrollToFocusedItem(String itemId) {
-  if (newsItemFocusNodes[itemId] != null && newsItemFocusNodes[itemId]!.hasFocus) {
-    Scrollable.ensureVisible(
-      newsItemFocusNodes[itemId]!.context!,
-      alignment: 0.05, // Adjust alignment for better UX
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-}
-
-
 
   // Add color generator function
   Color _generateRandomColor() {
@@ -218,67 +164,131 @@ void _scrollToFocusedItem(String itemId) {
     );
   }
 
+
   Future<void> _loadCachedDataAndFetchMusic() async {
+  setState(() {
+    _isLoading = true;
+    _errorMessage = '';
+  });
+
+  try {
+    // Step 1: Load cached data
+    await _loadCachedMusicData();
+
+    // Step 2: Fetch new data in the background and update UI if needed
+    await _fetchMusicInBackground();
+  } catch (e) {
     setState(() {
-      _isLoading = true;
-      _errorMessage = '';
+      _errorMessage = 'Failed to load data';
+      _isLoading = false;
     });
+  }
+}
 
-    try {
-      // Step 1: Load cached music data first
-      await _loadCachedMusicData();
+Future<void> _loadCachedMusicData() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedMusic = prefs.getString('music_list');
 
-      // Step 2: Fetch new data in the background and update UI if needed
-      await _fetchMusicInBackground();
-    } catch (e) {
+    if (cachedMusic != null) {
+      final List<dynamic> cachedData = json.decode(cachedMusic);
       setState(() {
-        _errorMessage = 'Failed to load music data';
-        _isLoading = false;
+        _musicList =
+            cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+        _isLoading = false; // Show cached data immediately
       });
     }
+  } catch (e) {
+    print('Error loading cached music data: $e');
   }
+}
 
-  Future<void> _loadCachedMusicData() async {
-    try {
-      // Fetch cached music data from SharedPreferences (similar to VOD)
-      final prefs = await SharedPreferences.getInstance();
-      final cachedMusic = prefs.getString('music_list');
+Future<void> _fetchMusicInBackground() async {
+  try {
+    // Step 1: Fetch new data from API
+    final newMusicList = await _apiService.fetchMusicData();
 
-      if (cachedMusic != null) {
-        // Parse and load cached data
-        final List<dynamic> cachedData = json.decode(cachedMusic);
-        setState(() {
-          _musicList =
-              cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
-          _isLoading = false; // Show cached data immediately
-        });
-      }
-    } catch (e) {
-      print('Error loading cached music data: $e');
+    // Step 2: Compare with cached data
+    final prefs = await SharedPreferences.getInstance();
+    final cachedMusic = prefs.getString('music_list');
+    final String newMusicJson = json.encode(newMusicList);
+
+    if (cachedMusic == null || cachedMusic != newMusicJson) {
+      // Step 3: Update cache if new data is different
+      await prefs.setString('music_list', newMusicJson);
+
+      // Step 4: Update UI with new data
+      setState(() {
+        _musicList = newMusicList;
+      });
     }
+  } catch (e) {
+    print('Error fetching music data: $e');
   }
+}
 
-  Future<void> _fetchMusicInBackground() async {
-    try {
-      // Fetch new music data from API and cache it (similar to VOD)
-      final newMusicList = await _apiService.fetchMusicData();
 
-      // Compare cached data with new data
-      final prefs = await SharedPreferences.getInstance();
-      final cachedMusic = prefs.getString('music_list');
-      if (cachedMusic != json.encode(newMusicList)) {
-        // Update cache if data is different
-        prefs.setString('music_list', json.encode(newMusicList));
+  // Future<void> _loadCachedDataAndFetchMusic() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //     _errorMessage = '';
+  //   });
 
-        // Update UI with new data
-        setState(() {
-          _musicList = newMusicList;
-        });
-      }
-    } catch (e) {
-      print('Error fetching music data: $e');
-    }
-  }
+  //   try {
+  //     // Step 1: Load cached music data first
+  //     await _loadCachedMusicData();
+
+  //     // Step 2: Fetch new data in the background and update UI if needed
+  //     await _fetchMusicInBackground();
+  //   } catch (e) {
+  //     setState(() {
+  //       _errorMessage = 'Failed to load data';
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
+
+  // Future<void> _loadCachedMusicData() async {
+  //   try {
+  //     // Fetch cached music data from SharedPreferences (similar to VOD)
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final cachedMusic = prefs.getString('music_list');
+
+  //     if (cachedMusic != null) {
+  //       // Parse and load cached data
+  //       final List<dynamic> cachedData = json.decode(cachedMusic);
+  //       setState(() {
+  //         _musicList =
+  //             cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+  //         _isLoading = false; // Show cached data immediately
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print('Error loading cached music data: $e');
+  //   }
+  // }
+
+  // Future<void> _fetchMusicInBackground() async {
+  //   try {
+  //     // Fetch new music data from API and cache it (similar to VOD)
+  //     final newMusicList = await _apiService.fetchMusicData();
+
+  //     // Compare cached data with new data
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final cachedMusic = prefs.getString('music_list');
+  //     if (cachedMusic != json.encode(newMusicList)) {
+  //       // Update cache if data is different
+  //       prefs.setString('music_list', json.encode(newMusicList));
+
+  //       // Update UI with new data
+  //       setState(() {
+  //         _musicList = newMusicList;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching music data: $e');
+  //   }
+  // }
 
   Future<void> fetchData() async {
     setState(() {
@@ -383,25 +393,26 @@ void _scrollToFocusedItem(String itemId) {
                           .requestFirstLastPlayedFocus();
                       return KeyEventResult.handled;
                     }
-                  } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                    if (_musicList.isNotEmpty) {
-                      // // Request focus for first news item
-                      // final firstItemId = _musicList[0].id;
-                      // if (newsItemFocusNodes.containsKey(firstItemId)) {
-                      //   FocusScope.of(context)
-                      //       .requestFocus(newsItemFocusNodes[firstItemId]);
-                      //   return KeyEventResult.handled;
-                      // }
-                      final firstItemId = _musicList[0].id;
-                      if (newsItemFocusNodes.containsKey(firstItemId)) {
-                        // Use FocusProvider to request focus
-                        context.read<FocusProvider>().requestNewsItemFocusNode(
-                            newsItemFocusNodes[firstItemId]!);
-                        return KeyEventResult.handled;
-                      }
-                    }
-                  } else if (event.logicalKey ==
-                      LogicalKeyboardKey.arrowRight) {
+                  }
+                  // else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                  //   if (_musicList.isNotEmpty) {
+                  //     // // Request focus for first news item
+                  //     // final firstItemId = _musicList[0].id;
+                  //     // if (newsItemFocusNodes.containsKey(firstItemId)) {
+                  //     //   FocusScope.of(context)
+                  //     //       .requestFocus(newsItemFocusNodes[firstItemId]);
+                  //     //   return KeyEventResult.handled;
+                  //     // }
+                  //     final firstItemId = _musicList[0].id;
+                  //     if (newsItemFocusNodes.containsKey(firstItemId)) {
+                  //       // Use FocusProvider to request focus
+                  //       context.read<FocusProvider>().requestNewsItemFocusNode(
+                  //           newsItemFocusNodes[firstItemId]!);
+                  //       return KeyEventResult.handled;
+                  //     }
+                  //   }
+                  // }
+                  else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
                     if (index == categories.length - 1) {
                       FocusScope.of(context).requestFocus(moreFocusNode);
                     } else {
@@ -521,24 +532,26 @@ void _scrollToFocusedItem(String itemId) {
                           .requestFirstLastPlayedFocus();
                       return KeyEventResult.handled;
                     }
-                  } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                    if (_musicList.isNotEmpty) {
-                      // // Request focus for first news item
-                      // final firstItemId = _musicList[0].id;
-                      // if (newsItemFocusNodes.containsKey(firstItemId)) {
-                      //   FocusScope.of(context)
-                      //       .requestFocus(newsItemFocusNodes[firstItemId]);
-                      //   return KeyEventResult.handled;
-                      // }
-                      final firstItemId = _musicList[0].id;
-                      if (newsItemFocusNodes.containsKey(firstItemId)) {
-                        // Use FocusProvider to request focus
-                        context.read<FocusProvider>().requestNewsItemFocusNode(
-                            newsItemFocusNodes[firstItemId]!);
-                        return KeyEventResult.handled;
-                      }
-                    }
-                  } else if (event.logicalKey == LogicalKeyboardKey.enter ||
+                  }
+                  // else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                  //   if (_musicList.isNotEmpty) {
+                  //     // // Request focus for first news item
+                  //     // final firstItemId = _musicList[0].id;
+                  //     // if (newsItemFocusNodes.containsKey(firstItemId)) {
+                  //     //   FocusScope.of(context)
+                  //     //       .requestFocus(newsItemFocusNodes[firstItemId]);
+                  //     //   return KeyEventResult.handled;
+                  //     // }
+                  //     final firstItemId = _musicList[0].id;
+                  //     if (newsItemFocusNodes.containsKey(firstItemId)) {
+                  //       // Use FocusProvider to request focus
+                  //       context.read<FocusProvider>().requestNewsItemFocusNode(
+                  //           newsItemFocusNodes[firstItemId]!);
+                  //       return KeyEventResult.handled;
+                  //     }
+                  //   }
+                  // }
+                  else if (event.logicalKey == LogicalKeyboardKey.enter ||
                       event.logicalKey == LogicalKeyboardKey.select) {
                     _navigateToChannelsCategory();
                     return KeyEventResult.handled;
@@ -607,11 +620,29 @@ void _scrollToFocusedItem(String itemId) {
     );
   }
 
+  // void _selectCategory(String category) {
+  //   setState(() {
+  //     _selectedCategory = category;
+  //   });
+  //   fetchData();
+  // }
+
   void _selectCategory(String category) {
     setState(() {
       _selectedCategory = category;
     });
-    fetchData();
+
+    fetchData().then((_) {
+      if (_musicList.isNotEmpty) {
+        final firstItemId = _musicList[0].id;
+        if (newsItemFocusNodes.containsKey(firstItemId)) {
+          // Request focus for the first item in the selected category
+          context
+              .read<FocusProvider>()
+              .requestNewsItemFocusNode(newsItemFocusNodes[firstItemId]!);
+        }
+      }
+    });
   }
 
   Widget _buildBody() {
@@ -631,7 +662,6 @@ void _scrollToFocusedItem(String itemId) {
     bool showViewAll = totalItems > 10;
 
     return ListView.builder(
-
       scrollDirection: Axis.horizontal,
       controller: _scrollController,
       itemCount: showViewAll ? 11 : totalItems,
@@ -664,9 +694,11 @@ void _scrollToFocusedItem(String itemId) {
           banner: '',
           url: '',
           streamType: '',
+          type: '',
           genres: '',
           status: '',
           videoId: '',
+          index: '',
         ),
         onTap: _navigateToViewAllScreen,
         onEnterPress: _handleEnterPress,
@@ -676,11 +708,14 @@ void _scrollToFocusedItem(String itemId) {
 
   Widget _buildNewsItem(NewsItemModel item, int index) {
     // newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode());
-      newsItemFocusNodes.putIfAbsent(item.id, () => FocusNode()..addListener(() {
-    if (newsItemFocusNodes[item.id]!.hasFocus) {
-      _scrollToFocusedItem(item.id);
-    }
-  }));
+    newsItemFocusNodes.putIfAbsent(
+        item.id,
+        () => FocusNode()
+          ..addListener(() {
+            if (newsItemFocusNodes[item.id]!.hasFocus) {
+              _scrollToFocusedItem(item.id);
+            }
+          }));
     return NewsItem(
       key: Key(item.id),
       hideDescription: true,
@@ -756,8 +791,9 @@ void _scrollToFocusedItem(String itemId) {
               banner: newsItem.banner,
               url: updatedUrl,
               streamType: 'M3u8',
+              type: 'M3u8',
               genres: newsItem.genres,
-              status: newsItem.status,
+              status: newsItem.status, index: newsItem.index,
             );
             break; // Exit loop when URL is successfully updated
           } catch (e) {
@@ -837,15 +873,15 @@ void _scrollToFocusedItem(String itemId) {
     //   node.dispose();
     // });
     // moreFocusNode.dispose();
-     for (var node in categoryFocusNodes.values) {
-    node.dispose();
-  }
-  
-  for (var node in newsItemFocusNodes.values) {
-    node.dispose();
-  }
+    for (var node in categoryFocusNodes.values) {
+      node.dispose();
+    }
 
-  moreFocusNode.dispose();
+    for (var node in newsItemFocusNodes.values) {
+      node.dispose();
+    }
+
+    moreFocusNode.dispose();
     super.dispose();
   }
 }

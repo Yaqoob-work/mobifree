@@ -67,13 +67,38 @@ Uint8List _getImageFromBase64String(String base64String) {
   return base64Decode(base64String.split(',').last);
 }
 
-// Models
+// // Models
+// class NetworkApi {
+//   final int id;
+//   final String name;
+//   final String logo;
+
+//   NetworkApi({required this.id, required this.name, required this.logo});
+
+//   factory NetworkApi.fromJson(Map<String, dynamic> json) {
+//     return NetworkApi(
+//       id: json['id'] is int
+//           ? json['id'] as int
+//           : int.parse(json['id'].toString()),
+//       name: json['name'] ?? 'No Name',
+//       logo: json['logo'] ?? localImage,
+//     );
+//   }
+// }
+
+
 class NetworkApi {
   final int id;
   final String name;
   final String logo;
+  final String networksOrder; // Add this
 
-  NetworkApi({required this.id, required this.name, required this.logo});
+  NetworkApi({
+    required this.id,
+    required this.name,
+    required this.logo,
+    required this.networksOrder,
+  });
 
   factory NetworkApi.fromJson(Map<String, dynamic> json) {
     return NetworkApi(
@@ -82,9 +107,11 @@ class NetworkApi {
           : int.parse(json['id'].toString()),
       name: json['name'] ?? 'No Name',
       logo: json['logo'] ?? localImage,
+      networksOrder: json['networks_order'] ?? '0', // Default '0' if missing
     );
   }
 }
+
 
 class MovieDetailsApi {
   final int id;
@@ -155,44 +182,190 @@ Future<List<NetworkApi>> fetchNetworks(BuildContext context) async {
   return networks; // Return cached data if no changes
 }
 
-Future<List<NewsItemModel>> fetchContent(
-    BuildContext context, int networkId) async {
+
+
+// Future<List<NetworkApi>> fetchNetworks(BuildContext context) async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final cachedNetworks = prefs.getString('networks');
+
+//   List<NetworkApi> networks = [];
+//   List<NetworkApi> apiNetworks;
+
+//   // Step 1: Use cached data for fast UI rendering
+//   if (cachedNetworks != null) {
+//     List<dynamic> cachedBody = json.decode(cachedNetworks);
+//     networks = cachedBody
+//         .map((dynamic item) => NetworkApi.fromJson(item))
+//         .toList();
+
+//     // **Sorting Cached Data**
+//     networks.sort((a, b) => (int.tryParse(a.networksOrder) ?? 0)
+//         .compareTo(int.tryParse(b.networksOrder) ?? 0));
+//   }
+
+//   // Step 2: Fetch API data in the background
+//   final response = await https.get(
+//     Uri.parse('https://api.ekomflix.com/android/getNetworks'),
+//     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//   );
+
+//   if (response.statusCode == 200) {
+//     List<dynamic> body = json.decode(response.body);
+//     apiNetworks = body.map((dynamic item) => NetworkApi.fromJson(item)).toList();
+
+//     // **Sorting API Data**
+//     apiNetworks.sort((a, b) => (int.tryParse(a.networksOrder) ?? 0)
+//         .compareTo(int.tryParse(b.networksOrder) ?? 0));
+
+//     // Step 3: Compare cached data with API data
+//     if (!listEquals(networks, apiNetworks)) {
+//       // If data differs, update cache
+//       prefs.setString('networks', json.encode(apiNetworks));
+//       return apiNetworks; // Return updated networks list
+//     }
+//   } else {
+//     throw Exception('Failed to load networks');
+//   }
+
+//   return networks; // Return cached data if no changes
+// }
+
+
+// Future<List<NewsItemModel>> fetchContent(
+//     BuildContext context, int networkId) async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final cachedContent = prefs.getString('content_$networkId');
+
+//   // Step 1: Use cached data for fast UI rendering
+//   List<NewsItemModel> content = [];
+//   if (cachedContent != null) {
+//     List<dynamic> cachedBody = json.decode(cachedContent);
+//     content =
+//         cachedBody.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
+//   }
+
+//   // Step 2: Fetch API data in the background
+//   List<NewsItemModel> apiContent;
+//   final response = await https.get(
+//     Uri.parse(
+//         'https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+//     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//   );
+
+//   if (response.statusCode == 200) {
+//     List<dynamic> body = json.decode(response.body);
+//     apiContent =
+//         body.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
+
+//     // Step 3: Compare cached data with API data
+//     if (!listEquals(content, apiContent)) {
+//       // If data differs, update cache and return new data
+//       prefs.setString('content_$networkId', response.body);
+//       return apiContent; // Return updated content list
+//     }
+//   } else {
+//     throw Exception('Failed to load content');
+//   }
+
+//   return content; // Return cached data if no changes
+// }
+
+
+
+// Future<List<NewsItemModel>> fetchContent(BuildContext context, int networkId) async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final cachedContent = prefs.getString('content_$networkId');
+
+//   // Step 1: Use cached data for fast UI rendering
+//   List<NewsItemModel> content = [];
+//   if (cachedContent != null) {
+//     List<dynamic> cachedBody = json.decode(cachedContent);
+//     content = cachedBody
+//         .map((dynamic item) => NewsItemModel.fromJson(item))
+//         .toList();
+
+//     // **Sorting Cached Data Based on Index**
+//     content.sort((a, b) => (int.tryParse(a.index) ?? 0).compareTo(int.tryParse(b.index) ?? 0));
+//   }
+
+//   // Step 2: Fetch API data in the background
+//   List<NewsItemModel> apiContent;
+//   final response = await https.get(
+//     Uri.parse('https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+//     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//   );
+
+//   if (response.statusCode == 200) {
+//     List<dynamic> body = json.decode(response.body);
+//     apiContent = body.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
+
+//     // **Sorting API Data Based on Index**
+//     apiContent.sort((a, b) => (int.tryParse(a.index) ?? 0).compareTo(int.tryParse(b.index) ?? 0));
+
+//     // Step 3: Compare cached data with API data
+//     if (!listEquals(content, apiContent)) {
+//       // If data differs, update cache
+//       prefs.setString('content_$networkId', json.encode(apiContent));
+//       return apiContent; // Return updated content list
+//     }
+//   } else {
+//     throw Exception('Failed to load content');
+//   }
+
+//   return content; // Return cached data if no changes
+// }
+
+
+
+Future<List<NewsItemModel>> fetchContent(BuildContext context, int networkId) async {
   final prefs = await SharedPreferences.getInstance();
   final cachedContent = prefs.getString('content_$networkId');
 
-  // Step 1: Use cached data for fast UI rendering
   List<NewsItemModel> content = [];
+
+  // Step 1: Use cached data for fast UI rendering
   if (cachedContent != null) {
     List<dynamic> cachedBody = json.decode(cachedContent);
-    content =
-        cachedBody.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
+    content = cachedBody.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
+    content.sort((a, b) => (int.tryParse(a.index) ?? 0).compareTo(int.tryParse(b.index) ?? 0));
   }
 
-  // Step 2: Fetch API data in the background
-  List<NewsItemModel> apiContent;
-  final response = await https.get(
-    Uri.parse(
-        'https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
+  // Step 2: Fetch API data in the background and compare with cache
+  try {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getAllContentsOfNetwork/$networkId'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
 
-  if (response.statusCode == 200) {
-    List<dynamic> body = json.decode(response.body);
-    apiContent =
-        body.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      List<NewsItemModel> apiContent = body.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
 
-    // Step 3: Compare cached data with API data
-    if (!listEquals(content, apiContent)) {
-      // If data differs, update cache and return new data
-      prefs.setString('content_$networkId', response.body);
-      return apiContent; // Return updated content list
+      // Sorting API data
+      apiContent.sort((a, b) => (int.tryParse(a.index) ?? 0).compareTo(int.tryParse(b.index) ?? 0));
+
+      // Step 3: Compare cached data with API data
+      if (!listEquals(content, apiContent)) {
+        print("🔄 Cache updated for networkId: $networkId");
+        prefs.setString('content_$networkId', json.encode(apiContent)); // Update cache
+        return apiContent; // Return new data to update UI
+      } else {
+        print("✅ Cache data is already up-to-date.");
+      }
+    } else {
+      print("❌ Failed to fetch content from API");
+      throw Exception('Failed to load content');
     }
-  } else {
-    throw Exception('Failed to load content');
+  } catch (e) {
+    print("Error fetching content: $e");
   }
 
-  return content; // Return cached data if no changes
+  return content; // Return cached data if API fails or data is the same
 }
+
+
+
+
 
 Future<Map<String, String>> fetchMoviePlayLink(int movieId) async {
   final prefs = await SharedPreferences.getInstance();
@@ -279,216 +452,7 @@ Widget displayImage(
   }
 }
 
-// class SubVod extends StatefulWidget {
-//   final Function(bool)? onFocusChange; // Add this
 
-//   const SubVod({Key? key, this.onFocusChange, required FocusNode focusNode})
-//       : super(key: key);
-
-//   @override
-//   _SubVodState createState() => _SubVodState();
-// }
-
-// class _SubVodState extends State<SubVod> {
-//   List<NetworkApi> _networks = [];
-//   bool _isLoading = true;
-//   bool _cacheLoaded = false; // To track if cache has been loaded
-//   // FocusNode firstSubVodFocusNode = FocusNode();
-//   late FocusNode firstSubVodFocusNode;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     firstSubVodFocusNode = FocusNode();
-
-//         // Add key event listener
-//     firstSubVodFocusNode.onKey = (node, event) {
-//       if (event is RawKeyDownEvent) {
-//         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-//           // // Get the HomeCategory focus node from provider and request focus
-//           // final homeCategoryFocusNode = context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
-//           // if (homeCategoryFocusNode != null) {
-//           //   homeCategoryFocusNode.requestFocus();
-//           //   return KeyEventResult.handled;
-//           // }
-//         }
-//         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-
-//                     // if (_musicList.isNotEmpty) {
-//                     //   // Request focus for first news item
-//                     //   final firstItemId = _musicList[0].id;
-//                     //   if (newsItemFocusNodes.containsKey(firstItemId)) {
-//                     //     FocusScope.of(context)
-//                     //         .requestFocus(newsItemFocusNodes[firstItemId]);
-//                     //     return KeyEventResult.handled;
-//                     //   }
-//                     // }
-//         }
-//       }
-//       return KeyEventResult.ignored;
-//     };
-
-//     // Register the first SubVod focus node in the FocusProvider
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       context
-//           .read<FocusProvider>()
-//           .setFirstSubVodFocusNode(firstSubVodFocusNode);
-//       print("First SubVod FocusNode registered"); // Debug log
-//     });
-//     // firstItemFocusNode = FocusNode()
-
-//     // ..addListener(() {
-//     //   // if (firstItemFocusNode.hasFocus) {
-//     //   //   widget.onFocusChange?.call(true);
-//     //   // }
-
-//     //         if (firstItemFocusNode.hasFocus) {
-//     //   context.read<FocusProvider>().setSubVodFocusNode(firstItemFocusNode);
-//     // }
-//     // });
-//     // Fetch networks from cache first
-//     _loadCachedNetworks();
-//     // Fetch data from API in the background and update if necessary
-//     _fetchNetworksInBackground();
-//   }
-
-//   // Load cached data
-//   Future<void> _loadCachedNetworks() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     final cachedNetworks = prefs.getString('networks');
-
-//     if (cachedNetworks != null) {
-//       List<dynamic> cachedBody = json.decode(cachedNetworks);
-//       setState(() {
-//         _networks = cachedBody
-//             .map((dynamic item) => NetworkApi.fromJson(item))
-//             .toList();
-//         _isLoading = false; // Stop loading, show cached data
-//         _cacheLoaded = true; // Cache has been successfully loaded
-//       });
-//     } else {
-//       print('No cache found');
-//     }
-//   }
-
-//   // Fetch API data in the background
-//   Future<void> _fetchNetworksInBackground() async {
-//     try {
-//       final fetchedNetworks = await fetchNetworks(context);
-//       if (!listEquals(_networks, fetchedNetworks)) {
-//         setState(() {
-//           _networks =
-//               fetchedNetworks; // Update UI with new data if it's different
-//         });
-//       }
-//     } catch (e) {
-//       // print('Error fetching networks: $e');
-//       if (!_cacheLoaded) {
-//         // Only show error message if cache is not available
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Failed to fetch networks.')),
-//         );
-//       }
-//     } finally {
-//       if (!_cacheLoaded) {
-//         // If no cache and no API data, stop loading
-//         setState(() {
-//           _isLoading = false;
-//         });
-//       }
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
-//       // Use provider's color for background
-//       Color backgroundColor = colorProvider.isItemFocused
-//           ? colorProvider.dominantColor.withOpacity(0.3)
-//           : Colors.black87;
-
-//       return Scaffold(
-//         backgroundColor: Colors.transparent,
-//         body: _isLoading
-//             ? Center(
-//                 child:
-//                     LoadingIndicator()) // Show loading only if no cached data
-//             : _buildNetworksList(),
-//       );
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     print("SubVod disposed");
-//     super.dispose();
-//   }
-
-// // @override
-// // void didChangeDependencies() {
-// //   super.didChangeDependencies();
-// //   WidgetsBinding.instance.addPostFrameCallback((_) {
-// //     context.read<FocusProvider>().requestSubVodFocus(context);
-// //   });
-// // }
-
-//   Widget _buildNetworksList() {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
-//       children: [
-//         Consumer<ColorProvider>(builder: (context, colorProvider, child) {
-//           // Use provider's color for text
-//           Color textColor = colorProvider.isItemFocused
-//               ? colorProvider.dominantColor
-//               : Colors.white;
-
-//           return Padding(
-//             padding:
-//                 const EdgeInsets.all(8.0), // Add some padding around the text
-//             child: Text(
-//               'Contents',
-//               style: TextStyle(
-//                 fontSize: 24.0,
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.white, // Adjust this color to match your theme
-//               ),
-//             ),
-//           );
-//         }),
-//         Expanded(
-//           child: _networks.isEmpty
-//               ? Center(child: Text('No Networks Available'))
-//               : ListView.builder(
-//                   scrollDirection: Axis.horizontal,
-//                   itemCount: _networks.length,
-//                   itemBuilder: (context, index) {
-//                     return FocusableItemWidget(
-//                       imageUrl: _networks[index].logo,
-//                       name: _networks[index].name,
-//                       focusNode: index == 0 ? firstSubVodFocusNode : null,
-//                       onTap: () async {
-//                         Navigator.push(
-//                           context,
-//                           MaterialPageRoute(
-//                             builder: (context) =>
-//                                 ContentScreen(networkId: _networks[index].id),
-//                           ),
-//                         );
-//                       },
-//                       fetchPaletteColor: fetchPaletteColor,
-//                       //                       onFocusChange: (hasFocus) {
-//                       //   if (hasFocus) {
-//                       //     print('${_networks[index].name} is focused');
-//                       //   }
-//                       // },
-//                     );
-//                   },
-//                 ),
-//         ),
-//       ],
-//     );
-//   }
-// }
 
 
 
@@ -520,15 +484,7 @@ class _SubVodState extends State<SubVod> {
     // Add key event listener
     firstSubVodFocusNode.onKey = (node, event) {
       if (event is RawKeyDownEvent) {
-        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          // Get the HomeCategory focus node from provider and request focus
-          final homeCategoryFocusNode =
-              context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
-          if (homeCategoryFocusNode != null) {
-            homeCategoryFocusNode.requestFocus();
-            return KeyEventResult.handled;
-          }
-        }else
+
 
 
 
@@ -539,13 +495,27 @@ if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
   return KeyEventResult.handled;
 }
 
+// else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+//         print("⬇️ SubVod: Down Arrow pressed, moving to HomeCategory's first banner");
 
+//         final homeCategoryFirstBannerFocusNode =
+//             context.read<FocusProvider>().getHomeCategoryFirstBannerFocusNode();
+
+//         if (homeCategoryFirstBannerFocusNode != null) {
+//           homeCategoryFirstBannerFocusNode.requestFocus();
+//           return KeyEventResult.handled;
+//         }
+//       }
 
 
 
       }
       return KeyEventResult.ignored;
     };
+
+
+
+
 
     // Register the first SubVod focus node in the FocusProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -590,33 +560,59 @@ if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
     }
   }
 
-  // Fetch API data in the background
+  // // Fetch API data in the background
+  // Future<void> _fetchNetworksInBackground() async {
+  //   try {
+  //     final fetchedNetworks = await fetchNetworks(context);
+  //     if (!listEquals(_networks, fetchedNetworks)) {
+  //       setState(() {
+  //         _networks =
+  //             fetchedNetworks; // Update UI with new data if it's different
+  //       });
+  //     }
+  //   } catch (e) {
+  //     // print('Error fetching networks: $e');
+  //     if (!_cacheLoaded) {
+  //       // Only show error message if cache is not available
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Failed to fetch networks.')),
+  //       );
+  //     }
+  //   } finally {
+  //     if (!_cacheLoaded) {
+  //       // If no cache and no API data, stop loading
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+
   Future<void> _fetchNetworksInBackground() async {
-    try {
-      final fetchedNetworks = await fetchNetworks(context);
-      if (!listEquals(_networks, fetchedNetworks)) {
-        setState(() {
-          _networks =
-              fetchedNetworks; // Update UI with new data if it's different
-        });
-      }
-    } catch (e) {
-      // print('Error fetching networks: $e');
-      if (!_cacheLoaded) {
-        // Only show error message if cache is not available
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch networks.')),
-        );
-      }
-    } finally {
-      if (!_cacheLoaded) {
-        // If no cache and no API data, stop loading
-        setState(() {
-          _isLoading = false;
-        });
-      }
+  try {
+    final fetchedNetworks = await fetchNetworks(context);
+
+    if (!listEquals(_networks, fetchedNetworks)) {
+      setState(() {
+        _networks = fetchedNetworks;
+      });
+    }
+  } catch (e) {
+    if (!_cacheLoaded) {
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Failed to fetch networks.')),
+      // );
+    }
+  } finally {
+    if (!_cacheLoaded) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -733,152 +729,6 @@ if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
 
 
 
-// class SubVod extends StatefulWidget {
-//     final Function(bool)? onFocusChange; // Add this
-
-//   const SubVod({Key? key, this.onFocusChange, required FocusNode focusNode})
-//       : super(key: key);
-//   @override
-//   _SubVodState createState() => _SubVodState();
-// }
-
-// class _SubVodState extends State<SubVod> {
-//   List<NetworkApi> _networks = [];
-//   bool _isLoading = true;
-//   bool _cacheLoaded = false; // To track if cache has been loaded
-
-//   @override
-//   void initState() {
-//     super.initState();
-//         WidgetsBinding.instance.addPostFrameCallback((_) {
-//       FocusNode firstVodFocusNode = FocusNode();
-//       context
-//           .read<FocusProvider>()
-//           .setFirstVodBannerFocusNode(firstVodFocusNode);
-//     });
-//     // Fetch networks from cache first
-//     _loadCachedNetworks();
-//     // Fetch data from API in the background and update if necessary
-//     _fetchNetworksInBackground();
-//   }
-
-//   // Load cached data
-//   Future<void> _loadCachedNetworks() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     final cachedNetworks = prefs.getString('networks');
-
-//     if (cachedNetworks != null) {
-//       List<dynamic> cachedBody = json.decode(cachedNetworks);
-//       setState(() {
-//         _networks = cachedBody
-//             .map((dynamic item) => NetworkApi.fromJson(item))
-//             .toList();
-//         _isLoading = false; // Stop loading, show cached data
-//         _cacheLoaded = true; // Cache has been successfully loaded
-//       });
-//     } else {
-//       print('No cache found');
-//     }
-//   }
-
-//   // Fetch API data in the background
-//   Future<void> _fetchNetworksInBackground() async {
-//     try {
-//       final fetchedNetworks = await fetchNetworks(context);
-//       if (!listEquals(_networks, fetchedNetworks)) {
-//         setState(() {
-//           _networks =
-//               fetchedNetworks; // Update UI with new data if it's different
-//         });
-//       }
-//     } catch (e) {
-//       // print('Error fetching networks: $e');
-//       if (!_cacheLoaded) {
-//         // Only show error message if cache is not available
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Failed to fetch networks.')),
-//         );
-//       }
-//     } finally {
-//       if (!_cacheLoaded) {
-//         // If no cache and no API data, stop loading
-//         setState(() {
-//           _isLoading = false;
-//         });
-//       }
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
-//       // Use provider's color for background
-//       Color backgroundColor = colorProvider.isItemFocused
-//           ? colorProvider.dominantColor.withOpacity(0.3)
-//           : Colors.black87;
-
-//       return Scaffold(
-//         backgroundColor: Colors.transparent,
-//         body: _isLoading
-//             ? Center(
-//                 child:
-//                     LoadingIndicator()) // Show loading only if no cached data
-//             : _buildNetworksList(),
-//       );
-//     });
-//   }
-
-//   Widget _buildNetworksList() {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start, // Align heading to the left
-//       children: [
-//         Consumer<ColorProvider>(builder: (context, colorProvider, child) {
-//           // Use provider's color for text
-//           Color textColor = colorProvider.isItemFocused
-//               ? colorProvider.dominantColor
-//               : Colors.white;
-
-//           return Padding(
-//             padding:
-//                 const EdgeInsets.all(8.0), // Add some padding around the text
-//             child: Text(
-//               'Contents',
-//               style: TextStyle(
-//                 fontSize: 24.0,
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.white, // Adjust this color to match your theme
-//               ),
-//             ),
-//           );
-//         }),
-//         Expanded(
-//           child: _networks.isEmpty
-//               ? Center(child: Text('No Networks Available'))
-//               : ListView.builder(
-//                   scrollDirection: Axis.horizontal,
-//                   itemCount: _networks.length,
-//                   itemBuilder: (context, index) {
-//                     return FocusableItemWidget(
-//                       imageUrl: _networks[index].logo,
-//                       name: _networks[index].name,
-//                       onTap: () async {
-//                         Navigator.push(
-//                           context,
-//                           MaterialPageRoute(
-//                             builder: (context) =>
-//                                 ContentScreen(networkId: _networks[index].id),
-//                           ),
-//                         );
-//                       },
-//                       fetchPaletteColor: fetchPaletteColor,
-//                     );
-//                   },
-//                 ),
-//         ),
-//       ],
-//     );
-//   }
-// }
 
 class VOD extends StatefulWidget {
   @override
@@ -898,7 +748,25 @@ class _VODState extends State<VOD> {
     super.initState();
     // FocusNode firstVodFocusNode = FocusNode();
 
-     // Initialize focus nodes for first row items
+    //  // Initialize focus nodes for first row items
+    // for (int i = 0; i < 5; i++) {
+    //   final focusNode = FocusNode();
+    //   firstRowFocusNodes[i] = focusNode;
+      
+    //   // Add key event listener for each focus node in first row
+    //   focusNode.onKey = (node, event) {
+    //     if (event is RawKeyDownEvent) {
+    //       if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+    //         context.read<FocusProvider>().requestVodMenuFocus();
+    //         return KeyEventResult.handled;
+    //       }
+    //     }
+    //     return KeyEventResult.ignored;
+    //   };
+    // }
+
+
+        // Initialize focus nodes for first row items
     for (int i = 0; i < 5; i++) {
       final focusNode = FocusNode();
       firstRowFocusNodes[i] = focusNode;
@@ -906,9 +774,36 @@ class _VODState extends State<VOD> {
       // Add key event listener for each focus node in first row
       focusNode.onKey = (node, event) {
         if (event is RawKeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            context.read<FocusProvider>().requestVodMenuFocus();
-            return KeyEventResult.handled;
+          switch (event.logicalKey) {
+            case LogicalKeyboardKey.arrowUp:
+              context.read<FocusProvider>().requestVodMenuFocus();
+              return KeyEventResult.handled;
+              
+            case LogicalKeyboardKey.arrowLeft:
+              // If not at the first item, move focus left
+              if (i > 0) {
+                firstRowFocusNodes[i - 1]?.requestFocus();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+              
+            case LogicalKeyboardKey.arrowRight:
+              // If not at the last item, move focus right
+              if (i < 4 && i < _networks.length - 1) {
+                firstRowFocusNodes[i + 1]?.requestFocus();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+              
+            case LogicalKeyboardKey.arrowDown:
+              // If there's a second row, move focus down
+              if (_networks.length > 5) {
+                // You might need to implement focus nodes for other rows
+                // or handle this differently based on your needs
+                FocusScope.of(context).nextFocus();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
           }
         }
         return KeyEventResult.ignored;
@@ -988,33 +883,64 @@ class _VODState extends State<VOD> {
     }
   }
 
-  // Fetch API data in the background
+
+  
+
+  // // Fetch API data in the background
+  // Future<void> _fetchNetworksInBackground() async {
+  //   try {
+  //     final fetchedNetworks = await fetchNetworks(context);
+  //     if (!listEquals(_networks, fetchedNetworks)) {
+  //       setState(() {
+  //         _networks =
+  //             fetchedNetworks; // Update UI with new data if it's different
+  //       });
+  //     }
+  //   } catch (e) {
+  //     // print('Error fetching networks: $e');
+  //     if (!_cacheLoaded) {
+  //       // Only show error message if cache is not available
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Failed to fetch networks.')),
+  //       );
+  //     }
+  //   } finally {
+  //     if (!_cacheLoaded) {
+  //       // If no cache and no API data, stop loading
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+
+
   Future<void> _fetchNetworksInBackground() async {
-    try {
-      final fetchedNetworks = await fetchNetworks(context);
-      if (!listEquals(_networks, fetchedNetworks)) {
-        setState(() {
-          _networks =
-              fetchedNetworks; // Update UI with new data if it's different
-        });
-      }
-    } catch (e) {
-      // print('Error fetching networks: $e');
-      if (!_cacheLoaded) {
-        // Only show error message if cache is not available
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch networks.')),
-        );
-      }
-    } finally {
-      if (!_cacheLoaded) {
-        // If no cache and no API data, stop loading
-        setState(() {
-          _isLoading = false;
-        });
-      }
+  try {
+    final fetchedNetworks = await fetchNetworks(context);
+    print("Fetched Networks: ${fetchedNetworks.length}");
+
+    if (!listEquals(_networks, fetchedNetworks)) {
+      setState(() {
+        _networks = fetchedNetworks;
+      });
+    }
+  } catch (e) {
+    if (!_cacheLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch networks.')),
+      );
+    }
+  } finally {
+    if (!_cacheLoaded) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
+
 
   @override
   // Widget build(BuildContext context) {
@@ -1087,6 +1013,144 @@ class _VODState extends State<VOD> {
   }
 }
 
+// class ContentScreen extends StatefulWidget {
+//   final int networkId;
+
+//   ContentScreen({required this.networkId});
+
+//   @override
+//   _ContentScreenState createState() => _ContentScreenState();
+// }
+
+// class _ContentScreenState extends State<ContentScreen> {
+//   List<NewsItemModel> _content = [];
+//   bool _isLoading = true;
+//   bool _cacheLoaded = false;
+//   FocusNode firstItemFocusNode = FocusNode();
+//   List<String> channelList = [];
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     Future.delayed(Duration(milliseconds: 50), () async {
+//       // Load cached content first
+//       _loadCachedContent();
+//       firstItemFocusNode.requestFocus();
+//     });
+//     // Fetch content from API in the background
+//     _fetchContentInBackground();
+//   }
+
+//   Future<void> _loadCachedContent() async {
+//     final prefs = await SharedPreferences.getInstance();
+//     final cachedContent = prefs.getString('content_${widget.networkId}');
+
+//     if (cachedContent != null) {
+//       List<dynamic> cachedBody = json.decode(cachedContent);
+//       // await Future.delayed(Duration(milliseconds: 50));
+//       setState(() {
+//         _content = cachedBody
+//             .map((dynamic item) => NewsItemModel.fromJson(item))
+//             .toList();
+//         _isLoading = false;
+//         _cacheLoaded = true;
+//       });
+//     } else {
+//       print('No cache found for content');
+//     }
+//   }
+
+//   Future<void> _fetchContentInBackground() async {
+//     try {
+//       final fetchedContent = await fetchContent(context, widget.networkId);
+
+//       if (!listEquals(_content, fetchedContent)) {
+//         setState(() {
+//           _content = fetchedContent;
+//         });
+//       }
+//     } catch (e) {
+//       // print('Error fetching content: $e');
+//       if (!_cacheLoaded) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Failed to fetch content.')),
+//         );
+//       }
+//     } finally {
+//       if (!_cacheLoaded) {
+//         setState(() {
+//           _isLoading = false;
+//         });
+//       }
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+//       // Use provider's color for background
+//       Color backgroundColor = colorProvider.isItemFocused
+//           ? colorProvider.dominantColor.withOpacity(0.3)
+//           : Colors.black87;
+
+//       return Scaffold(
+//         backgroundColor: backgroundColor,
+//         // body:
+//         //     _isLoading ? Center(child: Text('...')) : _buildContentList(),
+//         body: _isLoading
+//             ? !_cacheLoaded
+//                 ? Center(child: Text('...'))
+//                 : Center(child: LoadingIndicator())
+//             : _content != null
+//                 ? _buildContentList()
+//                 : Center(child: Text('...')),
+//       );
+//     });
+//   }
+
+//   Widget _buildContentList() {
+//     if (_content.isEmpty) {
+//       return Center(child: Text('No Content Available'));
+//     } else {
+//       // **Sorting content list based on index before displaying**
+//        _content.sort((a, b) => (int.tryParse(a.index) ?? 0).compareTo(int.tryParse(b.index) ?? 0));
+//       return Padding(
+//         padding: EdgeInsets.symmetric(
+//             horizontal: screenwdt * 0.03, vertical: screenhgt * 0.01),
+//         child: GridView.builder(
+//           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+//               crossAxisCount: 5, childAspectRatio: 0.8),
+//           itemCount: _content.length,
+//           itemBuilder: (context, index) {
+//             return FocusableItemWidget(
+//               focusNode: index == 0 ? firstItemFocusNode : null,
+//               imageUrl: _content[index].banner,
+//               name: _content[index].name,
+//               onTap: () async {
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (context) => DetailsPage(
+//                       id: int.tryParse(_content[index].id) ?? 0,
+//                       channelList: _content,
+//                       source: 'isContentScreenViaDetailsPageChannelLIst',
+//                       banner: _content[index].banner,
+//                       name: _content[index].name ?? '',
+//                     ),
+//                   ),
+//                 );
+//               },
+//               fetchPaletteColor: fetchPaletteColor,
+//             );
+//           },
+//         ),
+//       );
+//     }
+//   }
+// }
+
+
+
 class ContentScreen extends StatefulWidget {
   final int networkId;
 
@@ -1101,31 +1165,29 @@ class _ContentScreenState extends State<ContentScreen> {
   bool _isLoading = true;
   bool _cacheLoaded = false;
   FocusNode firstItemFocusNode = FocusNode();
-  List<String> channelList = [];
+   List<String> channelList = [];
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 50), () async {
+    _loadCachedContent();
+    _fetchContentInBackground(); // Fetch in background and update UI if needed
+        Future.delayed(Duration(milliseconds: 50), () async {
       // Load cached content first
       _loadCachedContent();
       firstItemFocusNode.requestFocus();
     });
-    // Fetch content from API in the background
-    _fetchContentInBackground();
   }
 
+  // Load cached data first
   Future<void> _loadCachedContent() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedContent = prefs.getString('content_${widget.networkId}');
 
     if (cachedContent != null) {
       List<dynamic> cachedBody = json.decode(cachedContent);
-      // await Future.delayed(Duration(milliseconds: 50));
       setState(() {
-        _content = cachedBody
-            .map((dynamic item) => NewsItemModel.fromJson(item))
-            .toList();
+        _content = cachedBody.map((dynamic item) => NewsItemModel.fromJson(item)).toList();
         _isLoading = false;
         _cacheLoaded = true;
       });
@@ -1134,6 +1196,7 @@ class _ContentScreenState extends State<ContentScreen> {
     }
   }
 
+  // Fetch fresh API data and compare with cache
   Future<void> _fetchContentInBackground() async {
     try {
       final fetchedContent = await fetchContent(context, widget.networkId);
@@ -1141,15 +1204,11 @@ class _ContentScreenState extends State<ContentScreen> {
       if (!listEquals(_content, fetchedContent)) {
         setState(() {
           _content = fetchedContent;
+          print("🔄 UI updated with new content.");
         });
       }
     } catch (e) {
-      // print('Error fetching content: $e');
-      if (!_cacheLoaded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch content.')),
-        );
-      }
+      print('Error fetching content: $e');
     } finally {
       if (!_cacheLoaded) {
         setState(() {
@@ -1161,24 +1220,17 @@ class _ContentScreenState extends State<ContentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+        return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
       // Use provider's color for background
       Color backgroundColor = colorProvider.isItemFocused
           ? colorProvider.dominantColor.withOpacity(0.3)
           : Colors.black87;
-
-      return Scaffold(
-        backgroundColor: backgroundColor,
-        // body:
-        //     _isLoading ? Center(child: Text('...')) : _buildContentList(),
-        body: _isLoading
-            ? !_cacheLoaded
-                ? Center(child: Text('...'))
-                : Center(child: LoadingIndicator())
-            : _content != null
-                ? _buildContentList()
-                : Center(child: Text('...')),
-      );
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _buildContentList(),
+    );
     });
   }
 
@@ -1186,6 +1238,7 @@ class _ContentScreenState extends State<ContentScreen> {
     if (_content.isEmpty) {
       return Center(child: Text('No Content Available'));
     } else {
+      _content.sort((a, b) => (int.tryParse(a.index) ?? 0).compareTo(int.tryParse(b.index) ?? 0));
       return Padding(
         padding: EdgeInsets.symmetric(
             horizontal: screenwdt * 0.03, vertical: screenhgt * 0.01),
@@ -1205,7 +1258,7 @@ class _ContentScreenState extends State<ContentScreen> {
                     builder: (context) => DetailsPage(
                       id: int.tryParse(_content[index].id) ?? 0,
                       channelList: _content,
-                      source: 'isContentScreenViaDetailsPageChannelLIst',
+                      source: 'isContentScreenViaDetailsPageChannelList',
                       banner: _content[index].banner,
                       name: _content[index].name ?? '',
                     ),
@@ -1220,6 +1273,7 @@ class _ContentScreenState extends State<ContentScreen> {
     }
   }
 }
+
 
 class DetailsPage extends StatefulWidget {
   // final NewsItemModel content;

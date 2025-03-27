@@ -189,6 +189,7 @@
 
 class NewsItemModel {
   final String id;
+  final String index;
   final String name;
   final String description; // Optional in NewsItemModel
   final String thumbnail; // Optional in NewsItemModel
@@ -196,16 +197,19 @@ class NewsItemModel {
   final String url;
   final String videoId;
   final String streamType;
+  final String type;
   final String genres;
   final String status;
   final String contentId; // Added from NewsItemModelone (renamed from content_id)
   final String contentType; // Optional, originally in NewsItemModel
   bool isFocused;
   final bool isYoutubeVideo;
-  final Duration position; // New field for position
+  final Duration position;
+  bool liveStatus; // New field for position
 
   NewsItemModel({
     required this.id,
+    required this.index,
     required this.name,
     this.description = '', // Default value
     this.thumbnail = '', // Default value
@@ -213,19 +217,22 @@ class NewsItemModel {
     required this.url,
      required this.videoId,
     required this.streamType,
+    required this.type,
     required this.genres,
     required this.status,
     this.contentId = '', // Default value for optional field
     this.contentType = '', // Default value for optional field
     this.isFocused = false,
     this.isYoutubeVideo = false,
-    this.position = Duration.zero, // Default value for new field
+    this.position = Duration.zero, 
+    this.liveStatus = false, // Default value for new field
   });
 
   /// Factory method for JSON deserialization
   factory NewsItemModel.fromJson(Map<String, dynamic> json) {
     return NewsItemModel(
       id: json['id']?.toString() ?? '',
+      index: json['index']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '', // Field from NewsItemModel
       thumbnail: json['thumbnail'] ?? '', // Field from NewsItemModel
@@ -233,11 +240,13 @@ class NewsItemModel {
       url: json['url'] ?? '',
       videoId: json['videoId'] ?? '',
       streamType: json['stream_type'] ?? '',
+      type: json['type'] ?? '',
       genres: json['genres'] ?? '',
       status: json['status'] ?? '',
       contentId: json['content_id'] ?? '', // Field from NewsItemModelone
       contentType: json['content_type'] ?? '', // Field from NewsItemModel
       isFocused: json['isFocused'] ?? false, // Field from NewsItemModel
+      liveStatus: json['liveStatus'] ?? false, // Field from NewsItemModel
       isYoutubeVideo: json['content_type'] == "1",
       position: Duration(milliseconds: json['position'] ?? 0), // Parse position as Duration
     );
@@ -247,6 +256,7 @@ class NewsItemModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'index': index,
       'name': name,
       'description': description,
       'thumbnail': thumbnail,
@@ -254,11 +264,13 @@ class NewsItemModel {
       'url': url,
       'videoId': videoId,
       'stream_type': streamType,
+      'type': type,
       'genres': genres,
       'status': status,
       'content_id': contentId, // Field added from NewsItemModelone
       'content_type': contentType, // Field from NewsItemModel
       'isFocused': isFocused, // Field from NewsItemModel
+      'liveStatus': liveStatus, // Field from NewsItemModel
       'isYoutubeVideo': isYoutubeVideo,
       'position': position.inMilliseconds, // Convert position to milliseconds
     };
@@ -267,6 +279,7 @@ class NewsItemModel {
   /// Adds the `copyWith` method
   NewsItemModel copyWith({
     String? id,
+    String? index,
     String? name,
     String? description,
     String? thumbnail,
@@ -274,16 +287,19 @@ class NewsItemModel {
     String? url,
     String? videoId,
     String? streamType,
+    String? type,
     String? genres,
     String? status,
     String? contentId,
     String? contentType,
     bool? isFocused,
+    bool? liveStatus,
     bool? isYoutubeVideo,
     Duration? position, // Include new field
   }) {
     return NewsItemModel(
       id: id ?? this.id,
+      index: id ?? this.index,
       name: name ?? this.name,
       description: description ?? this.description,
       thumbnail: thumbnail ?? this.thumbnail,
@@ -291,11 +307,13 @@ class NewsItemModel {
       url: url ?? this.url,
       videoId: url ?? this.videoId,
       streamType: streamType ?? this.streamType,
+      type: streamType ?? this.type,
       genres: genres ?? this.genres,
       status: status ?? this.status,
       contentId: contentId ?? this.contentId,
       contentType: contentType ?? this.contentType,
       isFocused: isFocused ?? this.isFocused,
+      liveStatus: liveStatus ?? this.liveStatus,
       isYoutubeVideo: isYoutubeVideo ?? this.isYoutubeVideo,
       position: position ?? this.position, // Copy or default to the current value
     );

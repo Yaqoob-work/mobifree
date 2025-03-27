@@ -307,8 +307,9 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               banner: newsItem.banner,
               url: updatedUrl,
               streamType: 'M3u8',
+              type: 'M3u8',
               genres: newsItem.genres,
-              status: newsItem.status,
+              status: newsItem.status, index: newsItem.index,
             );
             break; // Exit loop when URL is successfully updated
           } catch (e) {

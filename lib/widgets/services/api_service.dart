@@ -29,6 +29,20 @@ class ApiService {
   final _updateController = StreamController<bool>.broadcast();
   Stream<bool> get updateStream => _updateController.stream;
 
+// Future<List<NewsItemModel>> fetchMusicData() async {
+//   final response = await https.get(
+//     Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+//     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//   );
+
+//   if (response.statusCode == 200) {
+//     final List<dynamic> data = json.decode(response.body);
+//     return data.map((item) => NewsItemModel.fromJson(item)).toList();
+//   } else {
+//     throw Exception('Failed to fetch music data');
+//   }
+// }
+
 Future<List<NewsItemModel>> fetchMusicData() async {
   final response = await https.get(
     Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
@@ -37,11 +51,20 @@ Future<List<NewsItemModel>> fetchMusicData() async {
 
   if (response.statusCode == 200) {
     final List<dynamic> data = json.decode(response.body);
-    return data.map((item) => NewsItemModel.fromJson(item)).toList();
+    
+    // List ko sort karein `index` ke basis pe (ascending order)
+    List<NewsItemModel> sortedList = data
+        .map((item) => NewsItemModel.fromJson(item))
+        .where((item) => item.index != null) // Null check
+        .toList()
+      ..sort((a, b) => int.parse(a.index).compareTo(int.parse(b.index)));
+
+    return sortedList;
   } else {
     throw Exception('Failed to fetch music data');
   }
 }
+
 
 Future<List<NewsItemModel>> fetchNewsData() async {
   final response = await https.get(
@@ -126,54 +149,94 @@ Future<List<NewsItemModel>> fetchNewsData() async {
     }
   }
 
+  // void _processEntertainmentData(List<dynamic> responseData) {
+  //   allChannelList = responseData
+  //       .where((channel) => _isChannelAllowed(channel))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+
+  //   newsList = responseData
+  //       .where((channel) =>
+  //           _isChannelAllowed(channel) &&
+  //           channel['genres'].toString().contains('News'))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+
+  //   movieList = responseData
+  //       .where((channel) =>
+  //           _isChannelAllowed(channel) &&
+  //           channel['genres'].toString().contains('Movie'))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+
+  //   musicList = responseData
+  //       .where((channel) =>
+  //           _isChannelAllowed(channel) &&
+  //           channel['genres'].toString().contains('Music'))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+
+  //   entertainmentList = responseData
+  //       .where((channel) =>
+  //           _isChannelAllowed(channel) &&
+  //           channel['genres'].toString().contains('Entertainment'))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+
+  //   religiousList = responseData
+  //       .where((channel) =>
+  //           _isChannelAllowed(channel) &&
+  //           channel['genres'].toString().contains('Religious'))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+
+  //   sportsList = responseData
+  //       .where((channel) =>
+  //           _isChannelAllowed(channel) &&
+  //           channel['genres'].toString().contains('Sports'))
+  //       .map((channel) => NewsItemModel.fromJson(channel))
+  //       .toList();
+  // }
+
+
+
   void _processEntertainmentData(List<dynamic> responseData) {
-    allChannelList = responseData
-        .where((channel) => _isChannelAllowed(channel))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
+  List<NewsItemModel> allChannels = responseData
+      .where((channel) => _isChannelAllowed(channel))
+      .map((channel) => NewsItemModel.fromJson(channel))
+      .where((item) => item.index != null) // Null check
+      .toList()
+    ..sort((a, b) => int.parse(a.index).compareTo(int.parse(b.index))); // Sorting
 
-    newsList = responseData
-        .where((channel) =>
-            _isChannelAllowed(channel) &&
-            channel['genres'].toString().contains('News'))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
+  allChannelList = allChannels;
 
-    movieList = responseData
-        .where((channel) =>
-            _isChannelAllowed(channel) &&
-            channel['genres'].toString().contains('Movie'))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
+  newsList = allChannels
+      .where((channel) => channel.genres.contains('News'))
+      .toList();
 
-    musicList = responseData
-        .where((channel) =>
-            _isChannelAllowed(channel) &&
-            channel['genres'].toString().contains('Music'))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
+  movieList = allChannels
+      .where((channel) => channel.genres.contains('Movie'))
+      .toList();
 
-    entertainmentList = responseData
-        .where((channel) =>
-            _isChannelAllowed(channel) &&
-            channel['genres'].toString().contains('Entertainment'))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
+  musicList = allChannels
+      .where((channel) => channel.genres.contains('Music'))
+      .toList();
 
-    religiousList = responseData
-        .where((channel) =>
-            _isChannelAllowed(channel) &&
-            channel['genres'].toString().contains('Religious'))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
+  entertainmentList = allChannels
+      .where((channel) => channel.genres.contains('Entertainment'))
+      .toList();
 
-    sportsList = responseData
-        .where((channel) =>
-            _isChannelAllowed(channel) &&
-            channel['genres'].toString().contains('Sports'))
-        .map((channel) => NewsItemModel.fromJson(channel))
-        .toList();
-  }
+  religiousList = allChannels
+      .where((channel) => channel.genres.contains('Religious'))
+      .toList();
+
+  sportsList = allChannels
+      .where((channel) => channel.genres.contains('Sports'))
+      .toList();
+}
+
+
+
 
   bool _isChannelAllowed(dynamic channel) {
     int channelId = int.tryParse(channel['id'].toString()) ?? 0;

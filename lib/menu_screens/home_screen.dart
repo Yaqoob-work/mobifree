@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobi_tv_entertainment/main.dart';
+import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/movies_screen.dart';
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
 import 'package:mobi_tv_entertainment/provider/focus_provider.dart';
 import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
@@ -129,6 +130,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       focusNode: firstSubVodFocusNode,
                     ),
                   ),
+                  // SizedBox(
+                  //   height: screenhgt * 0.5,
+                  //   key: GlobalKey(),
+                  //   child: MoviesScreen(
+                  //     focusNode: firstHomeCategoryFocusNode,
+                  //   ),
+                  // ),
                   SizedBox(
                     height: screenhgt * 4,
                     key: homeCategoryFirstBannerKey,

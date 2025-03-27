@@ -7,7 +7,8 @@ import 'package:http/http.dart' as https;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
+import 'package:mobi_tv_entertainment/video_widget/network_reconnection_screen.dart';
+import 'package:video_player/video_player.dart'; // Changed from VLC to video_player
 import 'package:keep_screen_on/keep_screen_on.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/home_category.dart';
@@ -29,11 +30,13 @@ class GlobalEventBus {
 
 class GlobalVariables {
   static String unUpdatedUrl = '';
+  static String UpdatedUrl = '';
   static Duration position = Duration.zero;
   static Duration duration = Duration.zero;
   static String banner = '';
   static String name = '';
   static bool liveStatus = false;
+  static String slectedId = '';
 }
 
 // Create an event class
@@ -85,7 +88,8 @@ class VideoScreen extends StatefulWidget {
 class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   final SocketService _socketService = SocketService();
 
-  VlcPlayerController? _controller;
+  // Changed from VlcPlayerController to VideoPlayerController
+  VideoPlayerController? _controller;
   bool _controlsVisible = true;
   late Timer _hideControlsTimer;
   Duration _totalDuration = Duration.zero;
@@ -95,10 +99,9 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool _isVideoInitialized = false;
   Timer? _connectivityCheckTimer;
   int _focusedIndex = 0;
-  // bool _isPlayPauseFocused = false;
   bool _isFocused = false;
   List<FocusNode> focusNodes = [];
-  final ScrollController _scrollController = ScrollController();
+  late ScrollController _scrollController;
   final FocusNode _channelListFocusNode = FocusNode();
   final FocusNode screenFocusNode = FocusNode();
   final FocusNode playPauseButtonFocusNode = FocusNode();
@@ -115,6 +118,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   static const platform = MethodChannel('com.example.volume');
   bool _loadingVisible = false;
   Duration _lastKnownPosition = Duration.zero;
+  Duration _resumePositionOnNetDisconnection = Duration.zero;
   bool _wasPlayingBeforeDisconnection = false;
   int _maxRetries = 3;
   int _retryDelay = 5; // seconds
@@ -122,27 +126,24 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool _wasDisconnected = false;
   String? _currentModifiedUrl; // To store the current modified URL
 
-  // Uint8List _getImageFromBase64String(String base64String) {
-  //   // Split the base64 string to remove metadata if present
-  //   return base64Decode(base64String.split(',').last);
-  // }
-
   Map<String, Uint8List> _imageCache = {};
-
-  // Uint8List _getCachedImage(String base64String) {
-  //   if (!_imageCache.containsKey(base64String)) {
-  //     _imageCache[base64String] = base64Decode(base64String.split(',').last);
-  //   }
-  //   return _imageCache[base64String]!;
-  // }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
-    printLastPlayedPositions();
+
     _previewPosition = _controller?.value.position ?? Duration.zero;
+    Timer.periodic(Duration(minutes: 5), (timer) {
+      if (mounted) {
+        // Speed control is different in video_player
+        _controller?.setPlaybackSpeed(1.0);
+      } else {
+        timer.cancel();
+      }
+    });
     KeepScreenOn.turnOn();
     _initializeVolume();
     _listenToVolumeChanges();
@@ -151,23 +152,31 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       // Store current banners after loading cached ones
       _storeBannersLocally();
     });
+
     // Match channel by ID as strings
     if (widget.isBannerSlider) {
       _focusedIndex = widget.channelList.indexWhere(
-        (channel) => channel.contentId.toString() == widget.videoId.toString(),
+        (channel) =>
+            channel.contentId.toString() ==
+            (isOnItemTapUsed ? GlobalVariables.slectedId : widget.videoId)
+                .toString(),
       );
     } else if (widget.isVOD || widget.source == 'isLiveScreen') {
       _focusedIndex = widget.channelList.indexWhere(
-        (channel) => channel.id.toString() == widget.videoId.toString(),
+        (channel) =>
+            channel.id.toString() ==
+            (isOnItemTapUsed ? GlobalVariables.slectedId : widget.videoId)
+                .toString(),
       );
     } else {
       _focusedIndex = widget.channelList.indexWhere(
         (channel) => channel.url == widget.videoUrl,
       );
     }
+
     // Default to 0 if no match is found
     _focusedIndex = (_focusedIndex >= 0) ? _focusedIndex : 0;
-    // print('Initial focused index: $_focusedIndex');
+
     // Initialize focus nodes
     focusNodes = List.generate(
       widget.channelList.length,
@@ -177,31 +186,24 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setInitialFocus();
     });
-    _initializeVLCController(_focusedIndex);
+    _initializeVideoController(_focusedIndex);
     _startHideControlsTimer();
     _startNetworkMonitor();
     _startPositionUpdater();
   }
 
   @override
-  void dispose() async {
+  void dispose() {
+    _saveLastPlayedVideoBeforeDispose();
+
+    _controller?.pause();
+    _controller?.dispose();
     _scrollController.dispose();
 
-    await _saveLastPlayedVideoBeforeDispose();
-
-    try {
-      _controller?.stop();
-      _controller?.dispose();
-    } catch (e) {
-      print("Error disposing controller: $e");
-    }
-
     _controller?.removeListener(() {});
-    // _saveLastPlayedVideo(widget.videoUrl, _controller!.value.position,
-    //     _controller!.value.duration,
-    //      widget.bannerImageUrl);
+
     _connectivityCheckTimer?.cancel();
-    _hideControlsTimer?.cancel();
+    _hideControlsTimer.cancel();
     _volumeIndicatorTimer?.cancel(); // Cancel the volume timer if running
     // Clean up FocusNodes
     screenFocusNode.dispose();
@@ -230,6 +232,20 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_controller != null && _controller!.value.isInitialized) {
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.inactive) {
+        _controller!.pause(); // 🔹 App background mein jaane par pause
+        print("✅ App background mein gaya, video paused.");
+      } else if (state == AppLifecycleState.resumed) {
+        _controller!.play(); // 🔹 App wapas foreground mein aane par resume
+        print("✅ App foreground mein aaya, video resumed.");
+      }
+    }
+  }
+
   bool isSave = false;
   Future<void> _saveLastPlayedVideoBeforeDispose() async {
     try {
@@ -250,7 +266,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           print("Video saved successfully before dispose");
         } else if (!isOnItemTapUsed) {
           await _saveLastPlayedVideo(
-            // widget.videoUrl,
             widget.unUpdatedUrl,
             position,
             duration,
@@ -267,136 +282,36 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   }
 
   void _scrollListener() {
-    // if (_scrollController.position.pixels ==
-    //     _scrollController.position.maxScrollExtent) {
-    //   // _fetchData();
-    // }
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
       // _fetchData();
     }
   }
 
-// void _scrollToFocusedItem() {
-//   // Wait for the next frame to ensure proper layout
-//   WidgetsBinding.instance.addPostFrameCallback((_) {
-//     if (!_scrollController.hasClients || _focusedIndex < 0) return;
-
-//     const double itemHeight = 95.0;
-//     const double viewportPadding = 10.0;
-
-//     // Calculate target scroll position
-//     final double targetOffset = _focusedIndex * itemHeight;
-
-//     // Ensure the target offset doesn't exceed scroll bounds
-//     final double maxScroll = _scrollController.position.maxScrollExtent;
-//     final double safeOffset = math.min(
-//       targetOffset - viewportPadding,
-//       maxScroll
-//     );
-
-//     _scrollController.animateTo(
-//       math.max(0, safeOffset), // Prevent negative scroll
-//       duration: const Duration(milliseconds: 300), // Add smooth animation
-//       curve: Curves.easeOutCubic,
-//     );
-//   });
-// }
-
-
-
-
-
-  // void _scrollToFocusedItem() {
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     if (!_scrollController.hasClients || _focusedIndex < 0) return;
-
-  //     const double itemHeight = 95.0;
-  //     const double viewportPadding = 10.0;
-
-  //     // Get viewport height
-  //     final double viewportHeight =
-  //         _scrollController.position.viewportDimension;
-
-  //     // Calculate target scroll position
-  //     final double targetOffset = _focusedIndex * itemHeight;
-
-  //     // Calculate how many items can fit in viewport
-  //     final int itemsInViewport = (viewportHeight / itemHeight).floor();
-
-  //     // If focused item is near the end, adjust scroll to show more items
-  //     final int remainingItems = (widget.channelList.length - _focusedIndex);
-  //     if (remainingItems < itemsInViewport) {
-  //       // Adjust scroll to show last page of items
-  //       final double adjustedOffset =
-  //           (widget.channelList.length - itemsInViewport) * itemHeight;
-
-  //       _scrollController.animateTo(
-  //         math.max(0, adjustedOffset),
-  //         duration: const Duration(milliseconds: 300),
-  //         curve: Curves.easeOutCubic,
-  //       );
-  //     } else {
-  //       // Normal scroll behavior for items not near the end
-  //       final double maxScroll = _scrollController.position.maxScrollExtent;
-  //       final double safeOffset =
-  //           math.min(targetOffset - viewportPadding, maxScroll);
-
-  //       _scrollController.animateTo(
-  //         math.max(0, safeOffset),
-  //         duration: const Duration(milliseconds: 300),
-  //         curve: Curves.easeOutCubic,
-  //       );
-  //     }
-  //   });
-  // }
-
-
   void _scrollToFocusedItem() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients || _focusedIndex < 0) {
+        print('ScrollController not ready or invalid index.');
+        return;
+      }
 
-  if (_focusedIndex < 0 || !_scrollController.hasClients) {
-    print('Invalid focused index or no scroll controller available.');
-    return;
-  }
+      double itemHeight = screenhgt * 0.18; // Change if needed
+      const double viewportPadding = 16.0; // Adjust scrolling behavior
 
-  // Fetch the context of the focused node
-  final context = focusNodes[_focusedIndex].context;
-  if (context == null) {
-    print('Focus node context is null for index $_focusedIndex.');
-    return;
-  }
+      final double targetOffset =
+          _focusedIndex * (itemHeight + viewportPadding);
+      final double maxScroll = _scrollController.position.maxScrollExtent;
+      final double safeOffset = targetOffset.clamp(0, maxScroll);
 
-  // Calculate the offset to align the focused item at the top of the viewport
-  final RenderObject? renderObject = context.findRenderObject();
-  if (renderObject != null) {
-    final double itemOffset =
-        renderObject.getTransformTo(null).getTranslation().y;
+      print("Scrolling to offset: $safeOffset");
 
-    final double viewportOffset =
-        _scrollController.offset + itemOffset - 10; // 10px padding for spacing
-
-    // Ensure the target offset is within scroll bounds
-    final double maxScrollExtent = _scrollController.position.maxScrollExtent;
-    final double minScrollExtent = _scrollController.position.minScrollExtent;
-
-    final double safeOffset = viewportOffset.clamp(
-      minScrollExtent,
-      maxScrollExtent,
-    );
-
-    // Animate to the computed position
-    _scrollController.animateTo(
-      safeOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  } else {
-    print('RenderObject for index $_focusedIndex is null.');
-  }
+      _scrollController.animateTo(
+        safeOffset,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOutCubic,
+      );
     });
-}
-
+  }
 
   // Add this to your existing Map
   Map<String, Uint8List> _bannerCache = {};
@@ -497,102 +412,181 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       return;
     }
 
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-
-    print('Setting initial focus to index: $_focusedIndex');
-    FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-    _scrollToFocusedItem();});
-  }
-
-  Future<void> _onNetworkReconnected() async {
-    if (_controller != null) {
-      try {
-        print("Attempting to resume playback...");
-
-        // Check if the network is stable
-        bool isConnected = await _isInternetAvailable();
-        if (!isConnected) {
-          print("Network is not stable yet. Delaying reconnection attempt.");
-          return;
-        }
-
-        // Fallback: Ensure modifiedUrl is available
-        if (_currentModifiedUrl == null || _currentModifiedUrl!.isEmpty) {
-          var selectedChannel = widget.channelList[_focusedIndex];
-          _currentModifiedUrl =
-              '${selectedChannel.url}?network-caching=2000&live-caching=1000&rtsp-tcp';
-        }
-
-        // Log the URL for debugging
-        print("Resuming playback with URL: $_currentModifiedUrl");
-        // Handle playback based on content type (Live or VOD)
-        if (_controller!.value.isInitialized) {
-          if (widget.isLive) {
-            // Restart live playback
-            await _retryPlayback(_currentModifiedUrl!, 3);
-            // await _controller!.setMediaFromNetwork(_currentModifiedUrl!);
-            // await _controller!.play();
-          } else {
-            // Resume VOD playback from the last known position
-            // await _controller!.setMediaFromNetwork(_currentModifiedUrl!);
-            await _retryPlayback(_currentModifiedUrl!, 3);
-            if (_lastKnownPosition != Duration.zero) {
-              await _controller!.seekTo(_lastKnownPosition);
-            }
-            await _controller!.play();
-          }
-        }
-      } catch (e) {
-        print("Error during reconnection: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error resuming playback: ${e.toString()}")),
-        );
-      }
-    } else {
-      print("Controller is null, cannot reconnect.");
-    }
-  }
-
-  void _startNetworkMonitor() {
-    _networkCheckTimer = Timer.periodic(Duration(seconds: 5), (_) async {
-      bool isConnected = await _isInternetAvailable();
-      if (!isConnected && !_wasDisconnected) {
-        _wasDisconnected = true;
-        print("Network disconnected");
-      } else if (isConnected && _wasDisconnected) {
-        _wasDisconnected = false;
-        print("Network reconnected. Attempting to resume video...");
-
-        // Attempt reconnection only once
-        if (_controller?.value.isInitialized ?? false) {
-          _onNetworkReconnected();
-        }
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('Setting initial focus to index: $_focusedIndex');
+      FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
+      _scrollToFocusedItem();
     });
   }
 
+  bool _isReconnecting = false;
+  bool _shouldDisposeController = false;
+
+  // Future<void> _onNetworkReconnected() async {
+  //   if (_isReconnecting) return;
+  //   _isReconnecting = true;
+
+  //   try {
+  //     print("🌐 Network reconnected, resuming playback...");
+
+  //     bool isConnected = await _isInternetAvailable();
+  //     if (!isConnected) {
+  //       print("⚠️ Network not stable yet. Retrying...");
+  //       return;
+  //     }
+
+  //     String url =
+  //         isOnItemTapUsed ? GlobalVariables.UpdatedUrl : widget.videoUrl;
+
+  //     await _controller?.pause();
+  //     await _controller?.dispose();
+  //     _controller = null;
+
+  //     if (_controller == null) {
+  //       if (GlobalVariables.liveStatus == true) {
+  //         _controller = VideoPlayerController.networkUrl(Uri.parse(url));
+  //       } else {
+  //         _controller = VideoPlayerController.networkUrl(Uri.parse(url)); // VOD
+  //         await _seekToPositionOnNetReconnect(
+  //             _resumePositionOnNetDisconnection);
+  //       }
+
+  //       await _controller!.initialize();
+
+  //       _controller!.play();
+  //     }
+  //   } catch (e) {
+  //     print("❌ Error during reconnection: $e");
+  //   } finally {
+  //     _isReconnecting = false;
+  //   }
+  // }
+
+// Helper method to set up all the listeners
+  // void _setupVideoPlayerListeners() {
+  //   _controller!.addListener(() {
+  //     // Copy your entire existing listener code here
+  //     if (!mounted) return;
+
+  //     // Update buffering state
+  //     if (_controller!.value.isBuffering) {
+  //       _isBuffering = true;
+  //     } else {
+  //       _isBuffering = false;
+  //     }
+
+  //     // Update progress values
+  //     if (_controller!.value.duration.inMilliseconds > 0) {
+  //       _progress = _controller!.value.position.inMilliseconds /
+  //           _controller!.value.duration.inMilliseconds;
+  //     }
+
+  //     // Handle errors
+  //     if (_controller!.value.hasError) {
+  //       print("⚠️ VideoPlayer error: ${_controller!.value.errorDescription}");
+  //       // Error handling code
+  //     }
+
+  //     // Rest of your existing listener code
+  //   });
+  // }
+
+// Improved internet connectivity check
   Future<bool> _isInternetAvailable() async {
     try {
-      final result = await InternetAddress.lookup('google.com');
+      final List<InternetAddress> result =
+          await InternetAddress.lookup('google.com')
+              .timeout(Duration(seconds: 5));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    } on TimeoutException catch (_) {
+      return false;
     } catch (_) {
       return false;
     }
   }
 
-  // void _startPositionUpdater() {
-  //   Timer.periodic(Duration(seconds: 1), (_) {
-  //     if (mounted && _controller?.value.isInitialized == true) {
-  //       setState(() {
-  //         _lastKnownPosition = _controller!.value.position;
-  //       });
-  //     }
-  //   });
-  // }
+// Add this variable to track reconnection attempts
+  int _reconnectionAttempts = 0;
+  final int _maxReconnectionAttempts = 3;
+
+// Replace your existing _startNetworkMonitor method with this improved version
+  void _startNetworkMonitor() {
+    _networkCheckTimer = Timer.periodic(Duration(seconds: 5), (_) async {
+      if (!mounted) return;
+
+      bool isConnected = await _isInternetAvailable();
+
+      if (!isConnected && !_wasDisconnected) {
+        // Just disconnected
+        setState(() {
+          _wasDisconnected = true;
+          _lastDisconnectTime = DateTime.now();
+        });
+
+        // Save current position for later
+        _resumePositionOnNetDisconnection =
+            _controller?.value.position ?? Duration.zero;
+        _wasPlayingBeforeDisconnection = _controller?.value.isPlaying ?? false;
+
+        print(
+            "📡 Network disconnected at ${_lastDisconnectTime}. Position: ${_formatDuration(_resumePositionOnNetDisconnection)}");
+
+        // Pause video on disconnect
+        if (_controller != null && _controller!.value.isInitialized) {
+          _controller?.pause();
+        }
+
+        // Show user feedback about disconnection
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Network disconnected. Waiting to reconnect..."),
+              backgroundColor: Colors.red,
+              duration:
+                  Duration(seconds: -1), // Infinite duration until dismissed
+            ),
+          );
+        }
+      } else if (isConnected && _wasDisconnected) {
+        // Just reconnected
+        print(
+            "🌐 Network reconnected. Preparing to navigate to reconnection screen...");
+
+        // Clear any existing snackbar
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+
+        setState(() {
+          _wasDisconnected = false;
+        });
+
+        // Add a delay to ensure network stability before attempting reconnection
+        if (!_isReconnecting && mounted) {
+          _isReconnecting = true;
+
+          // Add a bit more delay to ensure stability
+          await Future.delayed(Duration(seconds: 3));
+
+          if (mounted) {
+            // Force navigation to the reconnection animation
+            // _handleNetworkReconnection();
+            _controller!.play();
+          }
+
+          _isReconnecting = false;
+        }
+      }
+    });
+  }
+
+// Add this variable to track disconnect time
+  DateTime _lastDisconnectTime = DateTime.now();
 
   void _startPositionUpdater() {
-    Timer.periodic(Duration(seconds: 1), (_) {
+    Timer.periodic(Duration(seconds: 3), (_) {
       if (mounted && _controller?.value.isInitialized == true) {
         setState(() {
           _lastKnownPosition = _controller!.value.position;
@@ -619,380 +613,239 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
   }
 
-  // Future<void> _initializeVLCController(int index) async {
-  //   // try {
-  //   setState(() {
-  //     _loadingVisible = true; // Show loading initially
-  //   });
+  bool _isSeekingOnNetReconnect = false; // Flag to track seek state
 
-  //   String modifiedUrl =
-  //       '${widget.videoUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+  Future<void> _seekToPositionOnNetReconnect(Duration position) async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
 
-  //   // String modifiedUrl =
-  //   //     '${widget.videoUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+    if (_isSeekingOnNetReconnect) return; // Prevent multiple seek calls
 
-  //   // Extract the API endpoint
-  //   String apiEndpoint = extractApiEndpoint(widget.videoUrl);
-  //   print("API Endpoint vlcinitialization: $apiEndpoint");
+    _isSeekingOnNetReconnect = true;
+    try {
+      print("⏩ Seeking to position after reconnection: $position");
 
-  //   _controller = VlcPlayerController.network(
-  //     modifiedUrl,
-  //     hwAcc: HwAcc.auto,
-  //     autoPlay: true,
-  //     // options: VlcPlayerOptions(),
-  //     options: VlcPlayerOptions(
-  //       video: VlcVideoOptions([
-  //         VlcVideoOptions.dropLateFrames(true),
-  //         VlcVideoOptions.skipFrames(true),
-  //       ]),
-  //     ),
-  //   );
+      if (_controller!.value.position != position) {
+        bool wasPlaying = _controller!.value.isPlaying;
+        if (wasPlaying) await _controller!.pause();
 
-  //   _controller!.initialize();
+        await _controller!.seekTo(position);
 
-  //   await _retryPlayback(modifiedUrl, 5);
-
-  //   if (widget.source == 'isLastPlayedVideos' ) {
-  //     // Convert milliseconds to Duration if necessary
-  //       print("hello isLastPlayedVideos");
-
-  //             final newPosition = (_controller)!.value.position*0 + widget.startAtPosition;
-  //     // (_controller)!.seekTo(newPosition);
-
-  //     // Add small delay to ensure player is ready
-  //     await Future.delayed(
-  //         Duration(seconds: 40)); // Delay for player initialization
-  //        _controller!.seekTo(newPosition);
-  //       print("Seekingtoposition: ${widget.startAtPosition}");
-  //   }
-
-  //   setState(() {
-  //     _isVideoInitialized = true;
-  //   });
-  //   Timer(Duration(seconds: widget.isVOD ? 15 : 5), () {
-  //     setState(() {
-  //       _loadingVisible = false;
-  //     });
-  //   });
-  //   // } catch (error) {
-  //   //   print("Error initializing the video: $error");
-  //   //   setState(() {
-  //   //     _isVideoInitialized = false;
-  //   //     _loadingVisible = false;
-  //   //   });
-  //   // }
-  //   bool _hasRenderedFirstFrame = false;
-
-  // _controller!.addListener(() {
-  //   if (_controller!.value.isInitialized &&
-  //       _controller!.value.isPlaying &&
-  //       !_isBuffering &&
-  //       !_hasRenderedFirstFrame) {
-  //     // Video is initialized, playing, and buffering has completed
-  //     setState(() {
-  //       // _loadingVisible = false;
-  //       _hasRenderedFirstFrame = true; // Prevent further prints
-  //     });
-  //     print("First frame rendered, hiding loading indicator.");
-  //   }
-  // });
-
-  //   // _controller?.addListener(() {
-  //   //   if (mounted && _controller!.value.hasError) {
-  //   //     print("VLC Player Error: ${_controller!.value.errorDescription}");
-  //   //     // setState(() {
-  //   //     //   _isVideoInitialized = false;
-  //   //     // });
-  //   //   }
-  //   // });
-  // }
-
-  void printLastPlayedPositions() {
-    for (int i = 0; i < widget.channelList.length; i++) {
-      final video = widget.channelList[i];
-      // final positionkagf = video.startAtPosition ??
-      Duration.zero; // Safely handle null values
-      // print('Video $i: PositionprintLastPlayed - ${positionkagf}');
-    }
-  }
-
-  void printAllStartAtPositions() {
-    for (int i = 0; i < widget.channelList.length; i++) {
-      var channel = widget.channelList[i];
-      print("Index: $i");
-      print("Channel Name: ${channel.name}");
-      print("Channel ID: ${channel.id}");
-      print("StartAtPositions: ${widget.startAtPosition}");
-      print("---------------------------");
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isVideoInitialized && !_controller!.value.isPlaying) {
-      _controller!.play();
+        if (wasPlaying) await _controller!.play();
+      }
+    } catch (e) {
+      print("❌ Error during seek after reconnection: $e");
+    } finally {
+      await Future.delayed(Duration(milliseconds: 100));
+      _isSeekingOnNetReconnect = false;
     }
   }
 
   bool _isSeeking = false; // Flag to track seek state
 
   Future<void> _seekToPosition(Duration position) async {
-    if (_isSeeking) return; // Skip if a seek operation is already in progress
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    if (_isSeeking) return; // Prevent multiple seek calls
 
     _isSeeking = true;
     try {
       print("Seeking to position: $position");
-      await _controller!.seekTo(position); // Perform the seek operation
-      await _controller!.play(); // Start playback from the new position
+
+      if (_controller!.value.position != position) {
+        // Pehle pause karein taaki seek fast ho
+        bool wasPlaying = _controller!.value.isPlaying;
+        if (wasPlaying) await _controller!.pause();
+
+        // Seek karein
+        await _controller!.seekTo(position);
+
+        // Agar pehle playing tha to dobara play karein
+        if (wasPlaying) await _controller!.play();
+      }
     } catch (e) {
       print("Error during seek: $e");
     } finally {
-      // Add a small delay to ensure the operation completes before resetting the flag
-      await Future.delayed(Duration(milliseconds: 500));
+      await Future.delayed(Duration(milliseconds: 100));
       _isSeeking = false;
     }
   }
 
-  // Future<void> _initializeVLCController(int index) async {
-  //   try {
-  //     String modifiedUrl =
-  //         '${widget.channelList[index].url}?network-caching=5000&live-caching=500&rtsp-tcp';
+  // for ontap
+  bool _isSeekingOntap = false; // Flag to track seek state
 
-  //     // Initialize the VLC player controller
-  //     _controller = VlcPlayerController.network(
-  //       modifiedUrl,
-  //       hwAcc: HwAcc.full,
-  //       options: VlcPlayerOptions(
-  //         video: VlcVideoOptions([
-  //           VlcVideoOptions.dropLateFrames(true),
-  //           VlcVideoOptions.skipFrames(true),
-  //         ]),
-  //       ),
-  //     );
+  Future<void> _seekToPositionOntap(Duration position) async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
 
-  //      await _controller!.initialize();
-  //       // if (
-  //       // e.toString().contains('LateInitializationError')
-  //       // ) {
-  //       await _retryPlayback(modifiedUrl, 5);
-  //     // }
-  //     _controller!.addListener(() async {
-  //       // if (_controller!.value.playingState == PlayingState.ended ||
-  //       //     _controller!.value.hasError
-  //       //     // || e.toString().contains('LateInitializationError')
-  //       //     ) {
-  //       //   print("Playback error or video ended. Playing next...");
-  //       //   Future.delayed(Duration(seconds: 20));
-  //       //   if (_controller!.value.isPlaying) {
-  //       //     _playNext();
-  //       //   }
-  //       // }
+    if (_isSeekingOntap) return; // Prevent multiple seek calls
 
-  //       if (_controller!.value.isInitialized &&
-  //           _controller!.value.duration > Duration.zero &&
-  //           !_isSeeking &&
-  //           widget.source == 'isLastPlayedVideos') {
-  //         if (widget.startAtPosition > Duration.zero &&
-  //             widget.startAtPosition > _controller!.value.position) {
-  //           if (widget.startAtPosition <= _controller!.value.position) {
-  //             print("Video already at the desired position, skipping seek.");
-  //             return;
-  //           }
-  //           await _seekToPosition(widget.startAtPosition);
-  //           _isSeeking = true;
-  //         }
-  //       }
-  //       if (_controller!.value.position <= Duration.zero ||
-  //           _controller!.value.isBuffering) {
-  //         _loadingVisible = true;
-  //       } else if (_controller!.value.position > Duration.zero) {
-  //         _loadingVisible = false;
-  //       }
+    _isSeekingOntap = true;
+    try {
+      print("Seeking to position: $position");
 
-  //       if (widget.isVOD &&
-  //               (_controller!.value.position >
-  //                   Duration.zero) && // Position is greater than zero
-  //               (_controller!.value.duration >
-  //                   Duration.zero) && // Duration is greater than zero
-  //               (_controller!.value.duration - _controller!.value.position <=
-  //                   Duration(seconds: 5)) // 5 seconds or less remaining
-  //           ) {
-  //         print("Video is about to end. Playing next...");
-  //         _playNext(); // Automatically play next video
-  //       }
-  //     });
+      if (_controller!.value.position != position) {
+        // Pehle pause karein taaki seek fast ho
+        bool wasPlaying = _controller!.value.isPlaying;
+        if (wasPlaying) await _controller!.pause();
 
-  //     setState(() {
-  //       _isVideoInitialized = true;
-  //     });
-  //   } catch (e) {
-  //     if (e.toString().contains('LateInitializationError')) {
-  //       String modifiedUrl =
-  //           '${widget.channelList[index].url}?network-caching=5000&live-caching=500&rtsp-tcp';
-  //       // Handle reinitialization
-  //       print(
-  //           "Reinitializing VLC controller due to LateInitializationError...");
-  //       // Future.delayed(Duration(seconds: 5));
-  //         _controller!.initialize();
-  //         await _retryPlayback(modifiedUrl, 5);
-  //       await Future.delayed(Duration(seconds: 7), () async {
+        // Seek karein
+        await _controller!.seekTo(position);
 
-  //         _playNext();
+        // Agar pehle playing tha to dobara play karein
+        if (wasPlaying) await _controller!.play();
+      }
+    } catch (e) {
+      print("Error during seek: $e");
+    } finally {
+      await Future.delayed(Duration(milliseconds: 100));
+      _isSeekingOntap = false;
+    }
+  }
 
-  //         await _initializeVLCController(index);
-  //       });
-  //     } else {
-  //       print("Error during VLC initialization: $e");
-  //     }
-  //   }
-  // }
+  // Add these variables to class
+  int _bufferingRetryCount = 0;
+  DateTime? _bufferingStartTime;
+  Timer? _bufferingTimer;
 
-  Future<void> _initializeVLCController(int index) async {
-    printAllStartAtPositions();
+  bool _hasSeeked = false;
 
-    String modifiedUrl =
-        '${widget.videoUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+  Future<void> _initializeVideoController(int index) async {
+    setState(() {
+      _hasSeeked = false;
+    });
+
+    // VideoPlayerController does not need the caching parameters that VLC used
+    String videoUrl = widget.videoUrl;
 
     // Initialize the controller
-    _controller = VlcPlayerController.network(
-      modifiedUrl,
-      hwAcc: HwAcc.full,
-      // autoPlay: true,
-      options: VlcPlayerOptions(
-        video: VlcVideoOptions([
-          VlcVideoOptions.dropLateFrames(true),
-          VlcVideoOptions.skipFrames(true),
-        ]),
-      ),
-    );
+    if (_controller == null) {
+      _controller = VideoPlayerController.network(
+        videoUrl,
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,
+        ),
+        httpHeaders: {
+          'Range': 'bytes=0-8000000', // लगभग 8MB का initial chunk मांगें
+          'Connection': 'keep-alive', // Connection को open रखें
+        },
+      );
 
-    _controller!.initialize();
-
-
-    // Retry playback in case of failures
-    await _retryPlayback(modifiedUrl, 5);
-
-      // Start playback after initialization
-  if (_controller!.value.isInitialized) {
-    _controller!.play();
-  } else {
-    print("Controller failed to initialize.");
-  }
-
-    //           if (widget.isVOD) {
-    //   if (_controller!.value.position > Duration.zero &&
-    //       _controller!.value.duration > Duration.zero &&
-    //       _controller!.value.position >= _controller!.value.duration) {
-    //     print("Video ended. Playing next...");
-    //     _playNext(); // Automatically play next video
-    //   }
-    // }
-
-    _controller!.addListener(() async {
-      
-
-      if (_controller!.value.isInitialized &&
-          _controller!.value.duration > Duration.zero &&
-          !_isSeeking &&
-          widget.source == 'isLastPlayedVideos') {
-        if (widget.startAtPosition > Duration.zero &&
-            widget.startAtPosition > _controller!.value.position) {
-          if (widget.startAtPosition <= _controller!.value.position) {
-            print("Video already at the desired position, skipping seek.");
-            return;
+      try {
+        try {
+          await _controller!.initialize();
+          print("✅ Video initialized successfully");
+        } catch (initError) {
+          print("❌ Video initialization error: $initError");
+          print("❌ URL that failed: $videoUrl");
+          // Try to provide more context about the error
+          if (initError.toString().contains("404")) {
+            print("❌ The video URL returned a 404 Not Found error");
+          } else if (initError.toString().contains("403")) {
+            print("❌ The video URL returned a 403 Forbidden error");
           }
-          await _seekToPosition(widget.startAtPosition);
-          _isSeeking = true;
+          // Rethrow to be caught by the outer try-catch
+          rethrow;
+        }
+
+        await _controller!.play();
+
+        _controller!.addListener(() async {
+          // Handle position seeking for non-live videos
+          if (_controller!.value.isInitialized &&
+              _controller!.value.duration > Duration.zero &&
+              !_isSeeking &&
+              !_hasSeeked &&
+              !widget.liveStatus &&
+              widget.source == 'isLastPlayedVideos') {
+            if (widget.startAtPosition > Duration.zero &&
+                widget.startAtPosition > _controller!.value.position) {
+              if (widget.startAtPosition <= _controller!.value.position) {
+                print("Video already at the desired position, skipping seek.");
+                _isSeeking = true;
+                _hasSeeked = true;
+                return;
+              }
+              await _seekToPosition(widget.startAtPosition);
+              _isSeeking = true;
+              _hasSeeked = true;
+            }
+          }
+          _isSeeking = false;
+
+          // Update loading indicators
+          if (_controller!.value.position <= Duration.zero) {
+            _loadingVisible = true;
+          } else if (_controller!.value.position > Duration.zero) {
+            _loadingVisible = false;
+          }
+          if (_controller!.value.isBuffering) {
+            _isBuffering = true;
+          } else {
+            _isBuffering = false;
+          }
+
+          // Auto-play next for VOD content
+          if (widget.isVOD &&
+              (_controller!.value.position > Duration.zero) &&
+              (_controller!.value.duration > Duration.zero) &&
+              (_controller!.value.duration - _controller!.value.position <=
+                  Duration(seconds: 5))) {
+            print("Video is about to end. Playing next...");
+            _playNext(); // Automatically play next video
+          }
+        });
+
+        setState(() {
+          _isVideoInitialized = true;
+          _currentModifiedUrl = videoUrl;
+        });
+      } catch (initError) {
+        print("❌ Video initialization error: $initError");
+        print("❌ URL that failed: $videoUrl");
+
+        // Important: Don't rethrow the error - handle it gracefully
+        // Instead of crashing, attempt to play the next video
+        if (widget.channelList.length > 1) {
+          print(
+              "🔄 Initialization error detected, attempting to play next video...");
+
+          // We need to set _controller to null so that we can reinitialize it
+          _controller = null;
+
+          // Use Future.delayed to ensure this happens after the current method completes
+          Future.delayed(Duration(milliseconds: 500), () {
+            if (mounted) {
+              _playNext();
+            }
+          });
+        } else {
+          print(
+              "⚠️ Cannot play next video - this is the only video in the list");
+          // Show error message to user
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Cannot play this video. Try again later."),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
         }
       }
-      if (_controller!.value.position <= Duration.zero ||
-          _controller!.value.isBuffering) {
-        _loadingVisible = true;
-      } else if (_controller!.value.position > Duration.zero) {
-        _loadingVisible = false;
-      }
-
-      if (widget.isVOD &&
-              (_controller!.value.position >
-                  Duration.zero) && // Position is greater than zero
-              (_controller!.value.duration >
-                  Duration.zero) && // Duration is greater than zero
-              (_controller!.value.duration - _controller!.value.position <=
-                  Duration(seconds: 5)) // 5 seconds or less remaining
-          ) {
-        print("Video is about to end. Playing next...");
-        _playNext(); // Automatically play next video
-      }
-
-      //       if (
-      //     _controller!.value.hasError 
-      //     // || e.toString().contains('LateInitializationError')
-      //     || e.toString().contains('Exception')
-      // ) {
-      //   print("Playback error or video ended. Playing next...");
-      //   _playNext();
-      // }
-
-      if (_controller!.value.hasError || e.toString().contains('Exception')) {
-  print("Playback error detected. Waiting for 5 seconds before deciding...");
-  
-  bool playbackRecovered = false;
-
-  // Listen to video controller updates
-  void checkPlaybackStatus() {
-    if (_controller!.value.isPlaying && !_controller!.value.hasError) {
-      playbackRecovered = true;
     }
   }
-
-  _controller!.addListener(checkPlaybackStatus);
-
-  // Wait for 5 seconds
-  Future.delayed(Duration(seconds: 10), () {
-    _controller!.removeListener(checkPlaybackStatus);
-    if (!playbackRecovered) {
-      print("Playback did not recover. Playing next...");
-      _playNext();
-    } else {
-      print("Playback recovered. Continuing...");
-    }
-  });
-}
-
-
-      // Check for playback errors
-    });
-
-    setState(() {
-      _isVideoInitialized = true;
-    });
-  }
-
-  
 
   Future<void> _retryPlayback(String url, int retries) async {
     for (int i = 0; i < retries; i++) {
-      if (!mounted || !_controller!.value.isInitialized) return;
+      if (!mounted || _controller == null || !_controller!.value.isInitialized)
+        return;
 
       try {
-        await _controller!.setMediaFromNetwork(url);
-        // Add position seeking after successful playback start
-
-        // await _controller!.play();
-
-        _controller!.addListener(() async {
-      if (
-          _controller!.value.hasError 
-          // || e.toString().contains('LateInitializationError')
-          || e.toString().contains('Exception')
-
-      ) {
-        print("Playback error or video ended. Playing next...");
-        _playNext();
-      }
-        });
-
+        // We need to create a new controller for retry
+        await _controller!.dispose();
+        _controller = VideoPlayerController.network(url);
+        await _controller!.initialize();
+        await _controller!.play();
         return; // Exit on success
       } catch (e) {
         print("Retry ${i + 1} failed: $e");
@@ -1001,9 +854,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
     print("All retries failed for URL: $url");
   }
-
-
-
 
   bool isYoutubeUrl(String? url) {
     if (url == null || url.isEmpty) {
@@ -1057,16 +907,197 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   }
 
   bool isOnItemTapUsed = false;
+  bool _hasSeekedOntap = false;
+
+  // Future<void> _onItemTap(int index) async {
+  //   setState(() {
+  //     isOnItemTapUsed = true;
+  //     _hasSeekedOntap = false;
+  //   });
+  //   var selectedChannel = widget.channelList[index];
+  //   String updatedUrl = selectedChannel.url;
+
+  //   try {
+  //     if (widget.source == 'isLastPlayedVideos') {
+  //       // For last played videos, just use the URL from the channel list directly
+  //       updatedUrl = widget.channelList[index].url;
+
+  //       // Check if it's a YouTube URL
+  //       if (isYoutubeUrl(updatedUrl)) {
+  //         print("Processing YouTube URL from last played videos");
+  //         updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+  //       }
+  //     } else {
+  //       final int contentId = int.tryParse(selectedChannel.id) ?? 0;
+
+  //       String apiEndpoint = extractApiEndpoint(updatedUrl);
+  //       print("API Endpoint onitemtap: $updatedUrl");
+
+  //       // if (widget.source == 'isHomeCategory') {
+  //       //   final playLink = await fetchLiveFeaturedTVById(selecte
+
+  //       // Continuing from previous part
+  //       if (widget.source == 'isHomeCategory') {
+  //         final playLink = await fetchLiveFeaturedTVById(selectedChannel.id);
+  //         if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+  //           updatedUrl = playLink['url']!;
+  //         }
+  //       }
+
+  //       if (widget.isBannerSlider) {
+  //         final playLink =
+  //             await fetchLiveFeaturedTVById(selectedChannel.contentId);
+  //         if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+  //           updatedUrl = playLink['url']!;
+  //         }
+  //       }
+
+  //       if (selectedChannel.contentType == '1' ||
+  //           selectedChannel.contentType == 1 &&
+  //               widget.source == 'isSearchScreen') {
+  //         final playLink = await fetchMoviePlayLink(contentId);
+  //         print('hello isSearchScreen$playLink');
+  //         if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+  //           updatedUrl = playLink['url']!;
+  //         }
+  //       }
+
+  //       if (widget.isVOD ||
+  //           widget.source == 'isSearchScreenViaDetailsPageChannelList') {
+  //         print('hello isVOD');
+  //         if (selectedChannel.contentType == '1' ||
+  //             selectedChannel.contentType == 1) {
+  //           final playLink = await fetchMoviePlayLink(contentId);
+  //           print('hello isVOD$playLink');
+  //           if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+  //             updatedUrl = playLink['url']!;
+  //           }
+  //         }
+  //       }
+  //     }
+
+  //     GlobalVariables.unUpdatedUrl = updatedUrl;
+  //     GlobalVariables.position = _controller!.value.position;
+  //     GlobalVariables.duration = _controller!.value.duration;
+  //     GlobalVariables.banner = selectedChannel.banner ?? '';
+  //     GlobalVariables.name = selectedChannel.name ?? '';
+  //     GlobalVariables.slectedId = selectedChannel.id ?? '';
+
+  //     if (selectedChannel.streamType == 'YoutubeLive' ||
+  //         selectedChannel.contentType == '1' ||
+  //         selectedChannel.contentType == 1) {
+  //       setState(() {
+  //         GlobalVariables.liveStatus = false;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         GlobalVariables.liveStatus = true;
+  //       });
+  //     }
+
+  //     // Now process YouTube URL if needed
+  //     if (isYoutubeUrl(updatedUrl)) {
+  //       print("Processing as YouTube content");
+  //       updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+  //       print("Socket service returned URL: $updatedUrl");
+  //     }
+
+  //     String apiEndpoint1 = extractApiEndpoint(updatedUrl);
+  //     print("API Endpoint onitemtap1: $apiEndpoint1");
+
+  //     // video_player doesn't need the caching parameters
+  //     GlobalVariables.UpdatedUrl = updatedUrl;
+
+  //     if (_controller != null && _controller!.value.isInitialized) {
+  //       // For video_player, we need to dispose and create a new controller
+  //       await _controller!.dispose();
+  //       _controller = VideoPlayerController.network(updatedUrl);
+
+  //       await _controller!.initialize();
+
+  //       await _controller!.play();
+
+  //       _controller!.addListener(() async {
+  //         if (_controller!.value.isInitialized &&
+  //             _controller!.value.duration > Duration.zero &&
+  //             !_isSeekingOntap &&
+  //             !_hasSeekedOntap &&
+  //             !selectedChannel.liveStatus &&
+  //             widget.source == 'isLastPlayedVideos') {
+  //           if (selectedChannel.position > Duration.zero &&
+  //               selectedChannel.position > _controller!.value.position &&
+  //               _controller!.value.position > Duration.zero) {
+  //             if (selectedChannel.position <= _controller!.value.position) {
+  //               print("Video already at the desired position, skipping seek.");
+  //               _isSeekingOntap = true;
+  //               _hasSeekedOntap = true;
+  //               return;
+  //             }
+
+  //             print("🔹 Channel liveStatus: ${selectedChannel.liveStatus}");
+  //             await _seekToPositionOntap(selectedChannel.position);
+  //             _isSeekingOntap = true;
+  //             _hasSeekedOntap = true;
+  //           }
+  //         }
+  //         _isSeekingOntap = false;
+  //         if (_controller!.value.position <= Duration.zero) {
+  //           _loadingVisible = true;
+  //         } else if (_controller!.value.position > Duration.zero) {
+  //           _loadingVisible = false;
+  //         }
+
+  //         // Auto-play next for VOD content
+  //         if (widget.isVOD &&
+  //             (_controller!.value.position > Duration.zero) &&
+  //             (_controller!.value.duration > Duration.zero) &&
+  //             (_controller!.value.duration - _controller!.value.position <=
+  //                 Duration(seconds: 5))) {
+  //           print("Video is about to end. Playing next...");
+  //           _playNext();
+  //         }
+  //       });
+
+  //       setState(() {
+  //         _focusedIndex = index;
+  //       });
+  //     } else {
+  //       throw Exception("Video Controller is not initialized");
+  //     }
+
+  //     setState(() {
+  //       _focusedIndex = index;
+  //       _currentModifiedUrl = updatedUrl;
+  //     });
+
+  //     _scrollToFocusedItem();
+  //     _resetHideControlsTimer();
+  //   } catch (e) {
+  //     print("Error switching channel: $e");
+  //   } finally {
+  //     setState(() {
+  //       // Loading handling done through controller listener
+  //     });
+  //   }
+  // }
+
+  // Update your _onItemTap method to handle potential null values:
+
   Future<void> _onItemTap(int index) async {
+    if (index < 0 || index >= widget.channelList.length) {
+      print("⚠️ अमान्य इंडेक्स: $index");
+      return;
+    }
+
     setState(() {
       isOnItemTapUsed = true;
+      _hasSeekedOntap = false;
+      _isVideoInitialized = false; // रिसेट करें ताकि लोडिंग इंडिकेटर दिखे
+      _loadingVisible = true; // लोडिंग इंडिकेटर को सक्रिय करें
     });
-    var selectedChannel = widget.channelList[index];
-    String updatedUrl = selectedChannel.url;
 
-    // setState(() {
-    //   _loadingVisible = true;
-    // });
+    var selectedChannel = widget.channelList[index];
+    String updatedUrl = selectedChannel.url ?? '';
 
     try {
       if (widget.source == 'isLastPlayedVideos') {
@@ -1084,6 +1115,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         String apiEndpoint = extractApiEndpoint(updatedUrl);
         print("API Endpoint onitemtap: $updatedUrl");
 
+        // if (widget.source == 'isHomeCategory') {
+        //   final playLink = await fetchLiveFeaturedTVById(selecte
+
+        // Continuing from previous part
         if (widget.source == 'isHomeCategory') {
           final playLink = await fetchLiveFeaturedTVById(selectedChannel.id);
           if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
@@ -1123,17 +1158,18 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         }
       }
 
+      // GlobalVariables अपडेट करें
       GlobalVariables.unUpdatedUrl = updatedUrl;
-      GlobalVariables.position = _controller!.value.position;
-      GlobalVariables.duration = _controller!.value.duration;
+      GlobalVariables.position = _controller?.value.position ?? Duration.zero;
+      GlobalVariables.duration = _controller?.value.duration ?? Duration.zero;
       GlobalVariables.banner = selectedChannel.banner ?? '';
       GlobalVariables.name = selectedChannel.name ?? '';
+      GlobalVariables.slectedId = selectedChannel.id ?? '';
 
-      if (
-          // selectedChannel.streamType == 'YoutubeLive' ||
-          // selectedChannel.type == "YoutubeLive" ||
+      // Live स्टेटस अपडेट करें
+      if (selectedChannel.streamType == 'YoutubeLive' ||
           selectedChannel.contentType == '1' ||
-              selectedChannel.contentType == 1) {
+          selectedChannel.contentType == 1) {
         setState(() {
           GlobalVariables.liveStatus = false;
         });
@@ -1143,114 +1179,226 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         });
       }
 
-      // Now process YouTube URL if needed
+      // YouTube URL प्रोसेसिंग
       if (isYoutubeUrl(updatedUrl)) {
-        print("Processing as YouTube content");
-        updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
-        print("Socket service returned URL: $updatedUrl");
+        print("YouTube कंटेंट के रूप में प्रोसेस हो रहा है");
+        try {
+          updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
+        } catch (e) {
+          print("YouTube URL प्रोसेसिंग में त्रुटि: $e");
+        }
       }
 
-      String apiEndpoint1 = extractApiEndpoint(updatedUrl);
-      print("API Endpoint onitemtap1: $apiEndpoint1");
+      GlobalVariables.UpdatedUrl = updatedUrl;
 
-      String _currentModifiedUrl =
-          '${updatedUrl}?network-caching=5000&live-caching=500&rtsp-tcp';
+      // पुराने कंट्रोलर को सही से डिस्पोज़ करें
+      if (_controller != null) {
+        try {
+          await _controller!.pause();
+          await _controller!.dispose();
+          _controller = null;
+        } catch (e) {
+          print("पुराने कंट्रोलर को डिस्पोज़ करते समय त्रुटि: $e");
+          _controller = null;
+        }
+      }
 
-      if (_controller != null && _controller!.value.isInitialized) {
-        _controller!.initialize();
+      // बेहतर एरर हैंडलिंग के साथ नया कंट्रोलर बनाएं
+      bool videoInitialized = false;
+      int retryCount = 0;
+      const maxRetries = 2;
 
-        await _retryPlayback(_currentModifiedUrl, 5);
+      while (!videoInitialized && retryCount < maxRetries) {
+        try {
+          _controller = VideoPlayerController.network(
+            updatedUrl,
+            videoPlayerOptions: VideoPlayerOptions(
+              mixWithOthers: false,
+            ),
+            httpHeaders: {
+              'Range': 'bytes=0-8000000',
+              'Connection': 'keep-alive',
+            },
+          );
 
-        _controller!.addListener(() async {
-          if (
-              // _controller!.value.isInitialized &&
-              // _controller!.value.duration > Duration.zero &&
-              !_isSeeking && widget.source == 'isLastPlayedVideos') {
-            if (selectedChannel.position > Duration.zero &&
-                selectedChannel.position > _controller!.value.position &&
-                _controller!.value.position > Duration.zero) {
-              if (selectedChannel.position <= _controller!.value.position) {
-                print("Video already at the desired position, skipping seek.");
-                return;
-              }
-              await _seekToPosition(selectedChannel.position);
-              _isSeeking = true;
+          // वीडियो इनिशियलाइज़ करने का टाइमआउट सेट करें
+          await _controller!.initialize().timeout(Duration(seconds: 10),
+              onTimeout: () {
+            throw TimeoutException(
+                "वीडियो इनिशियलाइज़ करने में बहुत समय लग रहा है");
+          });
+
+          // वीडियो आकार की जांच करें
+          if (_controller!.value.size.width <= 0 ||
+              _controller!.value.size.height <= 0) {
+            throw Exception("वीडियो का साइज़ अमान्य है");
+          }
+
+          // वीडियो प्ले करें
+          await _controller!.play();
+
+          // सेट करें कि वीडियो सफलतापूर्वक इनिशियलाइज़ हो गया है
+          videoInitialized = true;
+
+          // वीडियो लिसनर सेटअप करें
+          _setupVideoPlayerListeners();
+
+          setState(() {
+            _isVideoInitialized = true;
+            _loadingVisible = false;
+            _focusedIndex = index;
+            _currentModifiedUrl = updatedUrl;
+          });
+
+          print("✅ वीडियो सफलतापूर्वक इनिशियलाइज़ हुआ: $updatedUrl");
+          break;
+        } catch (e) {
+          retryCount++;
+          print(
+              "❌ वीडियो इनिशियलाइज़ करने में त्रुटि (प्रयास $retryCount/$maxRetries): $e");
+
+          if (_controller != null) {
+            await _controller!.dispose();
+            _controller = null;
+          }
+
+          if (retryCount >= maxRetries) {
+            print("⚠️ अधिकतम प्रयास किए गए, अगले वीडियो पर जा रहे हैं");
+
+            // नेक्स्ट वीडियो पर जाएं
+            if (index < widget.channelList.length - 1) {
+              Future.delayed(Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _onItemTap(index + 1);
+                }
+              });
+              return;
+            } else {
+              // अगर यह आखिरी वीडियो है तो यूजर को बताएं
+              // if (mounted) {
+              //   ScaffoldMessenger.of(context).showSnackBar(
+              //     SnackBar(
+              //       content: Text("वीडियो चलाने में समस्या आई। बाद में पुनः प्रयास करें।"),
+              //       backgroundColor: Colors.red,
+              //       duration: Duration(seconds: 3),
+              //     ),
+              //   );
+              // }
+              return;
             }
           }
-          _isSeeking = false;
-          if (_controller!.value.position <= Duration.zero) {
-            _loadingVisible = true;
-          } else if (_controller!.value.position > Duration.zero) {
-            _loadingVisible = false;
-          }
-          if (widget.isVOD &&
-                  (_controller!.value.position >
-                      Duration.zero) && // Position is greater than zero
-                  (_controller!.value.duration >
-                      Duration.zero) && // Duration is greater than zero
-                  (_controller!.value.duration - _controller!.value.position <=
-                      Duration(seconds: 5)) // 5 seconds or less remaining
-              ) {
-            print("Video is about to end. Playing next...");
-            _playNext(); // Automatically play next video
-          }
-        });
 
-        setState(() {
-          _focusedIndex = index;
-        });
-      } else {
-        throw Exception("VLC Controller is not initialized");
+          // रीट्राई से पहले थोड़ा इंतज़ार करें
+          await Future.delayed(Duration(milliseconds: 1000));
+        }
       }
 
-      setState(() {
-        _focusedIndex = index;
-        _currentModifiedUrl = _currentModifiedUrl;
-      });
-
+      // UI अपडेट करें
       _scrollToFocusedItem();
       _resetHideControlsTimer();
-      // Add listener for VLC state changes
-      // _controller!.addListener(() {
-      //   final currentState = _controller!.value.playingState;
-
-      //   if (currentState == PlayingState.playing ) {
-      //     // Update visibility state
-      //     setState(() {
-
-      //     });
-      //   }
-      // });
     } catch (e) {
-      print("Error switching channel: $e");
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text("Failed to switch channel: ${e.toString()}")),
-      // );
-    } finally {
-      setState(() {
-        // _loadingVisible = false;
-        // Timer(Duration(seconds: widget.isVOD ? 15 : 5), () {
-        //   setState(() {
-        //     _loadingVisible = false;
-        //   });
-        // });
-      });
+      print("चैनल स्विच करने में त्रुटि: $e");
+      if (mounted) {
+        setState(() {
+          _loadingVisible = false;
+        });
+      }
+
+      // अगले वीडियो पर जाने की कोशिश करें
+      if (index < widget.channelList.length - 1) {
+        Future.delayed(Duration(milliseconds: 500), () {
+          if (mounted) {
+            _onItemTap(index + 1);
+          }
+        });
+      }
     }
   }
 
-  Future<String> _fetchUpdatedUrl(String originalUrl) async {
-    for (int i = 0; i < _maxRetries; i++) {
-      try {
-        final updatedUrl = await SocketService().getUpdatedUrl(originalUrl);
-        print("Updated URL on retry $i: $updatedUrl");
-        return updatedUrl;
-      } catch (e) {
-        print("Retry ${i + 1} failed: $e");
-        if (i == _maxRetries - 1) rethrow; // Rethrow on final failure
-        await Future.delayed(Duration(seconds: _retryDelay));
+// वीडियो प्लेयर लिसनर सेटअप के लिए एक अलग मेथड बनाएं
+  void _setupVideoPlayerListeners() {
+    if (_controller == null) return;
+
+    _controller!.addListener(() {
+      if (!mounted) return;
+
+      // एरर हैंडलिंग
+      if (_controller!.value.hasError) {
+        print(
+            "⚠️ वीडियो प्लेयर त्रुटि: ${_controller!.value.errorDescription}");
+        // अगला वीडियो प्ले करें
+        _playNext();
+        return;
       }
+
+      // बफरिंग स्टेटस अपडेट करें
+      if (mounted) {
+        setState(() {
+          _isBuffering = _controller!.value.isBuffering;
+
+          // अगर वीडियो प्ले हो रहा है और पोजिशन > 0 है, तो लोडिंग इंडिकेटर बंद करें
+          if (_controller!.value.position > Duration.zero &&
+              _controller!.value.isPlaying) {
+            _loadingVisible = false;
+          }
+
+          // प्रोग्रेस वैल्यू अपडेट करें
+          if (_controller!.value.duration.inMilliseconds > 0) {
+            _progress = _controller!.value.position.inMilliseconds /
+                _controller!.value.duration.inMilliseconds;
+          }
+        });
+      }
+
+      // आपका मौजूदा लिसनर लॉजिक यहां...
+
+      // VOD कंटेंट के लिए ऑटो-प्ले नेक्स्ट
+      if (widget.isVOD &&
+          (_controller!.value.position > Duration.zero) &&
+          (_controller!.value.duration > Duration.zero) &&
+          (_controller!.value.duration - _controller!.value.position <=
+              Duration(seconds: 5))) {
+        print("वीडियो खत्म होने वाला है। अगला प्ले कर रहे हैं...");
+        _playNext();
+      }
+    });
+  }
+
+// Also update your _playNext method to be more robust:
+
+  void _playNext() {
+    if (widget.channelList.isEmpty) {
+      print("⚠️ Channel list is empty, cannot play next");
+      return;
     }
-    return ''; // Return empty string if all retries fail
+
+    if (_focusedIndex < widget.channelList.length - 1) {
+      try {
+        print("🔁 Playing next video at index: ${_focusedIndex + 1}");
+        _onItemTap(_focusedIndex + 1);
+
+        Future.delayed(Duration(milliseconds: 50), () {
+          if (mounted) {
+            FocusScope.of(context).requestFocus(nextButtonFocusNode);
+          }
+        });
+      } catch (e) {
+        print("❌ Error in _playNext: $e");
+        // If there's an error with this video too, try to move to the next one
+        if (_focusedIndex + 2 < widget.channelList.length) {
+          print("🔄 Attempting to skip to next+1 video");
+          Future.delayed(Duration(milliseconds: 500), () {
+            if (mounted) {
+              _onItemTap(_focusedIndex + 1);
+            }
+          });
+        }
+      }
+    } else {
+      print("⚠️ Already at the last video in the playlist");
+      // Optional: loop back to the first video
+      // _onItemTap(0);
+    }
   }
 
   Future<void> _initializeVolume() async {
@@ -1319,14 +1467,14 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _playNext() {
-    if (_focusedIndex < widget.channelList.length - 1) {
-      _onItemTap(_focusedIndex + 1);
-      Future.delayed(Duration(milliseconds: 50), () {
-        FocusScope.of(context).requestFocus(nextButtonFocusNode);
-      });
-    }
-  }
+  // void _playNext() {
+  //   if (_focusedIndex < widget.channelList.length - 1) {
+  //     _onItemTap(_focusedIndex + 1);
+  //     Future.delayed(Duration(milliseconds: 50), () {
+  //       FocusScope.of(context).requestFocus(nextButtonFocusNode);
+  //     });
+  //   }
+  // }
 
   void _playPrevious() {
     if (_focusedIndex > 0) {
@@ -1352,22 +1500,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _resetHideControlsTimer();
   }
 
-  // void _scrollToFocusedItem() {
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     if (_scrollController.hasClients) {
-  //       double offset = (_focusedIndex * 95.0).clamp(
-  //         0.0,
-  //         _scrollController.position.maxScrollExtent,
-  //       );
-  //       _scrollController.animateTo(
-  //         offset,
-  //         duration: Duration(milliseconds: 300),
-  //         curve: Curves.easeInOut,
-  //       );
-  //     }
-  //   });
-  // }
-
   void _resetHideControlsTimer() {
     // Set initial focus and scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1385,17 +1517,6 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _startHideControlsTimer();
   }
 
-  void _playChannelAtIndex(int index) {
-    _controller!.pause();
-    setState(() {
-      _controller = VlcPlayerController.network(widget.channelList[index].url)
-        ..initialize().then((_) {
-          setState(() {});
-          _controller!.play();
-        });
-    });
-  }
-
   void _startHideControlsTimer() {
     _hideControlsTimer = Timer(Duration(seconds: 10), () {
       setState(() {
@@ -1404,142 +1525,80 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Future<void> _saveLastPlayedVideo(
-  //   String unUpdatedUrl,
-  //   Duration position,
-  //   Duration duration,
-  //   String bannerImageUrl,
-  //   String name,
-  //   bool liveStatus,
-  // ) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     List<String> lastPlayedVideos =
-  //         prefs.getStringList('last_played_videos') ?? [];
+  Future<void> _saveLastPlayedVideo(
+    String unUpdatedUrl,
+    Duration position,
+    Duration duration,
+    String bannerImageUrl,
+    String name,
+    bool liveStatus,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> lastPlayedVideos =
+          prefs.getStringList('last_played_videos') ?? [];
 
-  //     if (duration <= Duration(seconds: 5) &&
-  //         position <= Duration(seconds: 5)) {
-  //       print("Invalid duration or position. Skipping save.");
-  //       return;
-  //     }
+      // 🔹 Debugging: Print existing list before modification
+      print("Existing lastPlayedVideos: $lastPlayedVideos");
 
-  //     // Channel se videoName aur videoId fetch karna
-  //     String videoName = '';
-  //     String videoId = widget.videoId?.toString() ?? '';
-
-  //     if (widget.channelList.isNotEmpty) {
-  //       int index = widget.channelList.indexWhere((channel) =>
-  //           channel.url == unUpdatedUrl ||
-  //           channel.id == widget.videoId.toString());
-  //       if (index != -1) {
-  //         // videoName = widget.channelList[index].name ?? '';
-  //         videoId = widget.channelList[index].id ?? '';
-  //       }
-  //     }
-
-  //     // Video entry format
-  //     String newVideoEntry =
-  //         "$unUpdatedUrl|${position.inMilliseconds}|${duration.inMilliseconds}|$liveStatus|$bannerImageUrl|$videoId|$name";
-
-  //     print(
-  //         "Saving video with position: ${position.inMilliseconds} ms and duration: ${duration.inMilliseconds} ms");
-
-  //     // Remove duplicate entries
-  //     lastPlayedVideos.removeWhere((entry) {
-  //       List<String> parts = entry.split('|');
-  //       return parts[0] == unUpdatedUrl || parts[4] == videoId;
-  //     });
-
-  //     // Add naya video entry
-  //     lastPlayedVideos.insert(0, newVideoEntry);
-
-  //     // List ko limit karna
-  //     if (lastPlayedVideos.length > 25) {
-  //       lastPlayedVideos = lastPlayedVideos.sublist(0, 25);
-  //     }
-
-  //     // SharedPreferences mein save karna
-  //     await prefs.setStringList('last_played_videos', lastPlayedVideos);
-  //     await prefs.setInt('last_video_duration', duration.inMilliseconds);
-  //     await prefs.setInt('last_video_position', position.inMilliseconds);
-
-  //     print("Savedvideo entrysuccessfully: $newVideoEntry");
-  //     print("Savedvideo entrysuccessfully: $lastPlayedVideos");
-  //   } catch (e) {
-  //     print("Error saving last played video: $e");
-  //   }
-  // }
-
-
-Future<void> _saveLastPlayedVideo(
-  String unUpdatedUrl,
-  Duration position,
-  Duration duration,
-  String bannerImageUrl,
-  String name,
-  bool liveStatus,
-) async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> lastPlayedVideos = prefs.getStringList('last_played_videos') ?? [];
-
-    // 🔹 Debugging: Print existing list before modification
-    print("Existing lastPlayedVideos: $lastPlayedVideos");
-    
-    if (duration <= Duration(seconds: 5) && position <= Duration(seconds: 5)) {
-      print("Invalid duration or position. Skipping save.");
-      return;
-    }
-
-    // 🔹 Check if video ID is valid
-    String videoId = widget.videoId?.toString() ?? '';
-
-    if (widget.channelList.isNotEmpty) {
-      int index = widget.channelList.indexWhere((channel) =>
-          channel.url == unUpdatedUrl || channel.id == widget.videoId.toString());
-      if (index != -1) {
-        videoId = widget.channelList[index].id ?? '';
+      if (duration <= Duration(seconds: 5) &&
+          position <= Duration(seconds: 5)) {
+        print("Invalid duration or position. Skipping save.");
+        return;
       }
+
+      // 🔹 Check if video ID is valid
+      String videoId = widget.videoId?.toString() ?? '';
+
+      if (widget.channelList.isNotEmpty) {
+        int index = widget.channelList.indexWhere((channel) =>
+            channel.url == unUpdatedUrl ||
+            channel.id == widget.videoId.toString());
+        if (index != -1) {
+          videoId = widget.channelList[index].id ?? '';
+        }
+      }
+
+      // 🔹 Debugging: Check if video ID exists
+      print("Video ID for saving: $videoId");
+
+      // 🔹 Video entry format
+      String newVideoEntry =
+          "$unUpdatedUrl|${position.inMilliseconds}|${duration.inMilliseconds}|$liveStatus|$bannerImageUrl|$videoId|$name";
+
+      print("Saving video: $newVideoEntry");
+
+      // 🔹 Remove duplicate entries safely
+      lastPlayedVideos.removeWhere((entry) {
+        List<String> parts = entry.split('|');
+        return parts.isNotEmpty &&
+            (parts[0] == unUpdatedUrl ||
+                parts.length > 4 && parts[4] == videoId);
+      });
+
+      // 🔹 Ensure list has elements before accessing indices
+      if (lastPlayedVideos.isEmpty) {
+        print("List was empty, adding first video.");
+      }
+
+      lastPlayedVideos.insert(0, newVideoEntry);
+
+      // 🔹 Avoid RangeError by limiting size safely
+      if (lastPlayedVideos.length > 25) {
+        lastPlayedVideos =
+            lastPlayedVideos.sublist(0, lastPlayedVideos.length.clamp(0, 25));
+      }
+
+      // 🔹 Save to SharedPreferences
+      await prefs.setStringList('last_played_videos', lastPlayedVideos);
+      await prefs.setInt('last_video_duration', duration.inMilliseconds);
+      await prefs.setInt('last_video_position', position.inMilliseconds);
+
+      print("Saved successfully: $lastPlayedVideos");
+    } catch (e) {
+      print("Error saving last played video: $e");
     }
-
-    // 🔹 Debugging: Check if video ID exists
-    print("Video ID for saving: $videoId");
-
-    // 🔹 Video entry format
-    String newVideoEntry =
-        "$unUpdatedUrl|${position.inMilliseconds}|${duration.inMilliseconds}|$liveStatus|$bannerImageUrl|$videoId|$name";
-
-    print("Saving video: $newVideoEntry");
-
-    // 🔹 Remove duplicate entries safely
-    lastPlayedVideos.removeWhere((entry) {
-      List<String> parts = entry.split('|');
-      return parts.isNotEmpty && (parts[0] == unUpdatedUrl || parts.length > 4 && parts[4] == videoId);
-    });
-
-    // 🔹 Ensure list has elements before accessing indices
-    if (lastPlayedVideos.isEmpty) {
-      print("List was empty, adding first video.");
-    }
-
-    lastPlayedVideos.insert(0, newVideoEntry);
-
-    // 🔹 Avoid RangeError by limiting size safely
-    if (lastPlayedVideos.length > 25) {
-      lastPlayedVideos = lastPlayedVideos.sublist(0, lastPlayedVideos.length.clamp(0, 25));
-    }
-
-    // 🔹 Save to SharedPreferences
-    await prefs.setStringList('last_played_videos', lastPlayedVideos);
-    await prefs.setInt('last_video_duration', duration.inMilliseconds);
-    await prefs.setInt('last_video_position', position.inMilliseconds);
-
-    print("Saved successfully: $lastPlayedVideos");
-  } catch (e) {
-    print("Error saving last played video: $e");
   }
-}
-
 
   int _accumulatedSeekForward = 0;
   int _accumulatedSeekBackward = 0;
@@ -1548,149 +1607,68 @@ Future<void> _saveLastPlayedVideo(
   final _seekDuration = 10; // seconds
   final _seekDelay = 3000; // milliseconds
 
+  void _seekForward() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
 
-void _seekForward() {
-  if (_controller == null || !_controller!.value.isInitialized) return;
-
-  setState(() {
-    // Accumulate seek duration
-    _accumulatedSeekForward += _seekDuration;
-    // Update preview position instantly
-    _previewPosition = _controller!.value.position + Duration(seconds: _accumulatedSeekForward);
-    // Ensure preview position does not exceed video duration
-    if (_previewPosition > _controller!.value.duration) {
-      _previewPosition = _controller!.value.duration;
-    }
-  });
-
-  // Reset and start timer to execute seek after delay
-  _seekTimer?.cancel();
-  _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
-    if (_controller != null) {
-      _controller!.seekTo(_previewPosition);
-      setState(() {
-        _accumulatedSeekForward = 0; // Reset accumulator after seek
-      });
-    }
-
-    // Update focus to forward button
-    Future.delayed(Duration(milliseconds: 50), () {
-      FocusScope.of(context).requestFocus(forwardButtonFocusNode);
+    setState(() {
+      // Accumulate seek duration
+      _accumulatedSeekForward += _seekDuration;
+      // Update preview position instantly
+      _previewPosition = _controller!.value.position +
+          Duration(seconds: _accumulatedSeekForward);
+      // Ensure preview position does not exceed video duration
+      if (_previewPosition > _controller!.value.duration) {
+        _previewPosition = _controller!.value.duration;
+      }
     });
-  });
-}
 
+    // Reset and start timer to execute seek after delay
+    _seekTimer?.cancel();
+    _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
+      if (_controller != null) {
+        _controller!.seekTo(_previewPosition);
+        setState(() {
+          _accumulatedSeekForward = 0; // Reset accumulator after seek
+        });
+      }
 
-void _seekBackward() {
-  if (_controller == null || !_controller!.value.isInitialized) return;
-
-  setState(() {
-    // Accumulate seek duration
-    _accumulatedSeekBackward += _seekDuration;
-    // Update preview position instantly
-    final newPosition = _controller!.value.position - Duration(seconds: _accumulatedSeekBackward);
-    // Ensure preview position does not go below zero
-    _previewPosition = newPosition > Duration.zero ? newPosition : Duration.zero;
-  });
-
-  // Reset and start timer to execute seek after delay
-  _seekTimer?.cancel();
-  _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
-    if (_controller != null) {
-      _controller!.seekTo(_previewPosition);
-      setState(() {
-        _accumulatedSeekBackward = 0; // Reset accumulator after seek
+      // Update focus to forward button
+      Future.delayed(Duration(milliseconds: 50), () {
+        FocusScope.of(context).requestFocus(forwardButtonFocusNode);
       });
-    }
-
-    // Update focus to backward button
-    Future.delayed(Duration(milliseconds: 50), () {
-      FocusScope.of(context).requestFocus(backwardButtonFocusNode);
     });
-  });
-}
+  }
 
+  void _seekBackward() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
 
+    setState(() {
+      // Accumulate seek duration
+      _accumulatedSeekBackward += _seekDuration;
+      // Update preview position instantly
+      final newPosition = _controller!.value.position -
+          Duration(seconds: _accumulatedSeekBackward);
+      // Ensure preview position does not go below zero
+      _previewPosition =
+          newPosition > Duration.zero ? newPosition : Duration.zero;
+    });
 
-  // void _seekForward() {
-  //   if (_controller == null) return;
+    // Reset and start timer to execute seek after delay
+    _seekTimer?.cancel();
+    _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
+      if (_controller != null) {
+        _controller!.seekTo(_previewPosition);
+        setState(() {
+          _accumulatedSeekBackward = 0; // Reset accumulator after seek
+        });
+      }
 
-  //   setState(() {
-  //     _accumulatedSeekForward += _seekDuration;
-  //     // Instantly update preview to show total accumulated seek time
-  //     _previewPosition = _controller!.value.position + Duration(seconds: _accumulatedSeekForward);
-  //   });
-
-  //   _seekTimer?.cancel();
-  //   _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
-  //     if (_controller != null) {
-  //       _controller!.seekTo(_previewPosition);
-  //       setState(() {
-  //         _accumulatedSeekForward = 0;
-  //       });
-  //     }
-
-  //     Future.delayed(Duration(milliseconds: 50), () {
-  //       FocusScope.of(context).requestFocus(forwardButtonFocusNode);
-  //     });
-  //   });
-  // }
-
-  // void _seekBackward() {
-  //   if (_controller == null) return;
-
-  //   setState(() {
-  //     _accumulatedSeekBackward += _seekDuration;
-  //     // Instantly calculate new preview position based on total accumulated backward seek
-  //     final newPosition = _controller!.value.position - Duration(seconds: _accumulatedSeekBackward);
-  //     _previewPosition = newPosition > Duration.zero ? newPosition : Duration.zero;
-  //   });
-
-  //   _seekTimer?.cancel();
-  //   _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
-  //     if (_controller != null) {
-  //       _controller!.seekTo(_previewPosition);
-  //       setState(() {
-  //         _accumulatedSeekBackward = 0;
-  //       });
-  //     }
-
-  //     Future.delayed(Duration(milliseconds: 50), () {
-  //       FocusScope.of(context).requestFocus(backwardButtonFocusNode);
-  //     });
-  //   });
-  // }
-
-
-  
-
-
-
-  // void _seekForward() {
-  //   if (_controller != null) {
-  //     final newPosition = (_controller)!.value.position + Duration(seconds: 60);
-  //     (_controller)!.seekTo(newPosition);
-  //   }
-  //   Future.delayed(Duration(milliseconds: 50), () {
-  //     FocusScope.of(context).requestFocus(forwardButtonFocusNode);
-  //   });
-  // }
-
-  // void _seekBackward() {
-  //   if (_controller != null) {
-  //     final newPosition = (_controller)!.value.position - Duration(seconds: 60);
-  //     (_controller)!
-  //         .seekTo(newPosition > Duration.zero ? newPosition : Duration.zero);
-  //   }
-  //   Future.delayed(Duration(milliseconds: 50), () {
-  //     FocusScope.of(context).requestFocus(backwardButtonFocusNode);
-  //   });
-  // }
-
-// void _onItemTap(int index) {
-//   _focusedIndex = index;
-//   _playChannelAtIndex(index);
-// }
+      // Update focus to backward button
+      Future.delayed(Duration(milliseconds: 50), () {
+        FocusScope.of(context).requestFocus(backwardButtonFocusNode);
+      });
+    });
+  }
 
   void _handleKeyEvent(RawKeyEvent event) {
     if (event is RawKeyDownEvent) {
@@ -1716,7 +1694,6 @@ void _seekBackward() {
             Future.delayed(Duration(milliseconds: 50), () {
               if (!widget.isLive) {
                 FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-                // _scrollToFocusedItem();
                 _scrollListener();
               }
             });
@@ -1725,7 +1702,6 @@ void _seekBackward() {
             setState(() {
               _focusedIndex--;
               FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-              // _scrollToFocusedItem();
               _scrollListener();
             });
           }
@@ -1733,27 +1709,13 @@ void _seekBackward() {
 
         case LogicalKeyboardKey.arrowDown:
           _resetHideControlsTimer();
-          // if (
-          //   playPauseButtonFocusNode.hasFocus ||
-          //     backwardButtonFocusNode.hasFocus ||
-          //     forwardButtonFocusNode.hasFocus ||
-          //     prevButtonFocusNode.hasFocus ||
-          //     nextButtonFocusNode.hasFocus) {
-          //   Future.delayed(Duration(milliseconds: 50), () {
-          //     if (!widget.isLive) {
-          //       FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
-          //     }
-          //   });
-          // } else
           if (progressIndicatorFocusNode.hasFocus) {
             FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-            // _scrollToFocusedItem();
             _scrollListener();
           } else if (_focusedIndex < widget.channelList.length - 1) {
             setState(() {
               _focusedIndex++;
               FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-              // _scrollToFocusedItem();
               _scrollListener();
             });
           } else if (_focusedIndex < widget.channelList.length) {
@@ -1869,11 +1831,7 @@ void _seekBackward() {
             _togglePlayPause();
             FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
           } else {
-            // if (widget.isLive) {
             _onItemTap(_focusedIndex);
-            // } else {
-            // FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
-            // }
           }
           break;
       }
@@ -1903,51 +1861,25 @@ void _seekBackward() {
       return Center(child: CircularProgressIndicator());
     }
 
+    // video_player needs a different approach to aspect ratio handling
     return LayoutBuilder(
       builder: (context, constraints) {
         // Get screen dimensions
         final screenWidth = constraints.maxWidth;
         final screenHeight = constraints.maxHeight;
 
-        // Get video dimensions
-        final videoWidth = _controller!.value.size?.width ?? screenWidth;
-        final videoHeight = _controller!.value.size?.height ?? screenHeight;
+        // Calculate aspect ratio from the controller
+        // final videoAspectRatio = _controller!.value.aspectRatio;
 
-        // Calculate aspect ratios
-        final videoRatio = videoWidth / videoHeight;
-        final screenRatio = screenWidth / screenHeight;
-
-        // Default scale factors
-        double scaleX = 1.0;
-        double scaleY = 1.0;
-
-        // Calculate optimal scaling
-        if (videoRatio < screenRatio) {
-          // Video is too narrow, scale width while maintaining aspect ratio
-          scaleX = (screenRatio / videoRatio).clamp(1.0, 1.35);
-          // Adjust height if width scaling is too aggressive
-          if (scaleX > 1.2) {
-            scaleY = (1.0 / (scaleX - 1.0)).clamp(0.85, 1.0);
-          }
-        } else {
-          // Video is too wide, scale height while maintaining aspect ratio
-          scaleY = (videoRatio / screenRatio).clamp(0.85, 1.0);
-          scaleX = scaleX.clamp(1.0, 1.35); // Limit horizontal scaling
-        }
-
+        // Use AspectRatio widget to maintain correct proportions
         return Container(
           width: screenWidth,
           height: screenHeight,
           color: Colors.black,
           child: Center(
-            child: Transform(
-              transform: Matrix4.identity()..scale(scaleX, scaleY, 1.0),
-              alignment: Alignment.center,
-              child: VlcPlayer(
-                controller: _controller!,
-                placeholder: Center(child: CircularProgressIndicator()),
-                aspectRatio: 16 / 9,
-              ),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: VideoPlayer(_controller!),
             ),
           ),
         );
@@ -1960,10 +1892,6 @@ void _seekBackward() {
     return WillPopScope(
       onWillPop: () async {
         _controller!.pause();
-        // await _saveLastPlayedVideo(
-        //     widget.unUpdatedUrl,
-        //     _controller?.value.position ?? Duration.zero,
-        //     widget.bannerImageUrl);
         await Future.delayed(Duration(milliseconds: 500));
         GlobalEventBus.eventBus.fire(RefreshPageEvent('uniquePageId'));
         Navigator.of(context).pop(true);
@@ -1987,20 +1915,32 @@ void _seekBackward() {
               onTap: _resetHideControlsTimer,
               child: Stack(
                 children: [
-                  // Video Player - यहाँ नया implementation जोड़ा गया है
+                  // Video Player - using the new implementation for video_player
                   if (_isVideoInitialized && _controller != null)
-                    _buildVideoPlayer(), // नया _buildVideoPlayer method का उपयोग
+                    _buildVideoPlayer(),
 
-                  // Loading Indicator
-                  if (_loadingVisible || !_isVideoInitialized || _isBuffering)
+                  // // Loading Indicator
+                  // if (_loadingVisible || !_isVideoInitialized)
+                  //   Container(
+                  //     color: Colors.black54,
+                  //     child: Center(
+                  //         child: RainbowPage(
+                  //       backgroundColor: Colors.black,
+                  //     )),
+                  //   ),
+                  // if (_isBuffering) LoadingIndicator(),
+                  // Replace the existing loading indicator section
+// Loading Indicator
+                  if (!_isVideoInitialized) // Only show rainbow on initial load
                     Container(
                       color: Colors.black54,
                       child: Center(
                           child: RainbowPage(
-                        backgroundColor: Colors.black, // हल्का नीला बैकग्राउंड
+                        backgroundColor: Colors.black,
                       )),
                     ),
-
+                  if (_isBuffering && _loadingVisible)
+                    LoadingIndicator(), // Only show if both conditions are true
                   // Channel List
                   if (_controlsVisible && !widget.channelList.isEmpty)
                     _buildChannelList(),
@@ -2017,13 +1957,10 @@ void _seekBackward() {
   }
 
   Widget _buildVolumeIndicator() {
-    // if (!_isVolumeIndicatorVisible) return SizedBox.shrink();
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Icon(Icons.volume_up, color: Colors.white, size: 24),
           Image.asset('assets/volume.png', width: 24, height: 24),
           Expanded(
             child: LinearProgressIndicator(
@@ -2049,24 +1986,17 @@ void _seekBackward() {
       left: MediaQuery.of(context).size.width * 0.0,
       right: MediaQuery.of(context).size.width * 0.78,
       child: Container(
-        // height: MediaQuery.of(context).size.height * 0.75,
-        // color: Colors.black.withOpacity(0.3),
         child: ListView.builder(
           controller: _scrollController,
           itemCount: widget.channelList.length,
           itemBuilder: (context, index) {
             final channel = widget.channelList[index];
-            // Handle different channel ID formats
-            // final String channelId = widget.isBannerSlider
-            //     ? (channel['contentId']?.toString() ?? channel.contentId?.toString() ?? '')
-            //     : (channel['id']?.toString() ?? channel.id?.toString() ?? '');
-
             final String channelId = widget.isBannerSlider
                 ? (channel.contentId?.toString() ??
                     channel.contentId?.toString() ??
                     '')
                 : (channel.id?.toString() ?? channel.id?.toString() ?? '');
-            // Handle banner for both map and object access
+
             final String? banner = channel is Map
                 ? channel['banner']?.toString()
                 : channel.banner?.toString();
@@ -2113,25 +2043,7 @@ void _seekBackward() {
                             child: Opacity(
                               opacity: 0.6,
                               child: isBase64
-                                  ?
-                                  // Image.memory(
-                                  //     _getImageFromBase64String(
-                                  //         channel.banner ?? ''),
-                                  //     fit: BoxFit.cover,
-                                  //     errorBuilder:
-                                  //         (context, error, stackTrace) =>
-                                  //             Container(color: Colors.grey[800]),
-                                  //   )
-                                  // Image.memory(
-                                  //     _getCachedImage(
-                                  //         channel.banner ?? localImage),
-                                  //     fit: BoxFit.cover,
-                                  //     errorBuilder:
-                                  //         (context, error, stackTrace) =>
-                                  //             localImage,
-                                  //   )
-                                  // :
-                                  Image.memory(
+                                  ? Image.memory(
                                       _bannerCache[channelId] ??
                                           _getCachedImage(
                                               channel.banner ?? localImage),
@@ -2190,11 +2102,16 @@ void _seekBackward() {
   }
 
   Widget _buildCustomProgressIndicator() {
+    // Calculate played progress from the controller
     double playedProgress =
         (_controller?.value.position.inMilliseconds.toDouble() ?? 0.0) /
             (_controller?.value.duration.inMilliseconds.toDouble() ?? 1.0);
 
-    double bufferedProgress = (playedProgress + 0.02).clamp(0.0, 1.0);
+    // For video_player, buffered progress is available from the controller
+    double bufferedProgress = _controller?.value.buffered.isNotEmpty ?? false
+        ? _controller!.value.buffered.last.end.inMilliseconds.toDouble() /
+            _controller!.value.duration.inMilliseconds.toDouble()
+        : (playedProgress + 0.02).clamp(0.0, 1.0); // Fallback
 
     return Container(
         // Add padding to make the indicator more visible when focused
@@ -2224,10 +2141,10 @@ void _seekBackward() {
               minHeight: 6,
               value: playedProgress.isNaN ? 0.0 : playedProgress,
               valueColor: AlwaysStoppedAnimation<Color>(
-            _previewPosition != _controller!.value.position
-                ? Colors.red.withOpacity(0.5)  // Preview seeking
-                : Colors.red,                  // Normal playback
-          ),
+                _previewPosition != _controller!.value.position
+                    ? Colors.red.withOpacity(0.5) // Preview seeking
+                    : Colors.red, // Normal playback
+              ),
               color: const Color.fromARGB(211, 155, 40, 248), // Played color
               backgroundColor: Colors.transparent, // Transparent to overlay
             ),
@@ -2249,7 +2166,6 @@ void _seekBackward() {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Expanded(flex: 1, child: Container()),
-
                 Expanded(
                   flex: 2,
                   child: Container(
@@ -2260,34 +2176,20 @@ void _seekBackward() {
                       child: Focus(
                         focusNode: playPauseButtonFocusNode,
                         onFocusChange: (hasFocus) {
-                          setState(() {
-                            // Change color based on focus state
-                          });
+                          if (mounted) {
+                            setState(() {
+                              // Change color based on focus state
+                            });
+                          }
                         },
                         child: IconButton(
-                          // icon: Icon(
-                          //   (_controller is VlcPlayerController &&
-                          //           (_controller as VlcPlayerController)
-                          //               .value
-                          //               .isPlaying)
-                          //       ? Icons.pause
-                          //       : Icons.play_arrow,
-                          //   color: playPauseButtonFocusNode.hasFocus
-                          //       ? Colors.blue
-                          //       : Colors.white,
-                          // ),
                           icon: Image.asset(
-                            (_controller is VlcPlayerController &&
-                                    (_controller as VlcPlayerController)
-                                        .value
-                                        .isPlaying)
+                            (_controller != null &&
+                                    _controller!.value.isPlaying)
                                 ? 'assets/pause.png' // Add your pause image path here
                                 : 'assets/play.png', // Add your play image path here
                             width: 35, // Adjust size as needed
                             height: 35,
-                            // color: playPauseButtonFocusNode.hasFocus
-                            //     ? Colors.blue
-                            //     : Colors.white,
                           ),
                           onPressed: _togglePlayPause,
                         ),
@@ -2295,7 +2197,6 @@ void _seekBackward() {
                     ),
                   ),
                 ),
-
                 if (!widget.isLive)
                   Expanded(
                     flex: 2,
@@ -2307,17 +2208,13 @@ void _seekBackward() {
                         child: Focus(
                           focusNode: backwardButtonFocusNode,
                           onFocusChange: (hasFocus) {
-                            setState(() {
-                              // Change color based on focus state
-                            });
+                            if (mounted) {
+                              setState(() {
+                                // Change color based on focus state
+                              });
+                            }
                           },
                           child: IconButton(
-                            // icon: Icon(
-                            //   Icons.replay_10,
-                            //   color: backwardButtonFocusNode.hasFocus
-                            //       ? Colors.blue
-                            //       : Colors.white,
-                            // ),
                             icon: Transform(
                               transform:
                                   Matrix4.rotationY(pi), // pi from dart:math
@@ -2342,17 +2239,13 @@ void _seekBackward() {
                         child: Focus(
                           focusNode: forwardButtonFocusNode,
                           onFocusChange: (hasFocus) {
-                            setState(() {
-                              // Change color based on focus state
-                            });
+                            if (mounted) {
+                              setState(() {
+                                // Change color based on focus state
+                              });
+                            }
                           },
                           child: IconButton(
-                            // icon: Icon(
-                            //   Icons.forward_10,
-                            //   color: forwardButtonFocusNode.hasFocus
-                            //       ? Colors.blue
-                            //       : Colors.white,
-                            // ),
                             icon: Image.asset('assets/seek.png',
                                 width: 24, height: 24),
                             onPressed: _seekForward,
@@ -2372,17 +2265,13 @@ void _seekBackward() {
                         child: Focus(
                           focusNode: prevButtonFocusNode,
                           onFocusChange: (hasFocus) {
-                            setState(() {
-                              // Change color based on focus state
-                            });
+                            if (mounted) {
+                              setState(() {
+                                // Change color based on focus state
+                              });
+                            }
                           },
                           child: IconButton(
-                            // icon: Icon(
-                            //   Icons.skip_previous,
-                            //   color: prevButtonFocusNode.hasFocus
-                            //       ? Colors.blue
-                            //       : Colors.white,
-                            // ),
                             icon: Transform(
                               transform:
                                   Matrix4.rotationY(pi), // pi from dart:math
@@ -2407,17 +2296,13 @@ void _seekBackward() {
                         child: Focus(
                           focusNode: nextButtonFocusNode,
                           onFocusChange: (hasFocus) {
-                            setState(() {
-                              // Change color based on focus state
-                            });
+                            if (mounted) {
+                              setState(() {
+                                // Change color based on focus state
+                              });
+                            }
                           },
                           child: IconButton(
-                            // icon: Icon(
-                            //   Icons.skip_next,
-                            //   color: nextButtonFocusNode.hasFocus
-                            //       ? Colors.blue
-                            //       : Colors.white,
-                            // ),
                             icon: Image.asset('assets/next.png',
                                 width: 35, height: 35),
                             onPressed: _playNext,
@@ -2426,9 +2311,7 @@ void _seekBackward() {
                       ),
                     ),
                   ),
-                // Expanded(flex: 1, child: Container()),
                 Expanded(flex: 8, child: _buildVolumeIndicator()),
-                // Expanded(flex: 1, child: Container()),
                 Expanded(
                   flex: 3,
                   child: Center(
@@ -2448,9 +2331,11 @@ void _seekBackward() {
                     child: Focus(
                       focusNode: progressIndicatorFocusNode,
                       onFocusChange: (hasFocus) {
-                        setState(() {
-                          // Handle focus changes if needed
-                        });
+                        if (mounted) {
+                          setState(() {
+                            // Handle focus changes if needed
+                          });
+                        }
                       },
                       child: Container(
                           color: progressIndicatorFocusNode.hasFocus
@@ -2461,19 +2346,20 @@ void _seekBackward() {
                     ),
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Center(
-                    child: Text(
-                      _formatDuration(
-                          _controller?.value.duration ?? Duration.zero),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                if (!widget.isLive)
+                  Expanded(
+                    flex: 3,
+                    child: Center(
+                      child: Text(
+                        _formatDuration(
+                            _controller?.value.duration ?? Duration.zero),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
                 Expanded(
                   flex: widget.isLive ? 3 : 1,
                   child: Center(
@@ -2500,17 +2386,6 @@ void _seekBackward() {
               ],
             ),
           ),
-          // Container(
-          //   padding: EdgeInsets.symmetric(vertical: 8.0),
-          //   color: progressIndicatorFocusNode.hasFocus
-          //       ? const Color.fromARGB(200, 16, 62, 99)
-          //       : Colors.black54,
-          //   child: Row(
-          //     children: [
-
-          //     ],
-          //   ),
-          // ),
         ],
       ),
     );
