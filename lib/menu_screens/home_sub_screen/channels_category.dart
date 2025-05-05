@@ -305,6 +305,8 @@ class _ChannelsCategoryState extends State<ChannelsCategory> {
               name: newsItem.name,
               description: newsItem.description,
               banner: newsItem.banner,
+              poster: newsItem.poster,
+              category: newsItem.category,
               url: updatedUrl,
               streamType: 'M3u8',
               type: 'M3u8',

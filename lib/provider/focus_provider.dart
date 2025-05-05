@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:mobi_tv_entertainment/main.dart';
 
 class FocusProvider extends ChangeNotifier {
   // ScrollController for managing scroll position
@@ -146,7 +147,7 @@ void scrollToElement(String identifier) {
     Scrollable.ensureVisible(
       context,
       alignment: 0.0, // Align the element at the top
-      duration: const Duration(milliseconds: 1000), // Animation duration
+      duration: const Duration(milliseconds: 400), // Animation duration
       curve: Curves.linear, // Smooth scrolling
     );
   } else {
@@ -568,6 +569,93 @@ void requestLiveScreenFocus() {
     _currentFocusColor = color;
     notifyListeners();
   }
+
+
+  // Other existing properties and methods...
+  
+  // ScrollController for the main screen
+  // final ScrollController scrollController = ScrollController();
+  
+  // Map to store element keys
+  // final Map<String, GlobalKey> _elementKeys = {};
+  
+  // Focus nodes
+  FocusNode? _watchNowFocusNode;
+  // FocusNode? _firstMusicItemFocusNode;
+  // FocusNode? _firstSubVodFocusNode;
+  FocusNode? _firstManageMoviesFocusNode;
+  
+  // Category count for ManageMovies
+  int _categoryCountMovies = 0;
+  
+  // Height calculation for ManageMovies
+  double _totalHeightMovies = 0.0;
+  
+  // Getters
+  int get categoryCount => _categoryCountMovies;
+  double get totalHeight => _totalHeightMovies;
+  
+  // Update category count from ManageMovies
+  void updateCategoryCountMovies(int count) {
+    _categoryCountMovies = count;
+    
+    // You might want to calculate total height here if needed
+    // _totalHeight = count * someHeightPerCategory;
+    
+    notifyListeners();
+  }
+
+  // Category count for ManageMovies
+  int _categoryCountWebseries = 0;
+  
+  // Height calculation for ManageMovies
+  double _totalHeightWebseries = 0.0;
+  
+  // Getters
+  int get categoryCountWebseries => _categoryCountWebseries;
+  double get totalHeightWebseries => _totalHeightWebseries;
+  
+  // Update category count from ManageMovies
+  void updateCategoryCountWebseries(int count) {
+    _categoryCountWebseries = count;
+    
+    // You might want to calculate total height here if needed
+    // _totalHeight = count * someHeightPerCategory;
+    
+    notifyListeners();
+  }
+  
+
+  
+
+
+
+
+  FocusNode? firstManageMoviesFocusNode;
+
+  void setFirstManageMoviesFocusNode(FocusNode node) {
+    firstManageMoviesFocusNode = node;
+    notifyListeners();
+  }
+
+  void requestManageMoviesFocus() {
+    firstManageMoviesFocusNode?.requestFocus();
+  }
+  FocusNode? firstManageWebseriesFocusNode;
+
+  void setFirstManageWebseriesFocusNode(FocusNode node) {
+    firstManageWebseriesFocusNode = node;
+    notifyListeners();
+  }
+
+  void requestManageWebseriesFocus() {
+    firstManageWebseriesFocusNode?.requestFocus();
+  }
+
+
+  
+  // Focus navigation methods and other functionality...
+
 
   @override
   void dispose() {

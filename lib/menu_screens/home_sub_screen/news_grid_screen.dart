@@ -57,7 +57,7 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor,
+      backgroundColor: Colors.transparent,
       body: _buildBody(),
     );
   }
@@ -149,6 +149,8 @@ class _NewsGridScreenState extends State<NewsGridScreen> {
               name: newsItem.name,
               description: newsItem.description,
               banner: newsItem.banner,
+              poster: newsItem.poster,
+              category: newsItem.category,
               url: updatedUrl,
               streamType: 'M3u8',
               type: 'M3u8',

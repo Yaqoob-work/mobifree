@@ -1545,6 +1545,8 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
           url: videoUrl,
           banner: video['bannerImageUrl'] ?? '',
           name: video['videoName'] ?? '',
+          poster: video['poster'] ?? '',
+          category: video['category'] ?? '',
           contentId: contentIdString,
           status: '1',
           streamType: streamType,

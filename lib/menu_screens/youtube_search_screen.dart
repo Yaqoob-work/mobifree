@@ -2124,187 +2124,187 @@
 
 
 
-import 'package:flutter/material.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter/services.dart';
+// import 'package:flutter/material.dart';
+// import 'package:flutter_vlc_player/flutter_vlc_player.dart';
+// import 'package:http/http.dart' as http;
+// import 'dart:convert';
+// import 'package:flutter/services.dart';
 
-class YoutubeSearchScreen extends StatefulWidget {
-  @override
-  _YoutubeSearchScreenState createState() => _YoutubeSearchScreenState();
-}
+// class YoutubeSearchScreen extends StatefulWidget {
+//   @override
+//   _YoutubeSearchScreenState createState() => _YoutubeSearchScreenState();
+// }
 
-class _YoutubeSearchScreenState extends State<YoutubeSearchScreen> {
-  List<dynamic> banners = [];
-  int focusedIndex = 0; // Track focused item
-  late VlcPlayerController _videoPlayerController;
-  bool isPlaying = false;
-  String? selectedVideoUrl;
-  ScrollController _scrollController = ScrollController();
-  List<FocusNode> focusNodes = [];
+// class _YoutubeSearchScreenState extends State<YoutubeSearchScreen> {
+//   List<dynamic> banners = [];
+//   int focusedIndex = 0; // Track focused item
+//   late VlcPlayerController _videoPlayerController;
+//   bool isPlaying = false;
+//   String? selectedVideoUrl;
+//   ScrollController _scrollController = ScrollController();
+//   List<FocusNode> focusNodes = [];
 
-  @override
-  void initState() {
-    super.initState();
-    fetchBanners();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     fetchBanners();
+//   }
 
-  Future<void> fetchBanners() async {
-    final response = await http.get(
-      Uri.parse('https://mobifreetv.com/android/manage_movies'),
-      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    );
+//   Future<void> fetchBanners() async {
+//     final response = await http.get(
+//       Uri.parse('https://mobifreetv.com/android/manage_movies'),
+//       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+//     );
 
-    if (response.statusCode == 200) {
-      setState(() {
-        banners = json.decode(response.body);
-        focusNodes = List.generate(
-            banners.length, (index) => FocusNode(debugLabel: 'Banner $index'));
-        if (focusNodes.isNotEmpty) {
-          FocusScope.of(context).requestFocus(focusNodes[0]);
-        }
-      });
-    } else {
-      print("Failed to load banners");
-    }
-  }
+//     if (response.statusCode == 200) {
+//       setState(() {
+//         banners = json.decode(response.body);
+//         focusNodes = List.generate(
+//             banners.length, (index) => FocusNode(debugLabel: 'Banner $index'));
+//         if (focusNodes.isNotEmpty) {
+//           FocusScope.of(context).requestFocus(focusNodes[0]);
+//         }
+//       });
+//     } else {
+//       print("Failed to load banners");
+//     }
+//   }
 
-  void playVideo(String? videoUrl) {
-    if (videoUrl == null || videoUrl.isEmpty) {
-      print("Invalid video URL");
-      return;
-    }
+//   void playVideo(String? videoUrl) {
+//     if (videoUrl == null || videoUrl.isEmpty) {
+//       print("Invalid video URL");
+//       return;
+//     }
 
-    setState(() {
-      selectedVideoUrl = videoUrl;
-      isPlaying = true;
-    });
+//     setState(() {
+//       selectedVideoUrl = videoUrl;
+//       isPlaying = true;
+//     });
 
-    _videoPlayerController = VlcPlayerController.network(
-      videoUrl,
-      autoPlay: true,
-      options: VlcPlayerOptions(),
-    );
-  }
+//     _videoPlayerController = VlcPlayerController.network(
+//       videoUrl,
+//       autoPlay: true,
+//       options: VlcPlayerOptions(),
+//     );
+//   }
 
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-        if (focusedIndex < banners.length - 1) {
-          setState(() {
-            focusedIndex++;
-          });
-          _scrollToFocusedItem();
-          FocusScope.of(context).requestFocus(focusNodes[focusedIndex]);
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-        if (focusedIndex > 0) {
-          setState(() {
-            focusedIndex--;
-          });
-          _scrollToFocusedItem();
-          FocusScope.of(context).requestFocus(focusNodes[focusedIndex]);
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-        String videoUrl = banners[focusedIndex]['runtime']?.toString() ?? '';
-        if (videoUrl.isNotEmpty) {
-          playVideo(videoUrl);
-        } else {
-          print("No valid runtime URL for this banner.");
-        }
-      }
-    }
-  }
+//   void _handleKeyEvent(RawKeyEvent event) {
+//     if (event is RawKeyDownEvent) {
+//       if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+//         if (focusedIndex < banners.length - 1) {
+//           setState(() {
+//             focusedIndex++;
+//           });
+//           _scrollToFocusedItem();
+//           FocusScope.of(context).requestFocus(focusNodes[focusedIndex]);
+//         }
+//       } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+//         if (focusedIndex > 0) {
+//           setState(() {
+//             focusedIndex--;
+//           });
+//           _scrollToFocusedItem();
+//           FocusScope.of(context).requestFocus(focusNodes[focusedIndex]);
+//         }
+//       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
+//         String videoUrl = banners[focusedIndex]['runtime']?.toString() ?? '';
+//         if (videoUrl.isNotEmpty) {
+//           playVideo(videoUrl);
+//         } else {
+//           print("No valid runtime URL for this banner.");
+//         }
+//       }
+//     }
+//   }
 
-  void _scrollToFocusedItem() {
-    _scrollController.animateTo(
-      focusedIndex * 220.0, // Approximate item width + margin
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
+//   void _scrollToFocusedItem() {
+//     _scrollController.animateTo(
+//       focusedIndex * 220.0, // Approximate item width + margin
+//       duration: Duration(milliseconds: 300),
+//       curve: Curves.easeInOut,
+//     );
+//   }
 
-  @override
-  void dispose() {
-    _videoPlayerController.dispose();
-    for (var node in focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
-  }
+//   @override
+//   void dispose() {
+//     _videoPlayerController.dispose();
+//     for (var node in focusNodes) {
+//       node.dispose();
+//     }
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: RawKeyboardListener(
-        focusNode: FocusNode(),
-        autofocus: true,
-        onKey: _handleKeyEvent,
-        child: Column(
-          children: [
-            // Video Player
-            if (isPlaying && selectedVideoUrl != null)
-              Container(
-                height: 250,
-                width: double.infinity,
-                child: VlcPlayer(
-                  controller: _videoPlayerController,
-                  aspectRatio: 16 / 9,
-                  placeholder: Center(child: CircularProgressIndicator()),
-                ),
-              ),
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       body: RawKeyboardListener(
+//         focusNode: FocusNode(),
+//         autofocus: true,
+//         onKey: _handleKeyEvent,
+//         child: Column(
+//           children: [
+//             // Video Player
+//             if (isPlaying && selectedVideoUrl != null)
+//               Container(
+//                 height: 250,
+//                 width: double.infinity,
+//                 child: VlcPlayer(
+//                   controller: _videoPlayerController,
+//                   aspectRatio: 16 / 9,
+//                   placeholder: Center(child: CircularProgressIndicator()),
+//                 ),
+//               ),
 
-            // Horizontal Banner List
-            Container(
-              height: 150,
-              child: ListView.builder(
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                itemCount: banners.length,
-                itemBuilder: (context, index) {
-                  bool isFocused = focusedIndex == index;
-                  return Focus(
-                    focusNode: focusNodes[index],
-                    child: GestureDetector(
-                      onTap: () {
-                        String videoUrl = banners[index]['runtime']?.toString() ?? '';
-                        if (videoUrl.isNotEmpty) {
-                          playVideo(videoUrl);
-                        }
-                      },
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 200),
-                        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        width: 200,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isFocused ? Colors.blueAccent : Colors.transparent,
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            if (isFocused)
-                              BoxShadow(
-                                color: Colors.blue.withOpacity(0.6),
-                                blurRadius: 10,
-                                spreadRadius: 5,
-                              ),
-                          ],
-                        ),
-                        child: Image.network(
-                          banners[index]['banner'] ?? '',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//             // Horizontal Banner List
+//             Container(
+//               height: 150,
+//               child: ListView.builder(
+//                 controller: _scrollController,
+//                 scrollDirection: Axis.horizontal,
+//                 itemCount: banners.length,
+//                 itemBuilder: (context, index) {
+//                   bool isFocused = focusedIndex == index;
+//                   return Focus(
+//                     focusNode: focusNodes[index],
+//                     child: GestureDetector(
+//                       onTap: () {
+//                         String videoUrl = banners[index]['runtime']?.toString() ?? '';
+//                         if (videoUrl.isNotEmpty) {
+//                           playVideo(videoUrl);
+//                         }
+//                       },
+//                       child: AnimatedContainer(
+//                         duration: Duration(milliseconds: 200),
+//                         margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+//                         width: 200,
+//                         decoration: BoxDecoration(
+//                           border: Border.all(
+//                             color: isFocused ? Colors.blueAccent : Colors.transparent,
+//                             width: 3,
+//                           ),
+//                           boxShadow: [
+//                             if (isFocused)
+//                               BoxShadow(
+//                                 color: Colors.blue.withOpacity(0.6),
+//                                 blurRadius: 10,
+//                                 spreadRadius: 5,
+//                               ),
+//                           ],
+//                         ),
+//                         child: Image.network(
+//                           banners[index]['banner'] ?? '',
+//                           fit: BoxFit.cover,
+//                         ),
+//                       ),
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }

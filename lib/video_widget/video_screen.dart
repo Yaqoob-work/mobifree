@@ -152,23 +152,46 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       // Store current banners after loading cached ones
       _storeBannersLocally();
     });
-
     // Match channel by ID as strings
-    if (widget.isBannerSlider) {
+    if (widget.isBannerSlider || widget.source == 'isLastPlayedVideos') {
       _focusedIndex = widget.channelList.indexWhere(
         (channel) =>
             channel.contentId.toString() ==
             (isOnItemTapUsed ? GlobalVariables.slectedId : widget.videoId)
                 .toString(),
       );
-    } else if (widget.isVOD || widget.source == 'isLiveScreen') {
+    } 
+    else if (widget.isVOD || widget.source == 'isLiveScreen'  ) {
       _focusedIndex = widget.channelList.indexWhere(
         (channel) =>
             channel.id.toString() ==
             (isOnItemTapUsed ? GlobalVariables.slectedId : widget.videoId)
                 .toString(),
       );
-    } else {
+    } 
+    else if ( widget.source == 'webseries_details_page' ) {
+      
+      _focusedIndex = widget.channelList.indexWhere(
+        (channel) =>
+            channel.id.toString() ==
+            (isOnItemTapUsed ? GlobalVariables.slectedId : widget.videoId)
+                .toString(),
+      );
+    // } 
+
+// // Update the initState focus index detection:
+//     if (widget.source == 'webseries_details_page') {
+//       _focusedIndex = widget.channelList.indexWhere(
+//         (channel) => channel.id.toString() == widget.videoId.toString(),
+//       );
+//       // if (_focusedIndex == -1) {
+//       //   _focusedIndex = widget.channelList.indexWhere(
+//       //     (channel) =>
+//       //         channel.contentId.toString() == widget.videoId.toString(),
+//       //   );
+//       // }
+    }
+     else {
       _focusedIndex = widget.channelList.indexWhere(
         (channel) => channel.url == widget.videoUrl,
       );
@@ -230,6 +253,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
 
     super.dispose();
+  }
+
+  bool get isControllerReady {
+    return _controller != null && _controller!.value.isInitialized;
   }
 
   @override
@@ -311,6 +338,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
         curve: Curves.easeOutCubic,
       );
     });
+    setState(() {});
   }
 
   // Add this to your existing Map
@@ -405,17 +433,35 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
   }
 
+  // void _setInitialFocus() {
+  //   if (widget.channelList.isEmpty) {
+  //     print('Channel list is empty, focusing on Play/Pause button');
+  //     _safelyRequestFocus(playPauseButtonFocusNode);
+  //     return;
+  //   }
+
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     print('Setting initial focus to index: $_focusedIndex');
+  //     _safelyRequestFocus(focusNodes[_focusedIndex]);
+  //     _scrollToFocusedItem();
+  //   });
+  // }
+
   void _setInitialFocus() {
-    if (widget.channelList.isEmpty) {
-      print('Channel list is empty, focusing on Play/Pause button');
-      FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+    if (widget.channelList.isEmpty || _focusedIndex < 0) {
+      _safelyRequestFocus(playPauseButtonFocusNode);
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('Setting initial focus to index: $_focusedIndex');
-      FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-      _scrollToFocusedItem();
+      print('🔰 Setting focus to index $_focusedIndex');
+      if (_focusedIndex < focusNodes.length) {
+        _safelyRequestFocus(focusNodes[_focusedIndex]);
+        _scrollToFocusedItem();
+      } else {
+        print(
+            "⚠️ _focusedIndex out of bounds: $_focusedIndex vs ${focusNodes.length}");
+      }
     });
   }
 
@@ -709,6 +755,11 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   bool _hasSeeked = false;
 
   Future<void> _initializeVideoController(int index) async {
+    if (_controller != null) {
+      await _controller!.dispose();
+      _controller = null;
+    }
+
     setState(() {
       _hasSeeked = false;
     });
@@ -788,7 +839,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               (_controller!.value.position > Duration.zero) &&
               (_controller!.value.duration > Duration.zero) &&
               (_controller!.value.duration - _controller!.value.position <=
-                  Duration(seconds: 5))) {
+                  Duration(seconds: 5)) &&
+              (!widget.channelList.isEmpty || widget.channelList.length != 1)) {
             print("Video is about to end. Playing next...");
             _playNext(); // Automatically play next video
           }
@@ -812,8 +864,9 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           _controller = null;
 
           // Use Future.delayed to ensure this happens after the current method completes
-          Future.delayed(Duration(milliseconds: 500), () {
-            if (mounted) {
+          Future.delayed(Duration(milliseconds: 5), () {
+            if (mounted && !widget.channelList.isEmpty ||
+                widget.channelList.length != 1) {
               _playNext();
             }
           });
@@ -824,7 +877,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("Cannot play this video. Try again later."),
+                content: Text("Something went wrong."),
                 backgroundColor: Colors.red,
                 duration: Duration(seconds: 3),
               ),
@@ -1144,6 +1197,17 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           }
         }
 
+        if (
+            // selectedChannel.contentType == '1' ||
+            // selectedChannel.contentType == 1 &&
+            widget.source == 'manage_movies') {
+          final playLink = await fetchMoviePlayLink(contentId);
+          print('hello isSearchScreen$playLink');
+          if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
+            updatedUrl = playLink['url']!;
+          }
+        }
+
         if (widget.isVOD ||
             widget.source == 'isSearchScreenViaDetailsPageChannelList') {
           print('hello isVOD');
@@ -1154,6 +1218,16 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
             if (playLink['url'] != null && playLink['url']!.isNotEmpty) {
               updatedUrl = playLink['url']!;
             }
+          }
+        }
+        if (widget.source == 'webseries_details_page') {
+          final playLink =
+              await fetchEpisodeUrlById(selectedChannel.contentId.toString());
+
+          if (playLink != null && playLink.isNotEmpty) {
+            updatedUrl = playLink;
+          } else {
+            return;
           }
         }
       }
@@ -1181,11 +1255,11 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
       // YouTube URL प्रोसेसिंग
       if (isYoutubeUrl(updatedUrl)) {
-        print("YouTube कंटेंट के रूप में प्रोसेस हो रहा है");
+        print("YT url processing");
         try {
           updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
         } catch (e) {
-          print("YouTube URL प्रोसेसिंग में त्रुटि: $e");
+          print("YT URL processing errror: $e");
         }
       }
 
@@ -1198,7 +1272,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           await _controller!.dispose();
           _controller = null;
         } catch (e) {
-          print("पुराने कंट्रोलर को डिस्पोज़ करते समय त्रुटि: $e");
+          print("old contoller disposed error: $e");
           _controller = null;
         }
       }
@@ -1224,23 +1298,19 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           // वीडियो इनिशियलाइज़ करने का टाइमआउट सेट करें
           await _controller!.initialize().timeout(Duration(seconds: 10),
               onTimeout: () {
-            throw TimeoutException(
-                "वीडियो इनिशियलाइज़ करने में बहुत समय लग रहा है");
+            throw TimeoutException("video initialization timed out");
           });
 
           // वीडियो आकार की जांच करें
           if (_controller!.value.size.width <= 0 ||
               _controller!.value.size.height <= 0) {
-            throw Exception("वीडियो का साइज़ अमान्य है");
+            throw Exception("video size is invalid");
           }
 
-          // वीडियो प्ले करें
           await _controller!.play();
 
-          // सेट करें कि वीडियो सफलतापूर्वक इनिशियलाइज़ हो गया है
           videoInitialized = true;
 
-          // वीडियो लिसनर सेटअप करें
           _setupVideoPlayerListeners();
 
           setState(() {
@@ -1250,12 +1320,9 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
             _currentModifiedUrl = updatedUrl;
           });
 
-          print("✅ वीडियो सफलतापूर्वक इनिशियलाइज़ हुआ: $updatedUrl");
           break;
         } catch (e) {
           retryCount++;
-          print(
-              "❌ वीडियो इनिशियलाइज़ करने में त्रुटि (प्रयास $retryCount/$maxRetries): $e");
 
           if (_controller != null) {
             await _controller!.dispose();
@@ -1263,12 +1330,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           }
 
           if (retryCount >= maxRetries) {
-            print("⚠️ अधिकतम प्रयास किए गए, अगले वीडियो पर जा रहे हैं");
-
-            // नेक्स्ट वीडियो पर जाएं
             if (index < widget.channelList.length - 1) {
-              Future.delayed(Duration(milliseconds: 500), () {
-                if (mounted) {
+              Future.delayed(Duration(milliseconds: 5), () {
+                if (mounted && !widget.channelList.isEmpty ||
+                    widget.channelList.length != 1) {
                   _onItemTap(index + 1);
                 }
               });
@@ -1289,7 +1354,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           }
 
           // रीट्राई से पहले थोड़ा इंतज़ार करें
-          await Future.delayed(Duration(milliseconds: 1000));
+          await Future.delayed(Duration(milliseconds: 10));
         }
       }
 
@@ -1307,12 +1372,39 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
       // अगले वीडियो पर जाने की कोशिश करें
       if (index < widget.channelList.length - 1) {
         Future.delayed(Duration(milliseconds: 500), () {
-          if (mounted) {
+          if (mounted && !widget.channelList.isEmpty ||
+              widget.channelList.length != 1) {
             _onItemTap(index + 1);
           }
         });
       }
     }
+  }
+
+  Future<String?> fetchEpisodeUrlById(String episodeId) async {
+    const apiUrl = 'https://mobifreetv.com/android/getEpisodes/id/0';
+
+    try {
+      final response = await https.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        // Search for the matching episode by id
+        final matchedEpisode = data.firstWhere(
+          (item) => item['id'] == episodeId,
+          orElse: () => null,
+        );
+
+        if (matchedEpisode != null && matchedEpisode['url'] != null) {
+          return matchedEpisode['url'];
+        }
+      }
+    } catch (e) {
+      print('Error fetching episode URL: $e');
+    }
+
+    return null;
   }
 
 // वीडियो प्लेयर लिसनर सेटअप के लिए एक अलग मेथड बनाएं
@@ -1322,36 +1414,31 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     _controller!.addListener(() {
       if (!mounted) return;
 
-      // एरर हैंडलिंग
+      // Error handling first
       if (_controller!.value.hasError) {
-        print(
-            "⚠️ वीडियो प्लेयर त्रुटि: ${_controller!.value.errorDescription}");
-        // अगला वीडियो प्ले करें
-        _playNext();
+        print("⚠️ Video player error: ${_controller!.value.errorDescription}");
+        _playNext(); // Try next video on error
         return;
       }
 
-      // बफरिंग स्टेटस अपडेट करें
+      // Update buffering state
       if (mounted) {
         setState(() {
           _isBuffering = _controller!.value.isBuffering;
 
-          // अगर वीडियो प्ले हो रहा है और पोजिशन > 0 है, तो लोडिंग इंडिकेटर बंद करें
+          // If video is playing and position > 0, hide loading indicator
           if (_controller!.value.position > Duration.zero &&
               _controller!.value.isPlaying) {
             _loadingVisible = false;
           }
 
-          // प्रोग्रेस वैल्यू अपडेट करें
+          // Update progress values
           if (_controller!.value.duration.inMilliseconds > 0) {
             _progress = _controller!.value.position.inMilliseconds /
                 _controller!.value.duration.inMilliseconds;
           }
         });
       }
-
-      // आपका मौजूदा लिसनर लॉजिक यहां...
-
       // VOD कंटेंट के लिए ऑटो-प्ले नेक्स्ट
       if (widget.isVOD &&
           (_controller!.value.position > Duration.zero) &&
@@ -1364,42 +1451,155 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Add this new method to safely handle focus changes
+  void _safelyRequestFocus(FocusNode node) {
+    if (!mounted || node == null || !node.canRequestFocus) return;
+
+    try {
+      // Delay focus slightly to allow UI to update first
+      Future.delayed(Duration(milliseconds: 50), () {
+        if (mounted && node.canRequestFocus) {
+          FocusScope.of(context).requestFocus(node);
+        }
+      });
+    } catch (e) {
+      print("Error requesting focus: $e");
+    }
+  }
+
+// Then replace direct focus calls with this method
+// For example:
+// Instead of: FocusScope.of(context).requestFocus(nextButtonFocusNode);
+// Use: _safelyRequestFocus(nextButtonFocusNode);
+
 // Also update your _playNext method to be more robust:
 
-  void _playNext() {
-    if (widget.channelList.isEmpty) {
-      print("⚠️ Channel list is empty, cannot play next");
+  // void _playNext() {
+  //   if (widget.channelList.isEmpty || widget.channelList.length == 1) {
+  //     print("⚠️ Channel list is empty, cannot play next");
+  //     return;
+  //   }
+
+  //   if (_focusedIndex < widget.channelList.length - 1) {
+  //     try {
+  //       print("🔁 Playing next video at index: ${_focusedIndex + 1}");
+  //       _onItemTap(_focusedIndex + 1);
+
+  //       Future.delayed(Duration(milliseconds: 50), () {
+  //         if (mounted) {
+  //           _safelyRequestFocus(nextButtonFocusNode);
+  //         }
+  //       });
+  //     } catch (e) {
+  //       print("❌ Error in _playNext: $e");
+  //       // If there's an error with this video too, try to move to the next one
+  //       if (_focusedIndex + 2 < widget.channelList.length) {
+  //         print("🔄 Attempting to skip to next+1 video");
+  //         Future.delayed(Duration(milliseconds: 500), () {
+  //           if (mounted ) {
+  //             _onItemTap(_focusedIndex + 1);
+  //           }
+  //         });
+  //       }
+  //     }
+  //   } else {
+  //     print("⚠️ Already at the last video in the playlist");
+  //     // Optional: loop back to the first video
+  //     // _onItemTap(0);
+  //   }
+  // }
+
+  void _playNext() async {
+    if (widget.channelList.isEmpty || widget.channelList.length <= 1) {
+      print("⚠️ Channel list is empty or has only one video, cannot play next");
       return;
     }
 
-    if (_focusedIndex < widget.channelList.length - 1) {
-      try {
-        print("🔁 Playing next video at index: ${_focusedIndex + 1}");
-        _onItemTap(_focusedIndex + 1);
+    int nextIndex = _focusedIndex + 1;
 
-        Future.delayed(Duration(milliseconds: 50), () {
+    if (nextIndex >= widget.channelList.length) {
+      print("🔄 Last video reached, looping back to the first video");
+      nextIndex = 0;
+    }
+
+    try {
+      print("▶️ Playing next video at index: $nextIndex");
+
+      // Ensure previous controller is safely disposed
+      if (_controller != null) {
+        await _controller!.pause();
+        await _controller!.dispose();
+        _controller = null;
+        await Future.delayed(Duration(milliseconds: 100)); // give slight delay
+      }
+
+      // Reset necessary state before calling _onItemTap
+      setState(() {
+        _isVideoInitialized = false;
+        _loadingVisible = true;
+        _focusedIndex = nextIndex;
+      });
+
+      _onItemTap(nextIndex);
+
+      Future.delayed(Duration(milliseconds: 50), () {
+        if (mounted) {
+          _safelyRequestFocus(nextButtonFocusNode);
+        }
+      });
+    } catch (e) {
+      print("❌ Error in _playNext: $e");
+      // If there's an error, try the next video again after a slight delay
+      if (nextIndex + 1 < widget.channelList.length) {
+        Future.delayed(Duration(milliseconds: 500), () {
           if (mounted) {
-            FocusScope.of(context).requestFocus(nextButtonFocusNode);
+            _playNext();
           }
         });
-      } catch (e) {
-        print("❌ Error in _playNext: $e");
-        // If there's an error with this video too, try to move to the next one
-        if (_focusedIndex + 2 < widget.channelList.length) {
-          print("🔄 Attempting to skip to next+1 video");
-          Future.delayed(Duration(milliseconds: 500), () {
-            if (mounted) {
-              _onItemTap(_focusedIndex + 1);
-            }
-          });
-        }
       }
-    } else {
-      print("⚠️ Already at the last video in the playlist");
-      // Optional: loop back to the first video
-      // _onItemTap(0);
     }
   }
+
+//   void _playNext() {
+//   if (widget.channelList.isEmpty) {
+//     print("⚠️ Channel list is empty, cannot play next");
+//     return;
+//   }
+
+//   // If there's only one video, don't call playNext
+//   if (widget.channelList.length == 1) {
+//     print("ℹ️ Only one video in the list, playNext will not be called.");
+//     return;
+//   }
+
+//   int nextIndex = _focusedIndex + 1;
+
+//   // Loop back if last video
+//   if (nextIndex >= widget.channelList.length) {
+//     print("🔄 Last video reached, looping back to the first video");
+//     nextIndex = 0;
+//   }
+
+//   try {
+//     print("▶️ Playing next video at index: $nextIndex");
+//     _onItemTap(nextIndex);
+
+//     Future.delayed(Duration(milliseconds: 50), () {
+//       if (mounted) {
+//         _safelyRequestFocus(nextButtonFocusNode);
+//       }
+//     });
+//   } catch (e) {
+//     print("❌ Error in _playNext: $e");
+//     if (nextIndex + 1 < widget.channelList.length) {
+//       Future.delayed(Duration(milliseconds: 500), () {
+//         if (mounted) {
+//           _onItemTap(nextIndex + 1);
+//         }
+//       });
+//     }
+//   }
+// }
 
   Future<void> _initializeVolume() async {
     try {
@@ -1471,7 +1671,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   //   if (_focusedIndex < widget.channelList.length - 1) {
   //     _onItemTap(_focusedIndex + 1);
   //     Future.delayed(Duration(milliseconds: 50), () {
-  //       FocusScope.of(context).requestFocus(nextButtonFocusNode);
+  //       _safelyRequestFocus(nextButtonFocusNode);
   //     });
   //   }
   // }
@@ -1480,13 +1680,13 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     if (_focusedIndex > 0) {
       _onItemTap(_focusedIndex - 1);
       Future.delayed(Duration(milliseconds: 50), () {
-        FocusScope.of(context).requestFocus(prevButtonFocusNode);
+        _safelyRequestFocus(prevButtonFocusNode);
       });
     }
   }
 
   void _togglePlayPause() {
-    if (_controller != null && _controller!.value.isInitialized) {
+    if (isControllerReady) {
       if (_controller!.value.isPlaying) {
         _controller!.pause();
       } else {
@@ -1495,7 +1695,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     }
 
     Future.delayed(Duration(milliseconds: 50), () {
-      FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+      _safelyRequestFocus(playPauseButtonFocusNode);
     });
     _resetHideControlsTimer();
   }
@@ -1504,9 +1704,9 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     // Set initial focus and scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.channelList.isEmpty) {
-        FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+        _safelyRequestFocus(playPauseButtonFocusNode);
       } else {
-        FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
+        _safelyRequestFocus(focusNodes[_focusedIndex]);
         _scrollToFocusedItem();
       }
     });
@@ -1607,35 +1807,97 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   final _seekDuration = 10; // seconds
   final _seekDelay = 3000; // milliseconds
 
+  // void _seekForward() {
+  //   if (_controller == null || !_controller!.value.isInitialized) return;
+
+  //   setState(() {
+  //     // Accumulate seek duration
+  //     _accumulatedSeekForward += _seekDuration;
+  //     // Update preview position instantly
+  //     _previewPosition = _controller!.value.position +
+  //         Duration(seconds: _accumulatedSeekForward);
+  //     // Ensure preview position does not exceed video duration
+  //     if (_previewPosition > _controller!.value.duration) {
+  //       _previewPosition = _controller!.value.duration;
+  //     }
+  //   });
+
+  //   // Reset and start timer to execute seek after delay
+  //   _seekTimer?.cancel();
+  //   _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
+  //     if (_controller != null) {
+  //       _controller!.seekTo(_previewPosition);
+  //       setState(() {
+  //         _accumulatedSeekForward = 0; // Reset accumulator after seek
+  //       });
+  //     }
+
+  //     // Update focus to forward button
+  //     Future.delayed(Duration(milliseconds: 50), () {
+  //       _safelyRequestFocus(forwardButtonFocusNode);
+  //     });
+  //   });
+  // }
+
+  // void _seekBackward() {
+  //   if (_controller == null || !_controller!.value.isInitialized) return;
+
+  //   setState(() {
+  //     // Accumulate seek duration
+  //     _accumulatedSeekBackward += _seekDuration;
+  //     // Update preview position instantly
+  //     final newPosition = _controller!.value.position -
+  //         Duration(seconds: _accumulatedSeekBackward);
+  //     // Ensure preview position does not go below zero
+  //     _previewPosition =
+  //         newPosition > Duration.zero ? newPosition : Duration.zero;
+  //   });
+
+  //   // Reset and start timer to execute seek after delay
+  //   _seekTimer?.cancel();
+  //   _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
+  //     if (_controller != null) {
+  //       _controller!.seekTo(_previewPosition);
+  //       setState(() {
+  //         _accumulatedSeekBackward = 0; // Reset accumulator after seek
+  //       });
+  //     }
+
+  //     // Update focus to backward button
+  //     Future.delayed(Duration(milliseconds: 50), () {
+  //       _safelyRequestFocus(backwardButtonFocusNode);
+  //     });
+  //   });
+  // }
+
   void _seekForward() {
     if (_controller == null || !_controller!.value.isInitialized) return;
 
     setState(() {
       // Accumulate seek duration
       _accumulatedSeekForward += _seekDuration;
-      // Update preview position instantly
-      _previewPosition = _controller!.value.position +
+      // Instantly update preview position for UI
+      final newPreviewPosition = _controller!.value.position +
           Duration(seconds: _accumulatedSeekForward);
-      // Ensure preview position does not exceed video duration
-      if (_previewPosition > _controller!.value.duration) {
-        _previewPosition = _controller!.value.duration;
-      }
+      _previewPosition = newPreviewPosition <= _controller!.value.duration
+          ? newPreviewPosition
+          : _controller!.value.duration;
+
+      // Instantly reflect progress change
+      _progress = _previewPosition.inMilliseconds /
+          _controller!.value.duration.inMilliseconds;
     });
 
     // Reset and start timer to execute seek after delay
     _seekTimer?.cancel();
-    _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
+    _seekTimer = Timer(Duration(milliseconds: _seekDelay), () async {
       if (_controller != null) {
-        _controller!.seekTo(_previewPosition);
+        await _controller!.seekTo(_previewPosition);
         setState(() {
-          _accumulatedSeekForward = 0; // Reset accumulator after seek
+          _accumulatedSeekForward = 0; // Reset accumulator
         });
       }
-
-      // Update focus to forward button
-      Future.delayed(Duration(milliseconds: 50), () {
-        FocusScope.of(context).requestFocus(forwardButtonFocusNode);
-      });
+      _safelyRequestFocus(forwardButtonFocusNode);
     });
   }
 
@@ -1645,28 +1907,28 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     setState(() {
       // Accumulate seek duration
       _accumulatedSeekBackward += _seekDuration;
-      // Update preview position instantly
-      final newPosition = _controller!.value.position -
+      // Instantly update preview position for UI
+      final newPreviewPosition = _controller!.value.position -
           Duration(seconds: _accumulatedSeekBackward);
-      // Ensure preview position does not go below zero
-      _previewPosition =
-          newPosition > Duration.zero ? newPosition : Duration.zero;
+      _previewPosition = newPreviewPosition >= Duration.zero
+          ? newPreviewPosition
+          : Duration.zero;
+
+      // Instantly reflect progress change
+      _progress = _previewPosition.inMilliseconds /
+          _controller!.value.duration.inMilliseconds;
     });
 
     // Reset and start timer to execute seek after delay
     _seekTimer?.cancel();
-    _seekTimer = Timer(Duration(milliseconds: _seekDelay), () {
+    _seekTimer = Timer(Duration(milliseconds: _seekDelay), () async {
       if (_controller != null) {
-        _controller!.seekTo(_previewPosition);
+        await _controller!.seekTo(_previewPosition);
         setState(() {
-          _accumulatedSeekBackward = 0; // Reset accumulator after seek
+          _accumulatedSeekBackward = 0; // Reset accumulator
         });
       }
-
-      // Update focus to backward button
-      Future.delayed(Duration(milliseconds: 50), () {
-        FocusScope.of(context).requestFocus(backwardButtonFocusNode);
-      });
+      _safelyRequestFocus(backwardButtonFocusNode);
     });
   }
 
@@ -1684,6 +1946,8 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
 
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowUp:
+          print("Focused Index: $_focusedIndex, Source: ${widget.source}");
+
           _resetHideControlsTimer();
           if (playPauseButtonFocusNode.hasFocus ||
               backwardButtonFocusNode.hasFocus ||
@@ -1691,36 +1955,63 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               prevButtonFocusNode.hasFocus ||
               nextButtonFocusNode.hasFocus ||
               progressIndicatorFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
+            Future.delayed(Duration(milliseconds: 100), () {
               if (!widget.isLive) {
-                FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
+                _safelyRequestFocus(focusNodes[_focusedIndex]);
                 _scrollListener();
               }
             });
-          } else if (_focusedIndex > 0) {
-            if (widget.channelList.isEmpty) return;
-            setState(() {
-              _focusedIndex--;
-              FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-              _scrollListener();
+          } else if (focusNodes[_focusedIndex].hasFocus && _focusedIndex > 0) {
+            Future.delayed(Duration(milliseconds: 100), () {
+              setState(() {
+                _focusedIndex--;
+                _safelyRequestFocus(focusNodes[_focusedIndex]);
+                _scrollToFocusedItem();
+              });
             });
           }
+
+          // else if (_focusedIndex > 0) {
+
+          //   if (widget.channelList.isEmpty) return;
+
+          //   setState(() {
+          //     _focusedIndex--;
+          //     _safelyRequestFocus(focusNodes[_focusedIndex]);
+          //     _scrollListener();
+          //   });
+          // }
           break;
 
         case LogicalKeyboardKey.arrowDown:
+          print("Focused Index: $_focusedIndex, Sourcesss: ${widget.source}");
+
           _resetHideControlsTimer();
           if (progressIndicatorFocusNode.hasFocus) {
-            FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
+            _safelyRequestFocus(focusNodes[_focusedIndex]);
             _scrollListener();
-          } else if (_focusedIndex < widget.channelList.length - 1) {
-            setState(() {
-              _focusedIndex++;
-              FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
-              _scrollListener();
+          }
+          // else if (_focusedIndex < widget.channelList.length - 1) {
+
+          //   setState(() {
+          //     _focusedIndex++;
+          //     _safelyRequestFocus(focusNodes[_focusedIndex]);
+          //     _scrollListener();
+          //   });
+          // }
+
+          else if (focusNodes[_focusedIndex].hasFocus &&
+              _focusedIndex < widget.channelList.length - 1) {
+            Future.delayed(Duration(milliseconds: 100), () {
+              setState(() {
+                _focusedIndex++;
+                _safelyRequestFocus(focusNodes[_focusedIndex]);
+                _scrollToFocusedItem();
+              });
             });
           } else if (_focusedIndex < widget.channelList.length) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(playPauseButtonFocusNode);
             });
           }
           break;
@@ -1731,42 +2022,42 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
             if (!widget.isLive) {
               _seekForward();
             }
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(progressIndicatorFocusNode);
             });
           } else if (focusNodes.any((node) => node.hasFocus)) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(playPauseButtonFocusNode);
             });
           } else if (playPauseButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
+            Future.delayed(Duration(milliseconds: 100), () {
               if (widget.channelList.isEmpty && widget.isLive) {
-                FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
+                _safelyRequestFocus(progressIndicatorFocusNode);
               } else if (widget.isLive && !widget.channelList.isEmpty) {
-                FocusScope.of(context).requestFocus(prevButtonFocusNode);
+                _safelyRequestFocus(prevButtonFocusNode);
               } else {
-                FocusScope.of(context).requestFocus(backwardButtonFocusNode);
+                _safelyRequestFocus(backwardButtonFocusNode);
               }
             });
           } else if (backwardButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(forwardButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(forwardButtonFocusNode);
             });
           } else if (forwardButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
+            Future.delayed(Duration(milliseconds: 100), () {
               if (widget.channelList.isEmpty) {
-                FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
+                _safelyRequestFocus(progressIndicatorFocusNode);
               } else {
-                FocusScope.of(context).requestFocus(prevButtonFocusNode);
+                _safelyRequestFocus(prevButtonFocusNode);
               }
             });
           } else if (prevButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(nextButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(nextButtonFocusNode);
             });
           } else if (nextButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(progressIndicatorFocusNode);
             });
           }
           break;
@@ -1777,37 +2068,37 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
             if (!widget.isLive) {
               _seekBackward();
             }
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(progressIndicatorFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(progressIndicatorFocusNode);
             });
           } else if (nextButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(prevButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(prevButtonFocusNode);
             });
           } else if (prevButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
+            Future.delayed(Duration(milliseconds: 100), () {
               if (widget.isLive) {
-                FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+                _safelyRequestFocus(playPauseButtonFocusNode);
               } else {
-                FocusScope.of(context).requestFocus(forwardButtonFocusNode);
+                _safelyRequestFocus(forwardButtonFocusNode);
               }
             });
           } else if (forwardButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(backwardButtonFocusNode);
             });
           } else if (backwardButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(playPauseButtonFocusNode);
             });
           } else if (playPauseButtonFocusNode.hasFocus) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(focusNodes[_focusedIndex]);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(focusNodes[_focusedIndex]);
               _scrollToFocusedItem();
             });
           } else if (focusNodes.any((node) => node.hasFocus)) {
-            Future.delayed(Duration(milliseconds: 50), () {
-              FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            Future.delayed(Duration(milliseconds: 100), () {
+              _safelyRequestFocus(playPauseButtonFocusNode);
             });
           }
           break;
@@ -1817,19 +2108,19 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
           _resetHideControlsTimer();
           if (nextButtonFocusNode.hasFocus) {
             _playNext();
-            FocusScope.of(context).requestFocus(nextButtonFocusNode);
+            _safelyRequestFocus(nextButtonFocusNode);
           } else if (prevButtonFocusNode.hasFocus) {
             _playPrevious();
-            FocusScope.of(context).requestFocus(prevButtonFocusNode);
+            _safelyRequestFocus(prevButtonFocusNode);
           } else if (forwardButtonFocusNode.hasFocus) {
             _seekForward();
-            FocusScope.of(context).requestFocus(forwardButtonFocusNode);
+            _safelyRequestFocus(forwardButtonFocusNode);
           } else if (backwardButtonFocusNode.hasFocus) {
             _seekBackward();
-            FocusScope.of(context).requestFocus(backwardButtonFocusNode);
+            _safelyRequestFocus(backwardButtonFocusNode);
           } else if (playPauseButtonFocusNode.hasFocus) {
             _togglePlayPause();
-            FocusScope.of(context).requestFocus(playPauseButtonFocusNode);
+            _safelyRequestFocus(playPauseButtonFocusNode);
           } else {
             _onItemTap(_focusedIndex);
           }
@@ -1891,7 +2182,10 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _controller!.pause();
+        // Safely pause the controller before popping
+        if (isControllerReady) {
+          _controller!.pause();
+        }
         await Future.delayed(Duration(milliseconds: 500));
         GlobalEventBus.eventBus.fire(RefreshPageEvent('uniquePageId'));
         Navigator.of(context).pop(true);
@@ -2008,6 +2302,13 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                   const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
               child: Focus(
                 focusNode: focusNodes[index],
+                onFocusChange: (hasFocus) {
+                  if (hasFocus) {
+                    setState(() {
+                      _focusedIndex = index;
+                    });
+                  }
+                },
                 child: GestureDetector(
                   onTap: () {
                     _onItemTap(index);
@@ -2101,58 +2402,120 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildCustomProgressIndicator() {
-    // Calculate played progress from the controller
-    double playedProgress =
-        (_controller?.value.position.inMilliseconds.toDouble() ?? 0.0) /
-            (_controller?.value.duration.inMilliseconds.toDouble() ?? 1.0);
+  // Widget _buildCustomProgressIndicator() {
 
-    // For video_player, buffered progress is available from the controller
+  //     if (!isControllerReady) {
+  //   return Container(
+  //     height: 6,
+  //     color: Colors.grey,
+  //   );
+  // }
+  //   // Calculate played progress from the controller
+  //   double playedProgress =
+  //       (_controller?.value.position.inMilliseconds.toDouble() ?? 0.0) /
+  //           (_controller?.value.duration.inMilliseconds.toDouble() ?? 1.0);
+
+  //   // For video_player, buffered progress is available from the controller
+  //   double bufferedProgress = _controller?.value.buffered.isNotEmpty ?? false
+  //       ? _controller!.value.buffered.last.end.inMilliseconds.toDouble() /
+  //           _controller!.value.duration.inMilliseconds.toDouble()
+  //       : (playedProgress + 0.02).clamp(0.0, 1.0); // Fallback
+
+  //   return Container(
+  //       // Add padding to make the indicator more visible when focused
+  //       padding: EdgeInsets.all(screenhgt * 0.03),
+  //       // Change background color based on focus state
+  //       decoration: BoxDecoration(
+  //         color: progressIndicatorFocusNode.hasFocus
+  //             ? const Color.fromARGB(
+  //                 200, 16, 62, 99) // Blue background when focused
+  //             : Colors.transparent,
+  //         // Optional: Add rounded corners when focused
+  //         borderRadius: progressIndicatorFocusNode.hasFocus
+  //             ? BorderRadius.circular(4.0)
+  //             : null,
+  //       ),
+  //       child: Stack(
+  //         children: [
+  //           // Buffered progress
+  //           LinearProgressIndicator(
+  //             minHeight: 6,
+  //             value: bufferedProgress.isNaN ? 0.0 : bufferedProgress,
+  //             color: Colors.green, // Buffered color
+  //             backgroundColor: Colors.grey, // Background
+  //           ),
+  //           // Played progress
+  //           LinearProgressIndicator(
+  //             minHeight: 6,
+  //             value: playedProgress.isNaN ? 0.0 : playedProgress,
+  //             valueColor: AlwaysStoppedAnimation<Color>(
+  //               _previewPosition != _controller!.value.position
+  //                   ? Colors.red.withOpacity(0.5) // Preview seeking
+  //                   : Colors.red, // Normal playback
+  //             ),
+  //             color: const Color.fromARGB(211, 155, 40, 248), // Played color
+  //             backgroundColor: Colors.transparent, // Transparent to overlay
+  //           ),
+  //         ],
+  //       ));
+  // }
+
+  Widget _buildCustomProgressIndicator() {
+    if (!isControllerReady) {
+      return Container(height: 6, color: Colors.grey);
+    }
+
     double bufferedProgress = _controller?.value.buffered.isNotEmpty ?? false
         ? _controller!.value.buffered.last.end.inMilliseconds.toDouble() /
             _controller!.value.duration.inMilliseconds.toDouble()
-        : (playedProgress + 0.02).clamp(0.0, 1.0); // Fallback
+        : (_progress + 0.02).clamp(0.0, 1.0);
 
     return Container(
-        // Add padding to make the indicator more visible when focused
-        padding: EdgeInsets.all(screenhgt * 0.03),
-        // Change background color based on focus state
-        decoration: BoxDecoration(
-          color: progressIndicatorFocusNode.hasFocus
-              ? const Color.fromARGB(
-                  200, 16, 62, 99) // Blue background when focused
-              : Colors.transparent,
-          // Optional: Add rounded corners when focused
-          borderRadius: progressIndicatorFocusNode.hasFocus
-              ? BorderRadius.circular(4.0)
-              : null,
-        ),
-        child: Stack(
-          children: [
-            // Buffered progress
-            LinearProgressIndicator(
-              minHeight: 6,
-              value: bufferedProgress.isNaN ? 0.0 : bufferedProgress,
-              color: Colors.green, // Buffered color
-              backgroundColor: Colors.grey, // Background
+      padding: EdgeInsets.all(screenhgt * 0.03),
+      decoration: BoxDecoration(
+        color: progressIndicatorFocusNode.hasFocus
+            ? const Color.fromARGB(200, 16, 62, 99)
+            : Colors.transparent,
+        borderRadius: progressIndicatorFocusNode.hasFocus
+            ? BorderRadius.circular(4.0)
+            : null,
+      ),
+      child: Stack(
+        children: [
+          LinearProgressIndicator(
+            minHeight: 6,
+            value: bufferedProgress.isNaN ? 0.0 : bufferedProgress,
+            color: Colors.green,
+            backgroundColor: Colors.grey,
+          ),
+          LinearProgressIndicator(
+            minHeight: 6,
+            value: _progress.isNaN ? 0.0 : _progress,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              const Color.fromARGB(255, 174, 54, 244),
             ),
-            // Played progress
-            LinearProgressIndicator(
-              minHeight: 6,
-              value: playedProgress.isNaN ? 0.0 : playedProgress,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                _previewPosition != _controller!.value.position
-                    ? Colors.red.withOpacity(0.5) // Preview seeking
-                    : Colors.red, // Normal playback
-              ),
-              color: const Color.fromARGB(211, 155, 40, 248), // Played color
-              backgroundColor: Colors.transparent, // Transparent to overlay
-            ),
-          ],
-        ));
+            backgroundColor: Colors.transparent,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildControls() {
+// Safe flag for play/pause icon
+    bool isPlaying = false;
+    if (isControllerReady) {
+      isPlaying = _controller!.value.isPlaying;
+    }
+
+// Safe duration and position
+    Duration position = Duration.zero;
+    Duration duration = Duration.zero;
+    if (isControllerReady) {
+      position = _controller!.value.position;
+      duration = _controller!.value.duration;
+    }
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -2167,7 +2530,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
               children: [
                 Expanded(flex: 1, child: Container()),
                 Expanded(
-                  flex: 2,
+                  flex: 4,
                   child: Container(
                     color: playPauseButtonFocusNode.hasFocus
                         ? const Color.fromARGB(200, 16, 62, 99)
@@ -2177,18 +2540,13 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                         focusNode: playPauseButtonFocusNode,
                         onFocusChange: (hasFocus) {
                           if (mounted) {
-                            setState(() {
-                              // Change color based on focus state
-                            });
+                            setState(() {});
                           }
                         },
                         child: IconButton(
                           icon: Image.asset(
-                            (_controller != null &&
-                                    _controller!.value.isPlaying)
-                                ? 'assets/pause.png' // Add your pause image path here
-                                : 'assets/play.png', // Add your play image path here
-                            width: 35, // Adjust size as needed
+                            isPlaying ? 'assets/pause.png' : 'assets/play.png',
+                            width: 35,
                             height: 35,
                           ),
                           onPressed: _togglePlayPause,
@@ -2210,7 +2568,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                           onFocusChange: (hasFocus) {
                             if (mounted) {
                               setState(() {
-                                // Change color based on focus state
+// Change color based on focus state
                               });
                             }
                           },
@@ -2241,7 +2599,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                           onFocusChange: (hasFocus) {
                             if (mounted) {
                               setState(() {
-                                // Change color based on focus state
+// Change color based on focus state
                               });
                             }
                           },
@@ -2267,7 +2625,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                           onFocusChange: (hasFocus) {
                             if (mounted) {
                               setState(() {
-                                // Change color based on focus state
+// Change color based on focus state
                               });
                             }
                           },
@@ -2298,7 +2656,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                           onFocusChange: (hasFocus) {
                             if (mounted) {
                               setState(() {
-                                // Change color based on focus state
+// Change color based on focus state
                               });
                             }
                           },
@@ -2312,6 +2670,7 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                     ),
                   ),
                 Expanded(flex: 8, child: _buildVolumeIndicator()),
+                if (!widget.isLive)
                 Expanded(
                   flex: 3,
                   child: Center(
@@ -2326,14 +2685,14 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 Expanded(
-                  flex: 20,
+                  flex: 15,
                   child: Center(
                     child: Focus(
                       focusNode: progressIndicatorFocusNode,
                       onFocusChange: (hasFocus) {
                         if (mounted) {
                           setState(() {
-                            // Handle focus changes if needed
+// Handle focus changes if needed
                           });
                         }
                       },
@@ -2364,21 +2723,23 @@ class _VideoScreenState extends State<VideoScreen> with WidgetsBindingObserver {
                   flex: widget.isLive ? 3 : 1,
                   child: Center(
                     child: widget.isLive
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.circle, color: Colors.red, size: 15),
-                              SizedBox(width: 5),
-                              Text(
-                                'Live',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          )
+                        ? 
+                        // Row(
+                        //     mainAxisAlignment: MainAxisAlignment.center,
+                        //     children: [
+                        //       Icon(Icons.circle, color: Colors.red, size: 15),
+                        //       SizedBox(width: 5),
+                        //       Text(
+                        //         'Live',
+                        //         style: TextStyle(
+                        //           color: Colors.red,
+                        //           fontSize: 20,
+                        //           fontWeight: FontWeight.bold,
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   )
+                        Image.asset('assets/live.png')
                         : Container(),
                   ),
                 ),

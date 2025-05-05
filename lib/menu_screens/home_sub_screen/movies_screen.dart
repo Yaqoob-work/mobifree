@@ -154,6 +154,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
             name: item['title'] ?? '',
             description: item['description'] ?? '',
             banner: item['poster'] ?? '',
+            poster: item['poster'] ?? '',
+            category: item['category'] ?? '',
             url: item['stream_url'] ?? '',
             streamType: item['stream_type'] ?? '',
             type: item['type'] ?? '',

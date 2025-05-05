@@ -164,6 +164,7 @@ Future<List<NetworkApi>> fetchNetworks(BuildContext context) async {
     headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
   );
 
+
   if (response.statusCode == 200) {
     List<dynamic> body = json.decode(response.body);
     apiNetworks =
@@ -495,6 +496,9 @@ if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
   return KeyEventResult.handled;
 }
 
+
+
+
 // else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
 //         print("⬇️ SubVod: Down Arrow pressed, moving to HomeCategory's first banner");
 
@@ -685,13 +689,21 @@ if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
                             context.read<FocusProvider>().requestMusicItemFocus(context);
                             return KeyEventResult.handled;
                           } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                            final homeCategoryFocusNode =
-                                context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
-                            if (homeCategoryFocusNode != null) {
-                              homeCategoryFocusNode.requestFocus();
-                              return KeyEventResult.handled;
-                            }
+                            // final homeCategoryFocusNode =
+                            //     context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+                            // if (homeCategoryFocusNode != null) {
+                            //   homeCategoryFocusNode.requestFocus();
+                            //   return KeyEventResult.handled;
+                            // }
+                            // inside SubVod initState or ListView.builder:
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      print("⬇️ SubVod: Arrow Down pressed, requesting ManageMovies item focus");
+      context.read<FocusProvider>().requestManageMoviesFocus();
+      return KeyEventResult.handled;
+    }
+
                           }
+                          
                         }
                         return KeyEventResult.ignored;
                       };

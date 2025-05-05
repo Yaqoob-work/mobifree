@@ -765,7 +765,7 @@ class _MyAppState extends State<MyApp> {
         '/search': (context) => SearchScreen(),
         '/vod': (context) => VOD(),
         '/live': (context) => LiveScreen(),
-        '/youtubeSearch': (context) => YoutubeSearchScreen (),
+        // '/youtubeSearch': (context) => YoutubeSearchScreen (),
       },
     );
   }
@@ -966,7 +966,7 @@ class _MyHomeState extends State<MyHome> {
       VOD(),
       LiveScreen(),
       SearchScreen(),
-      YoutubeSearchScreen()
+      // YoutubeSearchScreen()
     ];
 
     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
