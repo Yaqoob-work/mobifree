@@ -290,6 +290,20 @@ Future<void> _fetchMusicInBackground() async {
   //   }
   // }
 
+
+  void _initializeNewsItemFocusNodes() {
+  newsItemFocusNodes.clear();
+  for (var item in _musicList) {
+    newsItemFocusNodes[item.id] = FocusNode()
+      ..addListener(() {
+        if (newsItemFocusNodes[item.id]!.hasFocus) {
+          _scrollToFocusedItem(item.id);
+        }
+      });
+  }
+}
+
+
   Future<void> fetchData() async {
     setState(() {
       _isLoading = true;
@@ -327,6 +341,7 @@ Future<void> _fetchMusicInBackground() async {
           default:
             _musicList.addAll(_apiService.musicList);
         }
+        _initializeNewsItemFocusNodes();
         _isLoading = false;
       });
     } catch (e) {

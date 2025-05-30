@@ -13,33 +13,32 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/models/news_item_model.dart';
 
-
-
 class ManageMovies extends StatefulWidget {
   const ManageMovies({Key? key, required this.focusNode}) : super(key: key);
-  
+
   final FocusNode focusNode;
 
   @override
   State<ManageMovies> createState() => _ManageMoviesState();
 }
 
-class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClientMixin {
+class _ManageMoviesState extends State<ManageMovies>
+    with AutomaticKeepAliveClientMixin {
   List<dynamic> categories = [];
   bool isLoading = true;
   String debugMessage = "";
-  
+
   // Focus nodes for category items
   Map<String, Map<String, FocusNode>> focusNodesMap = {};
-  
+
   // Track the current focused item's position
   int currentCategoryIndex = 0;
   int currentMovieIndex = 0;
   final ScrollController _scrollController = ScrollController();
 
   @override
-  bool get wantKeepAlive => true; 
-  
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
@@ -76,29 +75,28 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
 
   Future<void> fetchData() async {
     if (!mounted) return;
-    
+
     setState(() {
       isLoading = true;
       debugMessage = "Cargando datos...";
     });
-    
+
     try {
       print("Fetching data from API...");
       final response = await http.get(
         Uri.parse('https://mobifreetv.com/android/manage_movies'),
         headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-      ).timeout(Duration(seconds: 15)); 
+      ).timeout(Duration(seconds: 15));
 
       print("API response status code: ${response.statusCode}");
-      
-      if (!mounted) return; 
-      
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         print("API response received successfully");
         final responseBody = response.body;
         print("Response body length: ${responseBody.length}");
-        
-        
+
         if (responseBody.isEmpty) {
           setState(() {
             isLoading = false;
@@ -106,59 +104,61 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
           });
           return;
         }
-        
+
         try {
           final List<dynamic> data = jsonDecode(responseBody) as List<dynamic>;
           print("Parsed JSON data. Category count: ${data.length}");
-          
+
           // Filter out empty categories
           List<dynamic> nonEmptyCategories = data.where((category) {
             if (!category.containsKey('movies')) {
               print("Category missing 'movies' key: $category");
               return false;
             }
-            
+
             List<dynamic> movies = category['movies'] as List<dynamic>;
-            print("Category ${category['category'] ?? 'unknown'} has ${movies.length} movies");
+            print(
+                "Category ${category['category'] ?? 'unknown'} has ${movies.length} movies");
             return movies.isNotEmpty;
           }).toList();
-          
+
           print("Non-empty categories count: ${nonEmptyCategories.length}");
-          
+
           // Update the category count in the provider
           if (mounted) {
             Provider.of<FocusProvider>(context, listen: false)
-              .updateCategoryCountMovies(nonEmptyCategories.length);
+                .updateCategoryCountMovies(nonEmptyCategories.length);
           }
-          
+
           // Initialize focus nodes for each movie in each category
           Map<String, Map<String, FocusNode>> newFocusNodesMap = {};
           for (int i = 0; i < nonEmptyCategories.length; i++) {
             final categoryId = '${nonEmptyCategories[i]['id']}';
             final movies = nonEmptyCategories[i]['movies'] as List<dynamic>;
-            
+
             Map<String, FocusNode> movieFocusNodes = {};
             for (int j = 0; j < movies.length; j++) {
               final movieId = '${movies[j]['id']}';
               movieFocusNodes[movieId] = FocusNode();
             }
-            
+
             newFocusNodesMap[categoryId] = movieFocusNodes;
           }
-          
+
           if (mounted) {
             setState(() {
               categories = nonEmptyCategories;
               focusNodesMap = newFocusNodesMap;
               isLoading = false;
-              debugMessage = "Data loaded: ${nonEmptyCategories.length} categories";
+              debugMessage =
+                  "Data loaded: ${nonEmptyCategories.length} categories";
             });
           }
-          
+
           // // Set focus to the first item after a short delay
           // Future.delayed(Duration(milliseconds: 300), () {
-          //   if (mounted && categories.isNotEmpty && 
-          //       categories[0]['movies'] != null && 
+          //   if (mounted && categories.isNotEmpty &&
+          //       categories[0]['movies'] != null &&
           //       (categories[0]['movies'] as List).isNotEmpty) {
           //     final firstCategoryId = '${categories[0]['id']}';
           //     final firstMovieId = '${(categories[0]['movies'] as List)[0]['id']}';
@@ -166,21 +166,20 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
           //   }
           // });
 
-
           Future.delayed(Duration(milliseconds: 300), () {
-  if (mounted && categories.isNotEmpty && categories[0]['movies'].isNotEmpty) {
-    final firstCategoryId = '${categories[0]['id']}';
-    final firstMovieId = '${categories[0]['movies'][0]['id']}';
+            if (mounted &&
+                categories.isNotEmpty &&
+                categories[0]['movies'].isNotEmpty) {
+              final firstCategoryId = '${categories[0]['id']}';
+              final firstMovieId = '${categories[0]['movies'][0]['id']}';
 
-    final firstNode = focusNodesMap[firstCategoryId]?[firstMovieId];
-    if (firstNode != null) {
-      Provider.of<FocusProvider>(context, listen: false)
-        .setFirstManageMoviesFocusNode(firstNode);
-    }
-  }
-});
-
-
+              final firstNode = focusNodesMap[firstCategoryId]?[firstMovieId];
+              if (firstNode != null) {
+                Provider.of<FocusProvider>(context, listen: false)
+                    .setFirstManageMoviesFocusNode(firstNode);
+              }
+            }
+          });
         } catch (parseError) {
           print("JSON parse error: $parseError");
           if (mounted) {
@@ -216,10 +215,12 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
   }
 
   // Navigate to the details page with the selected movie
-  void navigateToDetails(dynamic movie, String source, String banner, String name, int categoryIndex) {
+  void navigateToDetails(dynamic movie, String source, String banner,
+      String name, int categoryIndex) {
     try {
       // Convert the movies in the selected category to NewsItemModel list
-      final List<dynamic> categoryMovies = categories[categoryIndex]['movies'] as List<dynamic>;
+      final List<dynamic> categoryMovies =
+          categories[categoryIndex]['movies'] as List<dynamic>;
       final List<NewsItemModel> channelList = categoryMovies.map((movieItem) {
         return NewsItemModel(
           id: movieItem['id'],
@@ -227,13 +228,13 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
           poster: movieItem['poster'],
           banner: movieItem['banner'],
           description: movieItem['description'] ?? '',
-          category: source, 
-          index: '', 
-          url: '', 
-          videoId: '', 
-          streamType: '', 
-          type: '', 
-          genres: '', 
+          category: source,
+          index: '',
+          url: '',
+          videoId: '',
+          streamType: '',
+          type: '',
+          genres: '',
           status: '',
         );
       }).toList();
@@ -260,7 +261,7 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
 
   // // Function to scroll to the focused item
   // void _scrollToFocusedItem(String categoryId, String movieId) {
-  //   if (focusNodesMap[categoryId]?[movieId] == null || 
+  //   if (focusNodesMap[categoryId]?[movieId] == null ||
   //       !focusNodesMap[categoryId]![movieId]!.hasFocus) return;
 
   //   try {
@@ -277,45 +278,43 @@ class _ManageMoviesState extends State<ManageMovies> with AutomaticKeepAliveClie
   //   }
   // }
 
+  void _scrollToFocusedItem(String categoryId, String movieId) {
+    // सबसे पहले बेसिक नल चेक करें
+    if (focusNodesMap[categoryId]?[movieId] == null ||
+        !focusNodesMap[categoryId]![movieId]!.hasFocus) return;
 
-void _scrollToFocusedItem(String categoryId, String movieId) {
-  // सबसे पहले बेसिक नल चेक करें
-  if (focusNodesMap[categoryId]?[movieId] == null || 
-      !focusNodesMap[categoryId]![movieId]!.hasFocus) return;
-  
-  try {
-    final focusNode = focusNodesMap[categoryId]![movieId];
-    if (focusNode != null && 
-        focusNode.context != null &&
-        _scrollController.hasClients) {
-      
-      // BuildContext को सुरक्षित रूप से प्राप्त करें
-      final BuildContext? context = focusNode.context;
-      if (context != null && context.mounted) {
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.05,
-          duration: Duration(milliseconds: 1000),
-          curve: Curves.linear,
-        );
+    try {
+      final focusNode = focusNodesMap[categoryId]![movieId];
+      if (focusNode != null &&
+          focusNode.context != null &&
+          _scrollController.hasClients) {
+        // BuildContext को सुरक्षित रूप से प्राप्त करें
+        final BuildContext? context = focusNode.context;
+        if (context != null && context.mounted) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.05,
+            duration: Duration(milliseconds: 1000),
+            curve: Curves.linear,
+          );
+        }
       }
+    } catch (e) {
+      print("Error scrolling to focused item: $e");
     }
-  } catch (e) {
-    print("Error scrolling to focused item: $e");
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); 
-    
+    super.build(context);
+
     return Consumer<ColorProvider>(
       builder: (context, colorProvider, child) {
         // Use the same background color logic as in HomeCategory
         Color backgroundColor = colorProvider.isItemFocused
             ? colorProvider.dominantColor.withOpacity(0.3)
             : Colors.black;
-        
+
         if (isLoading) {
           return Center(
             child: Column(
@@ -323,7 +322,7 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SpinKitFadingCircle(
-                  color: Colors.black87 ,
+                  color: Colors.black87,
                   size: 50.0,
                 ),
                 SizedBox(height: 20),
@@ -335,7 +334,7 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
             ),
           );
         }
-        
+
         if (categories.isEmpty) {
           return Center(
             child: Column(
@@ -350,13 +349,12 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
             ),
           );
         }
-        
+
         // Set the container background to match the HomeCategory style
         return Container(
           color: backgroundColor, // Use the background color from ColorProvider
           child: Container(
-                  color: Colors.black54 ,
-
+            color: Colors.black54,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
@@ -368,7 +366,7 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
                     final category = categories[categoryIndex];
                     final movies = category['movies'] as List<dynamic>;
                     final categoryId = '${category['id']}';
-                    
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -376,23 +374,26 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
                           padding: const EdgeInsets.all(0.0),
                           child: Text(
                             category['category'].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.grey,
+                            style: TextStyle(
+                              color: hintColor,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                         SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.34, // Increased height to accommodate expanded items
+                          height: MediaQuery.of(context).size.height *
+                              0.34, // Increased height to accommodate expanded items
                           child: ListView.builder(
                             controller: _scrollController,
                             scrollDirection: Axis.horizontal,
-                            itemCount: movies.length > 7 ? 8 : movies.length + 1,
+                            itemCount:
+                                movies.length > 7 ? 8 : movies.length + 1,
                             itemBuilder: (context, movieIndex) {
                               // Show "View All" option at the end
-                              if ((movies.length >= 7 && movieIndex == 7) || 
-                                  (movies.length < 7 && movieIndex == movies.length)) {
+                              if ((movies.length >= 7 && movieIndex == 7) ||
+                                  (movies.length < 7 &&
+                                      movieIndex == movies.length)) {
                                 return Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 0),
                                   child: ViewAllWidget(
@@ -400,23 +401,26 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => CategoryMoviesGridView(
+                                          builder: (context) =>
+                                              CategoryMoviesGridView(
                                             category: category,
                                             movies: movies,
                                           ),
                                         ),
                                       );
                                     },
-                                    categoryText: category['category'].toUpperCase(),
+                                    categoryText:
+                                        category['category'].toUpperCase(),
                                   ),
                                 );
                               }
-                              
+
                               final movie = movies[movieIndex];
                               final movieId = '${movie['id']}';
-                              
+
                               // Get or create focus node for this movie
-                              FocusNode? focusNode = focusNodesMap[categoryId]?[movieId];
+                              FocusNode? focusNode =
+                                  focusNodesMap[categoryId]?[movieId];
                               if (focusNode == null) {
                                 focusNode = FocusNode();
                                 if (focusNodesMap[categoryId] == null) {
@@ -424,7 +428,7 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
                                 }
                                 focusNodesMap[categoryId]![movieId] = focusNode;
                               }
-                              
+
                               return Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 0),
                                 child: FocusableItemWidget(
@@ -446,7 +450,8 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
                                     );
                                   },
                                   fetchPaletteColor: (String imageUrl) {
-                                    return PaletteColorService().getSecondaryColor(imageUrl);
+                                    return PaletteColorService()
+                                        .getSecondaryColor(imageUrl);
                                   },
                                 ),
                               );
@@ -467,8 +472,6 @@ void _scrollToFocusedItem(String categoryId, String movieId) {
   }
 }
 
-
-
 // ViewAllWidget implementation
 class ViewAllWidget extends StatefulWidget {
   final VoidCallback onTap;
@@ -479,7 +482,6 @@ class ViewAllWidget extends StatefulWidget {
   @override
   _ViewAllWidgetState createState() => _ViewAllWidgetState();
 }
-
 
 class _ViewAllWidgetState extends State<ViewAllWidget> {
   bool isFocused = false;
@@ -535,14 +537,17 @@ class _ViewAllWidgetState extends State<ViewAllWidget> {
             // Using Stack for true bidirectional expansion
             Container(
               width: screenwdt * 0.19,
-              height: normalHeight, // Fixed container height is the normal height
+              height:
+                  normalHeight, // Fixed container height is the normal height
               child: Stack(
                 clipBehavior: Clip.none, // Allow items to overflow the stack
                 alignment: Alignment.center,
                 children: [
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 400),
-                    top: isFocused ? -(heightGrowth / 2) : 0, // Move up when focused
+                    top: isFocused
+                        ? -(heightGrowth / 2)
+                        : 0, // Move up when focused
                     left: 0,
                     width: screenwdt * 0.19,
                     height: isFocused ? focusedHeight : normalHeight,
@@ -638,10 +643,7 @@ class CategoryMoviesGridView extends StatefulWidget {
   final dynamic category;
   final List<dynamic> movies;
 
-  CategoryMoviesGridView({
-    required this.category, 
-    required this.movies
-  });
+  CategoryMoviesGridView({required this.category, required this.movies});
 
   @override
   _CategoryMoviesGridViewState createState() => _CategoryMoviesGridViewState();
@@ -688,13 +690,13 @@ class _CategoryMoviesGridViewState extends State<CategoryMoviesGridView> {
           poster: movieItem['poster'],
           banner: movieItem['banner'],
           description: movieItem['description'] ?? '',
-          category: categoryName, 
-          index: '', 
-          url: '', 
-          videoId: '', 
-          streamType: '', 
-          type: '', 
-          genres: '', 
+          category: categoryName,
+          index: '',
+          url: '',
+          videoId: '',
+          streamType: '',
+          type: '',
+          genres: '',
           status: '',
         );
       }).toList();

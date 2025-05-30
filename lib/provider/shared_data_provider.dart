@@ -22,7 +22,7 @@ class SharedDataProvider with ChangeNotifier {
 
   void updateLastPlayedVideos(List<Map<String, dynamic>> videos) {
     _lastPlayedVideos = videos;
-    notifyListeners();
+    // notifyListeners();
   }
 
   void addLastPlayedVideo(Map<String, dynamic> video) {

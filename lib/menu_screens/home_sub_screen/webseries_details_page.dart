@@ -33,7 +33,6 @@
 //   }
 // }
 
-
 // class WebSeriesDetailsPage extends StatefulWidget {
 //   final int id;
 //   final List<NewsItemModel> channelList;
@@ -56,7 +55,7 @@
 // class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
 //     with WidgetsBindingObserver {
 //   final SocketService _socketService = SocketService();
-  
+
 //   bool isLoading = true;
 //   List<NewsItemModel> seasons = [];
 //   Map<String, List<NewsItemModel>> episodesMap = {};
@@ -207,9 +206,6 @@
 //     }
 //   }
 
-
-
-
 //   Future<void> _fetchEpisodes(String seasonId) async {
 //     // Check if we already have episodes for this season
 //     if (episodesMap.containsKey(seasonId)) {
@@ -326,7 +322,6 @@
 //     });
 //   }
 
-
 //     bool isYoutubeUrl(String? url) {
 //     if (url == null || url.isEmpty) {
 //       return false;
@@ -358,7 +353,7 @@
 //     // Get the current list of episodes to pass to VideoScreen
 //     final currentSeasonId = seasons[selectedSeasonIndex].id;
 //     final episodes = episodesMap[currentSeasonId] ?? [];
-    
+
 //     // Find the current episode index in the list
 //     final currentEpisodeIndex = episodes.indexWhere((e) => e.id == episode.id);
 
@@ -369,7 +364,7 @@
 //           print("Processing YouTube URL from last played videos");
 //           updatedUrl = await _socketService.getUpdatedUrl(updatedUrl);
 //         }
-    
+
 //     Navigator.push(
 //       context,
 //       MaterialPageRoute(
@@ -724,8 +719,6 @@
 //   }
 // }
 
-
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -761,7 +754,7 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
   final SocketService _socketService = SocketService();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _mainFocusNode = FocusNode();
-  
+
   bool _isLoading = true;
   List<NewsItemModel> _seasons = [];
   Map<String, List<NewsItemModel>> _episodesMap = {};
@@ -807,7 +800,8 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
-          _seasons = data.map((season) => NewsItemModel.fromJson(season)).toList();
+          _seasons =
+              data.map((season) => NewsItemModel.fromJson(season)).toList();
           _isLoading = false;
         });
       }
@@ -834,7 +828,7 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         _episodeFocusNodes.clear();
-        
+
         final episodes = data.map((e) => NewsItemModel.fromJson(e)).toList();
         for (var episode in episodes) {
           _episodeFocusNodes[episode.id] = FocusNode();
@@ -866,7 +860,7 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
 
   Future<void> _scrollToIndex(int index) async {
     if (index < 0 || index >= _currentEpisodes.length) return;
-    
+
     final context = _episodeFocusNodes[_currentEpisodes[index].id]?.context;
     if (context != null) {
       await Scrollable.ensureVisible(
@@ -912,7 +906,6 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
         case LogicalKeyboardKey.enter:
           _playEpisode(episodes[_selectedEpisodeIndex]);
           break;
-
         default:
           break;
       }
@@ -928,6 +921,8 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
     if (_isYoutubeUrl(url)) {
       url = await _socketService.getUpdatedUrl(url);
     }
+
+    print("Playing episode: ${episode.name}, URL: $url");
 
     Navigator.push(
       context,
@@ -1024,19 +1019,87 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
         itemBuilder: (context, index) => _buildEpisodeItem(index),
       );
 
+  // Widget _buildEpisodeItem(int index) {
+  //   final episode = _currentEpisodes[index];
+  //   final isFocused = index == _selectedEpisodeIndex;
+
+  //   return Focus(
+  //     focusNode: _episodeFocusNodes[episode.id],
+  //     onFocusChange: (hasFocus) {
+  //       if (hasFocus) setState(() => _selectedEpisodeIndex = index);
+  //     },
+  //     child: Padding(
+  //       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+  //       child: AnimatedContainer(
+  //         duration: const Duration(milliseconds: 200),
+  //         decoration: BoxDecoration(
+  //           color: Colors.grey[900],
+  //           borderRadius: BorderRadius.circular(10),
+  //           border: Border.all(
+  //             color: isFocused ? Colors.purpleAccent : Colors.transparent,
+  //             width: 2,
+  //           ),
+  //           boxShadow: isFocused
+  //               ? [BoxShadow(color: Colors.purple.withOpacity(0.5), blurRadius: 10)]
+  //               : [],
+  //         ),
+  //         child: ListTile(
+  //           leading: _buildThumbnail(episode),
+  //           title: Text(
+  //             episode.name,
+  //             style: TextStyle(
+  //               color: isFocused ? Colors.purpleAccent : Colors.white,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //           subtitle: Text(
+  //             episode.description,
+  //             maxLines: 2,
+  //             overflow: TextOverflow.ellipsis,
+  //             style: TextStyle(color: Colors.grey[400]),
+  //           ),
+  //           trailing: Icon(
+  //             Icons.play_arrow,
+  //             color: isFocused ? Colors.purpleAccent : Colors.white,
+  //           ),
+  //           onTap: () => _playEpisode(episode),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildEpisodeItem(int index) {
     final episode = _currentEpisodes[index];
     final isFocused = index == _selectedEpisodeIndex;
+    final focusNode = _episodeFocusNodes[episode.id]!;
 
     return Focus(
-      focusNode: _episodeFocusNodes[episode.id],
+      focusNode: focusNode,
       onFocusChange: (hasFocus) {
         if (hasFocus) setState(() => _selectedEpisodeIndex = index);
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      // <-- this is the new bit
+      onKey: (FocusNode node, RawKeyEvent event) {
+        if (event is RawKeyDownEvent) {
+          final lk = event.logicalKey;
+          if (lk == LogicalKeyboardKey.enter ||
+              lk == LogicalKeyboardKey.select ||
+              lk == LogicalKeyboardKey.gameButtonA ||
+              lk == LogicalKeyboardKey.gameButtonStart) {
+            _playEpisode(episode);
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => _playEpisode(episode),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Colors.grey[900],
             borderRadius: BorderRadius.circular(10),
@@ -1045,29 +1108,55 @@ class _WebSeriesDetailsPageState extends State<WebSeriesDetailsPage>
               width: 2,
             ),
             boxShadow: isFocused
-                ? [BoxShadow(color: Colors.purple.withOpacity(0.5), blurRadius: 10)]
+                ? [
+                    BoxShadow(
+                        color: Colors.purple.withOpacity(0.5), blurRadius: 10)
+                  ]
                 : [],
           ),
-          child: ListTile(
-            leading: _buildThumbnail(episode),
-            title: Text(
-              episode.name,
-              style: TextStyle(
-                color: isFocused ? Colors.purpleAccent : Colors.white,
-                fontWeight: FontWeight.bold,
+          child: Row(
+            children: [
+              // your thumbnail
+              Container(
+                width: 100,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: NetworkImage(widget.banner),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
-            subtitle: Text(
-              episode.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey[400]),
-            ),
-            trailing: Icon(
-              Icons.play_arrow,
-              color: isFocused ? Colors.purpleAccent : Colors.white,
-            ),
-            onTap: () => _playEpisode(episode),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      episode.name,
+                      style: TextStyle(
+                        color: isFocused ? Colors.purpleAccent : Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (episode.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        episode.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[400]),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.play_arrow,
+                color: isFocused ? Colors.purpleAccent : Colors.white,
+              ),
+            ],
           ),
         ),
       ),

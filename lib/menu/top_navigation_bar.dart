@@ -1,5 +1,6 @@
 
 
+
 // import 'dart:math';
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
@@ -109,6 +110,7 @@
 //                       .read<FocusProvider>()
 //                       .setYoutubeSearchNavigationFocusNode(focusNode);
 //                 }
+                
 //                 if (index == 3) {
 //                   context
 //                       .read<FocusProvider>()
@@ -154,6 +156,8 @@
 //                         .requestYoutubeSearchIconFocus();
 //                   });
 //                 }
+
+                
 
 //                 Future.delayed(Duration(milliseconds: 100), () {
 //                   context.read<FocusProvider>().requestWatchNowFocus();
@@ -213,8 +217,6 @@
 //             child: RandomLightColorWidget(
 //               hasFocus: focusNode.hasFocus,
 //               childBuilder: (Color randomColor) {
-//                 final Color currentColor = _generateRandomColor();
-
 //                 return Container(
 //                   margin: EdgeInsets.all(screenwdt * 0.001),
 //                   decoration: BoxDecoration(
@@ -224,14 +226,14 @@
 //                     borderRadius: BorderRadius.circular(8),
 //                     border: Border.all(
 //                       color: focusNode.hasFocus
-//                           ? currentColor
+//                           ? randomColor
 //                           : Colors.transparent,
 //                       width: 2,
 //                     ),
 //                     boxShadow: focusNode.hasFocus
 //                         ? [
 //                             BoxShadow(
-//                               color: currentColor,
+//                               color: randomColor,
 //                               blurRadius: 15.0,
 //                               spreadRadius: 5.0,
 //                             ),
@@ -253,7 +255,7 @@
 //                               color: widget.selectedPage == index
 //                                   ? Colors.red // Selected button text color red
 //                                   : (focusNode.hasFocus
-//                                       ? currentColor
+//                                       ? randomColor
 //                                       : hintColor),
 //                               fontSize: menutextsz,
 //                               fontWeight: focusNode.hasFocus
@@ -271,7 +273,6 @@
 //     );
 //   }
 // }
-
 
 
 
@@ -301,11 +302,12 @@ class TopNavigationBar extends StatefulWidget {
 
 class _TopNavigationBarState extends State<TopNavigationBar> {
   late List<FocusNode> _focusNodes;
+  final List<String> navItems = ['Vod', 'Live TV', 'Search', 'Youtube'];
 
   @override
   void initState() {
     super.initState();
-    _focusNodes = List.generate(4, (index) => FocusNode());
+    _focusNodes = List.generate(navItems.length + 1, (index) => FocusNode());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
@@ -321,7 +323,6 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
     super.dispose();
   }
 
-  // Color generator function
   Color _generateRandomColor() {
     final random = Random();
     return Color.fromRGBO(
@@ -338,6 +339,7 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
       Color backgroundColor = colorProvider.isItemFocused
           ? colorProvider.dominantColor.withOpacity(0.5)
           : cardColor;
+
       return Container(
         color: backgroundColor,
         child: Container(
@@ -352,12 +354,11 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
               ),
               Spacer(),
               Row(
-                children: [
-                  _buildNavigationItem('Vod', 1, _focusNodes[1]),
-                  _buildNavigationItem('Live TV', 2, _focusNodes[2]),
-                  _buildNavigationItem('Search', 3, _focusNodes[3]),
-                  // _buildNavigationItem('Youtube', 4, _focusNodes[4]),
-                ],
+                children: List.generate(navItems.length, (i) {
+                  final index = i + 1; // offset by 1 due to logo
+                  return _buildNavigationItem(
+                      navItems[i], index, _focusNodes[index]);
+                }),
               ),
             ],
           ),
@@ -369,34 +370,31 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
   Widget _buildNavigationItem(String title, int index, FocusNode focusNode) {
     return Padding(
       padding: EdgeInsets.only(
-          top: screenwdt * 0.007,
-          left: screenwdt * 0.013,
-          right: screenwdt * 0.013),
+        top: screenwdt * 0.007,
+        left: screenwdt * 0.013,
+        right: screenwdt * 0.013,
+      ),
       child: IntrinsicWidth(
         child: Focus(
           focusNode: focusNode,
           onFocusChange: (hasFocus) {
             setState(() {
               if (hasFocus) {
-                // Navigation focus updates
-                if (index == 4) {
-                  context
-                      .read<FocusProvider>()
-                      .setYoutubeSearchNavigationFocusNode(focusNode);
-                }
-                if (index == 3) {
-                  context
-                      .read<FocusProvider>()
-                      .setSearchNavigationFocusNode(focusNode);
-                }
-                if (index == 2) {
-                  context.read<FocusProvider>().setLiveTvFocusNode(focusNode);
-                }
-                if (index == 1) {
-                  context.read<FocusProvider>().setVodMenuFocusNode(focusNode);
+                switch (index) {
+                  case 1:
+                    context.read<FocusProvider>().setVodMenuFocusNode(focusNode);
+                    break;
+                  case 2:
+                    context.read<FocusProvider>().setLiveTvFocusNode(focusNode);
+                    break;
+                  case 3:
+                    context.read<FocusProvider>().setSearchNavigationFocusNode(focusNode);
+                    break;
+                  case 4:
+                    context.read<FocusProvider>().setYoutubeSearchNavigationFocusNode(focusNode);
+                    break;
                 }
 
-                // Har baar naya color generate karein
                 final newColor = _generateRandomColor();
                 context.read<ColorProvider>().updateColor(newColor, true);
               } else {
@@ -407,33 +405,53 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
           onKeyEvent: (node, event) {
             if (event is KeyDownEvent) {
               if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                if (index == 1) {
-                  Future.delayed(Duration(milliseconds: 100), () {
+  if (index == widget.selectedPage) {
+    switch (index) {
+      case 0:
+        context.read<FocusProvider>().requestWatchNowFocus();
+        break;
+      case 1:
+        context.read<FocusProvider>().requestVodBannerFocus();
+        break;
+      case 2:
+        context.read<FocusProvider>().requestLiveScreenFocus();
+        break;
+      case 3:
+        context.read<FocusProvider>().requestSearchIconFocus();
+        break;
+      case 4:
+        context.read<FocusProvider>().requestYoutubeSearchIconFocus();
+        break;
+    }
+  } else {
+    context.read<FocusProvider>().requestWatchNowFocus();
+  }
+  return KeyEventResult.handled;
+}
+else
+              if (
+                  event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.select) {
+
+                switch (index) {
+                  case 0:
+                    context.read<FocusProvider>().requestWatchNowFocus();
+                    break;
+                  case 1:
                     context.read<FocusProvider>().requestVodBannerFocus();
-                  });
-                }
-                if (index == 2) {
-                  Future.delayed(Duration(milliseconds: 100), () {
+                    break;
+                  case 2:
                     context.read<FocusProvider>().requestLiveScreenFocus();
-                  });
-                }
-                if (index == 3) {
-                  Future.delayed(Duration(milliseconds: 100), () {
+                    break;
+                  case 3:
                     context.read<FocusProvider>().requestSearchIconFocus();
-                  });
-                }
-                if (index == 4) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    context
-                        .read<FocusProvider>()
-                        .requestYoutubeSearchIconFocus();
-                  });
+                    break;
+                  case 4:
+                    context.read<FocusProvider>().requestYoutubeSearchIconFocus();
+                    break;
                 }
 
-                Future.delayed(Duration(milliseconds: 100), () {
-                  context.read<FocusProvider>().requestWatchNowFocus();
-                });
-
+                widget.onPageSelected(index);
                 return KeyEventResult.handled;
               } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
                 _focusNodes[(index + 1) % _focusNodes.length].requestFocus();
@@ -442,39 +460,6 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                 _focusNodes[
                         (index - 1 + _focusNodes.length) % _focusNodes.length]
                     .requestFocus();
-                return KeyEventResult.handled;
-              } else if (event.logicalKey == LogicalKeyboardKey.select ||
-                  event.logicalKey == LogicalKeyboardKey.enter) {
-                widget.onPageSelected(index);
-
-                if (index == 0) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    context.read<FocusProvider>().requestWatchNowFocus();
-                  });
-                }
-                if (index == 1) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    context.read<FocusProvider>().requestVodBannerFocus();
-                  });
-                }
-                if (index == 2) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    context.read<FocusProvider>().requestLiveScreenFocus();
-                  });
-                }
-                if (index == 3) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    context.read<FocusProvider>().requestSearchIconFocus();
-                  });
-                }
-                if (index == 4) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    context
-                        .read<FocusProvider>()
-                        .requestYoutubeSearchIconFocus();
-                  });
-                }
-
                 return KeyEventResult.handled;
               }
             }
@@ -512,7 +497,9 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                         : [],
                   ),
                   padding: EdgeInsets.symmetric(
-                      vertical: screenhgt * 0.01, horizontal: screenwdt * 0.01),
+                    vertical: screenhgt * 0.01,
+                    horizontal: screenwdt * 0.01,
+                  ),
                   child: index == 0
                       ? Image.asset(
                           'assets/logo3.png',
@@ -522,9 +509,8 @@ class _TopNavigationBarState extends State<TopNavigationBar> {
                           child: Text(
                             title,
                             style: TextStyle(
-                              // color: focusNode.hasFocus ? currentColor : hintColor,
                               color: widget.selectedPage == index
-                                  ? Colors.red // Selected button text color red
+                                  ? Colors.red
                                   : (focusNode.hasFocus
                                       ? randomColor
                                       : hintColor),

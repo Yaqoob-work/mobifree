@@ -101,6 +101,29 @@ class FocusProvider extends ChangeNotifier {
   }
 
 
+
+    FocusNode? _searchNavigationFocusNode;
+
+  void setSearchNavigationFocusNode(FocusNode node) {
+    _searchNavigationFocusNode = node;
+  }
+
+  void requestSearchNavigationFocus() {
+    _searchNavigationFocusNode?.requestFocus();
+  }
+
+
+  FocusNode? _youtubeSearchNavigationFocusNode;
+
+  void setYoutubeSearchNavigationFocusNode(FocusNode node) {
+    _youtubeSearchNavigationFocusNode = node;
+  }
+
+  void requestYoutubeSearchNavigationFocus() {
+    _youtubeSearchNavigationFocusNode?.requestFocus();
+  }
+
+
   // In focus_provider.dart
   void registerElementKey(String identifier, GlobalKey key) {
     _elementKeys[identifier] = key;
@@ -112,20 +135,7 @@ class FocusProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-//   // In focus_provider.dart
-//   void scrollToElement(String identifier) {
-//     final key = _elementKeys[identifier];
-//     if (key?.currentContext == null) {
-//       print('Key for $identifier has no currentContext or is not assigned!');
-//       return; // Exit early if key isn't valid
-//     }
-// print('Scrolling to $identifier');
-//     Scrollable.ensureVisible(
-//       key!.currentContext!,
-//       alignment: 0.0,
-//       duration: const Duration(milliseconds: 300),
-//     );
-//   }
+
 
 
 
@@ -146,8 +156,8 @@ void scrollToElement(String identifier) {
     print('Scrolling to $identifier');
     Scrollable.ensureVisible(
       context,
-      alignment: 0.0, // Align the element at the top
-      duration: const Duration(milliseconds: 400), // Animation duration
+      alignment: 0.15, // Align the element at the top
+      duration: const Duration(milliseconds: 600), // Animation duration
       curve: Curves.linear, // Smooth scrolling
     );
   } else {
@@ -357,26 +367,7 @@ void requestLiveScreenFocus() {
     _liveTvFocusNode?.requestFocus();
   }
 
-  FocusNode? _searchNavigationFocusNode;
 
-  void setSearchNavigationFocusNode(FocusNode node) {
-    _searchNavigationFocusNode = node;
-  }
-
-  void requestSearchNavigationFocus() {
-    _searchNavigationFocusNode?.requestFocus();
-  }
-
-
-  FocusNode? _youtubeSearchNavigationFocusNode;
-
-  void setYoutubeSearchNavigationFocusNode(FocusNode node) {
-    _youtubeSearchNavigationFocusNode = node;
-  }
-
-  void requestYoutubeSearchNavigationFocus() {
-    _youtubeSearchNavigationFocusNode?.requestFocus();
-  }
 
 
 
@@ -640,7 +631,11 @@ void requestLiveScreenFocus() {
 
   void requestManageMoviesFocus() {
     firstManageMoviesFocusNode?.requestFocus();
+      scrollToElement('manageMovies');
   }
+
+
+
   FocusNode? firstManageWebseriesFocusNode;
 
   void setFirstManageWebseriesFocusNode(FocusNode node) {
@@ -650,6 +645,7 @@ void requestLiveScreenFocus() {
 
   void requestManageWebseriesFocus() {
     firstManageWebseriesFocusNode?.requestFocus();
+      scrollToElement('manageWebseries');
   }
 
 

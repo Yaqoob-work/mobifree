@@ -16,12 +16,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MoviesScreen extends StatefulWidget {
   final Function(bool)? onFocusChange;
 
-  const MoviesScreen({
-    Key? key, 
-    this.onFocusChange, 
-    required FocusNode focusNode
-  }) : super(key: key);
-  
+  const MoviesScreen(
+      {Key? key, this.onFocusChange, required FocusNode focusNode})
+      : super(key: key);
+
   @override
   _MoviesScreenState createState() => _MoviesScreenState();
 }
@@ -45,7 +43,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
         if (itemFocusNodes.containsKey(firstItemId)) {
           final focusNode = itemFocusNodes[firstItemId]!;
           // context.read<FocusProvider>().setFirstWatchlistItemFocusNode(focusNode);
-          print("✅ WatchlistScreen: First item focus node registered: $firstItemId");
+          print(
+              "✅ WatchlistScreen: First item focus node registered: $firstItemId");
         } else {
           print("⚠️ WatchlistScreen: First item NOT registered!");
         }
@@ -73,7 +72,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
     try {
       // Load cached data first
       await _loadCachedWatchlistData();
-      
+
       // Fetch new data in background
       await _fetchWatchlistInBackground();
     } catch (e) {
@@ -92,7 +91,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
       if (cachedWatchlist != null) {
         final List<dynamic> cachedData = json.decode(cachedWatchlist);
         setState(() {
-          _watchlistItems = cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+          _watchlistItems =
+              cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
           _isLoading = false;
         });
       }
@@ -104,10 +104,11 @@ class _MoviesScreenState extends State<MoviesScreen> {
   Future<void> _fetchWatchlistInBackground() async {
     try {
       final newWatchlistItems = await _fetchWatchlistFromApi();
-      
+
       // Cache the new data
       final prefs = await SharedPreferences.getInstance();
-      final watchlistJson = json.encode(newWatchlistItems.map((item) => item.toJson()).toList());
+      final watchlistJson =
+          json.encode(newWatchlistItems.map((item) => item.toJson()).toList());
       prefs.setString('watchlist_data', watchlistJson);
 
       // Update UI with new data
@@ -115,7 +116,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
         _watchlistItems = newWatchlistItems;
         _isLoading = false;
       });
-      
+
       // Initialize focus nodes for new items
       for (var item in _watchlistItems) {
         if (!itemFocusNodes.containsKey(item.id)) {
@@ -149,25 +150,29 @@ class _MoviesScreenState extends State<MoviesScreen> {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['status'] == 'success') {
           final List<dynamic> items = data['data'];
-          return items.map((item) => NewsItemModel(
-            id: item['id'].toString(),
-            name: item['title'] ?? '',
-            description: item['description'] ?? '',
-            banner: item['poster'] ?? '',
-            poster: item['poster'] ?? '',
-            category: item['category'] ?? '',
-            url: item['stream_url'] ?? '',
-            streamType: item['stream_type'] ?? '',
-            type: item['type'] ?? '',
-            genres: item['genres'] ?? '',
-            status: item['status'] ?? '',
-            videoId: item['video_id'] ?? '', index: '',
-          )).toList();
+          return items
+              .map((item) => NewsItemModel(
+                    id: item['id'].toString(),
+                    name: item['title'] ?? '',
+                    description: item['description'] ?? '',
+                    banner: item['poster'] ?? '',
+                    poster: item['poster'] ?? '',
+                    category: item['category'] ?? '',
+                    url: item['stream_url'] ?? '',
+                    streamType: item['stream_type'] ?? '',
+                    type: item['type'] ?? '',
+                    genres: item['genres'] ?? '',
+                    status: item['status'] ?? '',
+                    videoId: item['video_id'] ?? '',
+                    index: '',
+                  ))
+              .toList();
         } else {
           throw Exception('API returned error: ${data['message']}');
         }
       } else {
-        throw Exception('Failed to load watchlist data: ${response.statusCode}');
+        throw Exception(
+            'Failed to load watchlist data: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in _fetchWatchlistFromApi: $e');
@@ -183,7 +188,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            padding:
+                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: Text(
               'My Watchlist',
               style: TextStyle(
@@ -225,15 +231,14 @@ class _MoviesScreenState extends State<MoviesScreen> {
   Widget _buildWatchlistItem(NewsItemModel item, int index) {
     // Create focus node if it doesn't exist
     itemFocusNodes.putIfAbsent(
-      item.id,
-      () => FocusNode()
-        ..addListener(() {
-          if (itemFocusNodes[item.id]!.hasFocus) {
-            _scrollToFocusedItem(item.id);
-          }
-        })
-    );
-    
+        item.id,
+        () => FocusNode()
+          ..addListener(() {
+            if (itemFocusNodes[item.id]!.hasFocus) {
+              _scrollToFocusedItem(item.id);
+            }
+          }));
+
     return NewsItem(
       key: Key(item.id),
       hideDescription: true,
@@ -253,7 +258,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
   }
 
   void _handleEnterPress(String itemId) {
-    final selectedItem = _watchlistItems.firstWhere((item) => item.id == itemId);
+    final selectedItem =
+        _watchlistItems.firstWhere((item) => item.id == itemId);
     _navigateToVideoScreen(selectedItem);
   }
 

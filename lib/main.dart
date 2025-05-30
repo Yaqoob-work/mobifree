@@ -621,12 +621,6 @@
 //   }
 // }
 
-
-
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -721,8 +715,6 @@ class _MyAppState extends State<MyApp> {
     // });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     screenhgt = MediaQuery.of(context).size.height;
@@ -732,7 +724,7 @@ class _MyAppState extends State<MyApp> {
     menutextsz = MediaQuery.of(context).size.width / 70;
     Headingtextsz = MediaQuery.of(context).size.width / 50;
     highlightColor = Colors.blue;
-    cardColor =  const Color.fromARGB(200, 0, 0, 0).withOpacity(0.7);
+    cardColor = const Color.fromARGB(200, 0, 0, 0).withOpacity(0.7);
     hintColor = Colors.white;
     borderColor = Color.fromARGB(255, 247, 6, 118);
     localImage = Image.asset(
@@ -809,7 +801,7 @@ class UpdateChecker {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
 
-          String apiVersion = data['playstore_version'];
+          String apiVersion = data['playstore_version'] ?? "";
           String apkUrl = data['playstore_apkUrl'];
           String releaseNotes = data['playstore_releaseNotes'];
 
@@ -966,7 +958,7 @@ class _MyHomeState extends State<MyHome> {
       VOD(),
       LiveScreen(),
       SearchScreen(),
-      // YoutubeSearchScreen()
+      YoutubeSearchScreen()
     ];
 
     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
@@ -983,7 +975,7 @@ class _MyHomeState extends State<MyHome> {
                 Container(
                   width: screenwdt,
                   height: screenhgt,
-                color: cardColor,
+                  color: cardColor,
                   child: Column(
                     children: [
                       TopNavigationBar(

@@ -233,8 +233,9 @@ class _HomeScreenState extends State<HomeScreen> {
       focusProvider.setWatchNowFocusNode(watchNowFocusNode);
       focusProvider.setFirstMusicItemFocusNode(musicItemFocusNode);
       focusProvider.setFirstSubVodFocusNode(firstSubVodFocusNode);
-      focusProvider.setFirstSubVodFocusNode(manageMoviesFocusNode);
-      focusProvider.setFirstSubVodFocusNode(manageWebseriesFocusNode);
+      focusProvider.setFirstManageMoviesFocusNode(manageMoviesFocusNode);
+      focusProvider.setFirstManageWebseriesFocusNode(manageWebseriesFocusNode);
+      focusProvider.setHomeCategoryFirstBannerFocusNode(manageWebseriesFocusNode);
 
       context.read<FocusProvider>().registerElementKey('watchNow', watchNowKey);
       focusProvider.registerElementKey('musicItem', musicItemKey);
@@ -261,6 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
     watchNowFocusNode.dispose();
     musicItemFocusNode.dispose();
     firstSubVodFocusNode.dispose();
+    manageMoviesFocusNode.dispose();
+    manageWebseriesFocusNode.dispose();
     firstHomeCategoryFocusNode.dispose();
     _socketService.dispose();
     super.dispose();
@@ -270,30 +273,31 @@ class _HomeScreenState extends State<HomeScreen> {
   double _calculateManageMoviesHeight(BuildContext context) {
     final focusProvider = context.watch<FocusProvider>();
     final int categoryCount = focusProvider.categoryCount;
-    
+
     // Base height per category (adjust this value as needed)
-    final double heightPerCategory = screenhgt * 0.45;
-    
+    final double heightPerCategory = screenhgt * 0.42;
+
     // Calculate total height based on number of categories
     // Using a minimum of 1 category to avoid zero height
     final int effectiveCategoryCount = categoryCount > 0 ? categoryCount : 1;
-    
+
     return heightPerCategory * effectiveCategoryCount;
   }
+
   // Calculate ManageMovies height based on category count
-  double _calculateManageWebseriesHeight(BuildContext context) {
-    final focusProvider = context.watch<FocusProvider>();
-    final int categoryCount = focusProvider.categoryCount;
-    
-    // Base height per category (adjust this value as needed)
-    final double heightPerCategory = screenhgt * 0.45;
-    
-    // Calculate total height based on number of categories
-    // Using a minimum of 1 category to avoid zero height
-    final int effectiveCategoryCount = categoryCount > 0 ? categoryCount : 1;
-    
-    return heightPerCategory * effectiveCategoryCount;
-  }
+  // double _calculateManageWebseriesHeight(BuildContext context) {
+  //   final focusProvider = context.watch<FocusProvider>();
+  //   final int categoryCount = focusProvider.categoryCount;
+
+  //   // Base height per category (adjust this value as needed)
+  //   final double heightPerCategory = screenhgt * 0.45;
+
+  //   // Calculate total height based on number of categories
+  //   // Using a minimum of 1 category to avoid zero height
+  //   final int effectiveCategoryCount = categoryCount > 0 ? categoryCount : 1;
+
+  //   return heightPerCategory * effectiveCategoryCount;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -304,7 +308,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Get the calculated height for ManageMovies
       final double manageMoviesHeight = _calculateManageMoviesHeight(context);
-      final double manageWebseriesHeight = _calculateManageWebseriesHeight(context);
+      // final double manageWebseriesHeight =
+      //     _calculateManageWebseriesHeight(context);
 
       return Scaffold(
         backgroundColor: backgroundColor,
@@ -320,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    height: screenhgt * 0.8,
+                    height: screenhgt * 0.5,
                     width: screenwdt,
                     key: watchNowKey,
                     child: BannerSlider(
@@ -351,7 +356,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SizedBox(
                     // Use the dynamically calculated height based on category count
-                    height: manageWebseriesHeight,
+                    // height: manageWebseriesHeight,
+                    height: screenhgt * 0.42,
+
                     key: manageWebseriesKey,
                     child: ManageWebseries(
                       focusNode: manageWebseriesFocusNode,

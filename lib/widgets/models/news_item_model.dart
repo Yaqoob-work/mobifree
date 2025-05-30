@@ -155,7 +155,7 @@ class NewsItemModel {
   final String index;
   final String name;
   final String description;
-  final String thumbnail;
+  final String thumbnail_high;
   final String banner;
   final String poster;
   final String url;
@@ -193,7 +193,7 @@ class NewsItemModel {
     this.index = '',
     required this.name,
     this.description = '',
-    this.thumbnail = '',
+    this.thumbnail_high = '',
     required this.banner,
     this.poster = '',
     required this.url,
@@ -231,7 +231,7 @@ class NewsItemModel {
       index: json['index']?.toString() ?? '',
       name: json['name'] ?? json['Episoade_Name'] ?? json['session_name'] ?? '',
       description: json['description'] ?? json['episoade_description'] ?? json['session_description'] ?? '',
-      thumbnail: json['thumbnail'] ?? '',
+      thumbnail_high: json['thumbnail_high'] ?? '',
       banner: json['banner'] ?? json['session_image'] ?? json['episoade_image'] ?? '',
       poster: json['poster'] ?? '',
       url: json['url'] ?? '',
@@ -270,7 +270,7 @@ class NewsItemModel {
       'index': index,
       'name': name,
       'description': description,
-      'thumbnail': thumbnail,
+      'thumbnail_high': thumbnail_high,
       'banner': banner,
       'poster': poster,
       'url': url,
@@ -308,7 +308,7 @@ class NewsItemModel {
     String? index,
     String? name,
     String? description,
-    String? thumbnail,
+    String? thumbnail_high,
     String? banner,
     String? poster,
     String? url,
@@ -344,7 +344,7 @@ class NewsItemModel {
       index: index ?? this.index,
       name: name ?? this.name,
       description: description ?? this.description,
-      thumbnail: thumbnail ?? this.thumbnail,
+      thumbnail_high: thumbnail_high ?? this.thumbnail_high,
       banner: banner ?? this.banner,
       poster: poster ?? this.poster,
       url: url ?? this.url,

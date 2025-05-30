@@ -1,7 +1,3 @@
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as https;
@@ -9,8 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/news_item_model.dart';
 
 class ApiService {
-
-    ApiService();
+  ApiService();
 
   Future<void> updateCacheOnPageEnter() async {
     await _updateCacheInBackground();
@@ -43,43 +38,41 @@ class ApiService {
 //   }
 // }
 
-Future<List<NewsItemModel>> fetchMusicData() async {
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
+  Future<List<NewsItemModel>> fetchMusicData() async {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
 
-  if (response.statusCode == 200) {
-    final List<dynamic> data = json.decode(response.body);
-    
-    // List ko sort karein `index` ke basis pe (ascending order)
-    List<NewsItemModel> sortedList = data
-        .map((item) => NewsItemModel.fromJson(item))
-        .where((item) => item.index != null) // Null check
-        .toList()
-      ..sort((a, b) => int.parse(a.index).compareTo(int.parse(b.index)));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
 
-    return sortedList;
-  } else {
-    throw Exception('Failed to fetch music data');
+      // List ko sort karein `index` ke basis pe (ascending order)
+      List<NewsItemModel> sortedList = data
+          .map((item) => NewsItemModel.fromJson(item))
+          .where((item) => item.index != null) // Null check
+          .toList()
+        ..sort((a, b) => int.parse(a.index).compareTo(int.parse(b.index)));
+
+      return sortedList;
+    } else {
+      throw Exception('Failed to fetch music data');
+    }
   }
-}
 
+  Future<List<NewsItemModel>> fetchNewsData() async {
+    final response = await https.get(
+      Uri.parse('https://api.ekomflix.com/android/getNewsData'),
+      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+    );
 
-Future<List<NewsItemModel>> fetchNewsData() async {
-  final response = await https.get(
-    Uri.parse('https://api.ekomflix.com/android/getNewsData'),
-    headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  );
-
-  if (response.statusCode == 200) {
-    final List<dynamic> data = json.decode(response.body);
-    return data.map((item) => NewsItemModel.fromJson(item)).toList();
-  } else {
-    throw Exception('Failed to fetch news data');
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((item) => NewsItemModel.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to fetch news data');
+    }
   }
-}
-
 
   Future<void> fetchSettings() async {
     try {
@@ -198,45 +191,41 @@ Future<List<NewsItemModel>> fetchNewsData() async {
   //       .toList();
   // }
 
-
-
   void _processEntertainmentData(List<dynamic> responseData) {
-  List<NewsItemModel> allChannels = responseData
-      .where((channel) => _isChannelAllowed(channel))
-      .map((channel) => NewsItemModel.fromJson(channel))
-      .where((item) => item.index != null) // Null check
-      .toList()
-    ..sort((a, b) => int.parse(a.index).compareTo(int.parse(b.index))); // Sorting
+    List<NewsItemModel> allChannels = responseData
+        .where((channel) => _isChannelAllowed(channel))
+        .map((channel) => NewsItemModel.fromJson(channel))
+        .where((item) => item.index != null) // Null check
+        .toList()
+      ..sort((a, b) =>
+          int.parse(a.index).compareTo(int.parse(b.index))); // Sorting
 
-  allChannelList = allChannels;
+    allChannelList = allChannels;
 
-  newsList = allChannels
-      .where((channel) => channel.genres.contains('News'))
-      .toList();
+    newsList = allChannels
+        .where((channel) => channel.genres.contains('News'))
+        .toList();
 
-  movieList = allChannels
-      .where((channel) => channel.genres.contains('Movie'))
-      .toList();
+    movieList = allChannels
+        .where((channel) => channel.genres.contains('Movie'))
+        .toList();
 
-  musicList = allChannels
-      .where((channel) => channel.genres.contains('Music'))
-      .toList();
+    musicList = allChannels
+        .where((channel) => channel.genres.contains('Music'))
+        .toList();
 
-  entertainmentList = allChannels
-      .where((channel) => channel.genres.contains('Entertainment'))
-      .toList();
+    entertainmentList = allChannels
+        .where((channel) => channel.genres.contains('Entertainment'))
+        .toList();
 
-  religiousList = allChannels
-      .where((channel) => channel.genres.contains('Religious'))
-      .toList();
+    religiousList = allChannels
+        .where((channel) => channel.genres.contains('Religious'))
+        .toList();
 
-  sportsList = allChannels
-      .where((channel) => channel.genres.contains('Sports'))
-      .toList();
-}
-
-
-
+    sportsList = allChannels
+        .where((channel) => channel.genres.contains('Sports'))
+        .toList();
+  }
 
   bool _isChannelAllowed(dynamic channel) {
     int channelId = int.tryParse(channel['id'].toString()) ?? 0;
@@ -270,8 +259,6 @@ Future<List<NewsItemModel>> fetchNewsData() async {
       print('Error updating cache in background: $e');
     }
   }
-
-  
 
   void dispose() {
     _updateController.close();

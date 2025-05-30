@@ -146,7 +146,10 @@ class _BannerSliderState extends State<BannerSlider> {
     super.initState();
     _lastPlayedScrollController = ScrollController();
     sharedDataProvider = context.read<SharedDataProvider>();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+
     sharedDataProvider.updateLastPlayedVideos(lastPlayedVideos);
+    });
     _socketService.initSocket();
     // printLastPlayedPositions();
     _pageController = PageController();
@@ -237,17 +240,6 @@ class _BannerSliderState extends State<BannerSlider> {
     }
   }
 
-  Future<Map<String, dynamic>> _getLastPlayedVideo() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? lastVideoDuration = prefs.getInt('last_video_duration');
-    int? lastVideoPosition = prefs.getInt('last_video_position');
-
-    return {
-      "duration": lastVideoDuration ?? 0,
-      "position": lastVideoPosition ?? 0,
-    };
-  }
-
   bool isYoutubeUrl(String? url) {
     if (url == null || url.isEmpty) {
       return false;
@@ -316,38 +308,32 @@ class _BannerSliderState extends State<BannerSlider> {
     }
   }
 
-
   Future<void> _loadCachedData() async {
-  final prefs = await SharedPreferences.getInstance();
-  final cachedBanners = prefs.getString('banners');
+    final prefs = await SharedPreferences.getInstance();
+    final cachedBanners = prefs.getString('banners');
 
-  if (cachedBanners != null) {
-    final List<dynamic> responseData = json.decode(cachedBanners);
-    setState(() {
-      bannerList = responseData
-          .where((banner) => banner['status'] == "1")
-          .map((banner) => NewsItemModel.fromJson(banner))
-          .toList();
+    if (cachedBanners != null) {
+      final List<dynamic> responseData = json.decode(cachedBanners);
+      setState(() {
+        bannerList = responseData
+            .where((banner) => banner['status'] == "1")
+            .map((banner) => NewsItemModel.fromJson(banner))
+            .toList();
 
-      selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
-      isLoading = false;
-    });
+        selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
+        isLoading = false;
+      });
 
-    if (bannerList.isNotEmpty) {
-      await _fetchBannerColors();
+      if (bannerList.isNotEmpty) {
+        await _fetchBannerColors();
+      }
+    } else {
+      setState(() => isLoading = false);
     }
-  } else {
-    setState(() => isLoading = false);
+
+    // Background mein data fetch karne ke liye
+    fetchBanners(isBackgroundFetch: true);
   }
-
-  // Background mein data fetch karne ke liye
-  fetchBanners(isBackgroundFetch: true);
-}
-
-
-
-
-
 
   // Future<void> _loadCachedData() async {
   //   final prefs = await SharedPreferences.getInstance();
@@ -375,50 +361,49 @@ class _BannerSliderState extends State<BannerSlider> {
   //   fetchBanners(isBackgroundFetch: true);
   // }
 
+  Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedBanners = prefs.getString('banners');
 
-  
-Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final cachedBanners = prefs.getString('banners');
+    try {
+      final response = await https.get(
+        Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
+        headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
+      );
 
-  try {
-    final response = await https.get(
-      Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
-      headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-    );
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
 
-    if (response.statusCode == 200) {
-      final List<dynamic> responseData = json.decode(response.body);
+        // **Check if API response is different from cached data**
+        if (cachedBanners != null &&
+            json.encode(json.decode(cachedBanners)) ==
+                json.encode(responseData)) {
+          return; // No update needed
+        }
 
-      // **Check if API response is different from cached data**
-      if (cachedBanners != null &&
-          json.encode(json.decode(cachedBanners)) == json.encode(responseData)) {
-        return; // No update needed
+        setState(() {
+          bannerList = responseData
+              .where((banner) => banner['status'] == "1")
+              .map((banner) => NewsItemModel.fromJson(banner))
+              .toList();
+
+          selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
+          isLoading = false;
+        });
+
+        await prefs.setString('banners', response.body);
+        await _fetchBannerColors();
+        _startAutoSlide();
+      } else {
+        throw Exception('Failed to load banners');
       }
-
+    } catch (e) {
       setState(() {
-        bannerList = responseData
-            .where((banner) => banner['status'] == "1")
-            .map((banner) => NewsItemModel.fromJson(banner))
-            .toList();
-
-        selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
+        errorMessage = e.toString();
         isLoading = false;
       });
-
-      await prefs.setString('banners', response.body);
-      await _fetchBannerColors();
-      _startAutoSlide();
-    } else {
-      throw Exception('Failed to load banners');
     }
-  } catch (e) {
-    setState(() {
-      errorMessage = e.toString();
-      isLoading = false;
-    });
   }
-}
 
   // Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
   //   final prefs = await SharedPreferences.getInstance();
@@ -691,7 +676,7 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
       _lastPlayedScrollController.animateTo(
         targetOffset,
         duration: Duration(milliseconds: 1000),
-        curve: Curves.linear ,
+        curve: Curves.linear,
       );
     }
   }
@@ -721,7 +706,6 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                               controller: _pageController,
                               itemCount: bannerList.length,
                               onPageChanged: (index) {
-                                
                                 setState(() {
                                   selectedContentId =
                                       bannerList[index].contentId.toString();
@@ -879,7 +863,7 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                             // Continue Watching Section
                             if (lastPlayedVideos.isNotEmpty)
                               Positioned(
-                                bottom: screenhgt * 0.03,
+                                bottom: screenhgt * 0.01,
                                 left: 0,
                                 right: 0,
                                 child: Container(
@@ -889,20 +873,47 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10.0),
-                                        child: Text(
-                                          'Continue Watching',
-                                          style: TextStyle(
-                                            fontSize: Headingtextsz,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: screenhgt * 0.02),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: screenwdt * 0.025),
+                                          child:
+                                              // Text(
+                                              //   'Continue Watching',
+                                              //   style: TextStyle(
+                                              //     fontSize: Headingtextsz,
+                                              //     fontWeight: FontWeight.bold,
+                                              //     color: Colors.white,
+                                              //   ),
+                                              // ),
+                                              Container(
+                                            padding: EdgeInsets.all(
+                                                screenwdt * 0.005),
+                                            decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: Colors.transparent,
+                                                  width: 2.0,
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.transparent,
+                                                    blurRadius: 15.0,
+                                                    spreadRadius: 5.0,
+                                                  ),
+                                                ]),
+                                            child: Text(
+                                              'Continue Watching   ⇓',
+                                              style: TextStyle(
+                                                fontSize: menutextsz,
+                                                color: hintColor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          )),
+                                      // SizedBox(height: screenhgt * 0.02),
                                       SizedBox(
-                                        height: screenhgt * 0.35,
+                                        height: screenhgt * 0.27,
                                         child: ListView.builder(
                                             controller:
                                                 _lastPlayedScrollController,
@@ -1089,8 +1100,8 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                                         .ignored;
                                                   },
                                                   child: Container(
-                                                    width: screenwdt * 0.18,
-                                                    height: screenhgt * 0.15,
+                                                    width: screenwdt * 0.15,
+                                                    height: screenhgt * 0.1,
                                                     margin:
                                                         EdgeInsets.symmetric(
                                                             horizontal: 5),
@@ -1157,10 +1168,11 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                                                       .ellipsis,
                                                             ),
                                                           ),
-                                                          SizedBox(
-                                                              height:
-                                                                  screenhgt *
-                                                                      0.02),
+
+                                                          // SizedBox(
+                                                          //     height:
+                                                          //         screenhgt *
+                                                          //             0.02),
                                                           Stack(
                                                             children: [
                                                               ClipRRect(
@@ -1180,13 +1192,13 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                                                       ? Image
                                                                           .memory(
                                                                           _getCachedImage(videoData['bannerImageUrl'] ??
-                                                                              ''),
+                                                                              localImage),
                                                                           fit: BoxFit
                                                                               .cover,
                                                                           width:
                                                                               double.infinity,
                                                                           height:
-                                                                              screenhgt * 0.15,
+                                                                              screenhgt * 0.1,
                                                                           errorBuilder: (context, error, stackTrace) =>
                                                                               Image.asset(
                                                                             localImage,
@@ -1195,7 +1207,7 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                                                             width:
                                                                                 double.infinity,
                                                                             height:
-                                                                                screenhgt * 0.15,
+                                                                                screenhgt * 0.1,
                                                                           ),
                                                                         )
                                                                       : Image
@@ -1207,14 +1219,14 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                                                           width:
                                                                               double.infinity,
                                                                           height:
-                                                                              screenhgt * 0.15,
+                                                                              screenhgt * 0.1,
                                                                           errorBuilder: (context,
                                                                               error,
                                                                               stackTrace) {
                                                                             return Image.asset('assets/logo.png',
                                                                                 fit: BoxFit.cover,
                                                                                 width: double.infinity,
-                                                                                height: screenhgt * 0.15);
+                                                                                height: screenhgt * 0.1);
                                                                           },
                                                                         ),
                                                                 ),
@@ -1225,10 +1237,11 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
                                                                           0.02),
                                                             ],
                                                           ),
+
                                                           SizedBox(
                                                               height:
                                                                   screenhgt *
-                                                                      0.02),
+                                                                      0.01),
                                                           Padding(
                                                             padding:
                                                                 const EdgeInsets
@@ -1475,7 +1488,10 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
         });
         printLastPlayedPositions();
         print("LoadedlastPlayedVideos: $lastPlayedVideos");
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+
         sharedDataProvider.updateLastPlayedVideos(lastPlayedVideos);
+  });
         // WidgetsBinding.instance.addPostFrameCallback((_) {
         //   if (lastPlayedVideos.isNotEmpty) {
         //     context.read<FocusProvider>().setFirstLastPlayedFocusNode(
@@ -1489,6 +1505,9 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
       });
     }
   }
+
+
+
 
   void printLastPlayedPositions() {
     for (int i = 0; i < lastPlayedVideos.length; i++) {
@@ -1554,7 +1573,8 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
           contentType: '1',
           genres: '',
           position: video['position'], // Include position as Duration
-          liveStatus: video['liveStatus'], index: '', // Include position as Duration
+          liveStatus: video['liveStatus'],
+          index: '', // Include position as Duration
         );
       }).toList();
 
@@ -1600,7 +1620,7 @@ Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
               isBannerSlider: source == 'isBannerSlider',
               videoId: videoId,
               source: 'isLastPlayedVideos', name: videoData['videoName'] ?? '',
-              liveStatus: videoData['liveStatus'] ,
+              liveStatus: videoData['liveStatus'],
             ),
           ),
         );

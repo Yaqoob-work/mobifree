@@ -1,5 +1,3 @@
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -70,9 +68,6 @@ class CategoryService {
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
     );
 
-    
-
-
     if (response.statusCode == 200) {
       categories = _processCategories(json.decode(response.body));
       final prefs = await SharedPreferences.getInstance();
@@ -96,25 +91,24 @@ class CategoryService {
   // }
 
   List<Category> _processCategories(List<dynamic> jsonResponse) {
-  List<Category> categories =
-      jsonResponse.map((category) => Category.fromJson(category)).toList();
-  
-  if (settings['tvenableAll'] == 0) {
-    for (var category in categories) {
-      category.channels.retainWhere(
-        (channel) => settings['channels'].contains(int.parse(channel.id)),
-      );
+    List<Category> categories =
+        jsonResponse.map((category) => Category.fromJson(category)).toList();
+
+    if (settings['tvenableAll'] == 0) {
+      for (var category in categories) {
+        category.channels.retainWhere(
+          (channel) => settings['channels'].contains(int.parse(channel.id)),
+        );
+      }
     }
+
+    // Sort categories and their channels by index
+    for (var category in categories) {
+      category.channels.sort((a, b) => a.index.compareTo(b.index));
+    }
+
+    return categories;
   }
-
-  // Sort categories and their channels by index
-  for (var category in categories) {
-    category.channels.sort((a, b) => a.index.compareTo(b.index));
-  }
-
-  return categories;
-}
-
 
   Future<void> _updateCacheInBackground() async {
     try {
@@ -319,7 +313,6 @@ class Channel {
       type: json['Type'] ?? '',
       status: json['status'] ?? '',
       description: json['description'] ?? '',
-
     );
   }
 }
@@ -421,9 +414,9 @@ class _CategoryWidgetState extends State<CategoryWidget> {
     //     .where((channel) => channel.url.isNotEmpty)
     //     .toList();
 
-          List<Channel> filteredChannels = List.from(widget.category.channels);
-  filteredChannels.sort((a, b) => a.index.compareTo(b.index)); // Sort by index
-
+    List<Channel> filteredChannels = List.from(widget.category.channels);
+    filteredChannels
+        .sort((a, b) => a.index.compareTo(b.index)); // Sort by index
 
     return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
       Color backgroundColor = colorProvider.isItemFocused

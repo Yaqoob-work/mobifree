@@ -91,7 +91,6 @@ Future<void> fetchSettings() async {
   }
 }
 
-
 class SearchScreen extends StatefulWidget {
   @override
   _SearchScreenState createState() => _SearchScreenState();
@@ -122,9 +121,11 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchIconFocusNode.addListener(_onSearchIconFocusChanged);
     _socketService.initSocket();
     checkServerStatus();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-    context.read<FocusProvider>().setSearchIconFocusNode(_searchIconFocusNode);
-  });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<FocusProvider>()
+          .setSearchIconFocusNode(_searchIconFocusNode);
+    });
   }
 
   @override
@@ -525,16 +526,11 @@ class _SearchScreenState extends State<SearchScreen> {
           Focus(
             focusNode: _searchIconFocusNode,
             onKey: (node, event) {
-                       if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowUp) {
-
-                      context
-                          .read<FocusProvider>()
-                          .requestSearchNavigationFocus();
-                      return KeyEventResult.handled;
-                    }
-                  
-       else
               if (event is RawKeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                context.read<FocusProvider>().requestSearchNavigationFocus();
+                return KeyEventResult.handled;
+              } else if (event is RawKeyDownEvent &&
                   event.logicalKey == LogicalKeyboardKey.select) {
                 _toggleSearchField();
                 return KeyEventResult.handled;
@@ -579,7 +575,7 @@ class _SearchScreenState extends State<SearchScreen> {
         });
       },
       onKeyEvent: (FocusNode node, KeyEvent event) {
- if (event is KeyDownEvent &&
+        if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
           _onItemTap(context, index);
           return KeyEventResult.handled;
