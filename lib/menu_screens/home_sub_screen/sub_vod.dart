@@ -466,32 +466,26 @@ class _SubVodState extends State<SubVod> {
   @override
   void initState() {
     super.initState();
-    firstSubVodFocusNode = FocusNode();
 
-    // Add key event listener
-    firstSubVodFocusNode.onKey = (node, event) {
-      if (event is RawKeyDownEvent) {
-        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          print("⬆️ SubVod: Up Arrow pressed, requesting music item focus");
-
-          context.read<FocusProvider>().requestMusicItemFocus(context);
-          return KeyEventResult.handled;
+    firstSubVodFocusNode = FocusNode()
+      ..onKey = (node, event) {
+        if (event is RawKeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            context.read<FocusProvider>().requestMusicItemFocus(context);
+            return KeyEventResult.handled;
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            // Request focus on Movies' first item
+            // final moviesFirstFocusNode = context.read<FocusProvider>().requestManageMoviesFocus;
+            // if (moviesFirstFocusNode != null) {
+            //   moviesFirstFocusNode.requestFocus();
+            //   return KeyEventResult.handled;
+            // }
+            context.read<FocusProvider>().requestManageMoviesFocus;
+            return KeyEventResult.handled;
+          }
         }
-
-// else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-//         print("⬇️ SubVod: Down Arrow pressed, moving to HomeCategory's first banner");
-
-//         final homeCategoryFirstBannerFocusNode =
-//             context.read<FocusProvider>().getHomeCategoryFirstBannerFocusNode();
-
-//         if (homeCategoryFirstBannerFocusNode != null) {
-//           homeCategoryFirstBannerFocusNode.requestFocus();
-//           return KeyEventResult.handled;
-//         }
-//       }
-      }
-      return KeyEventResult.ignored;
-    };
+        return KeyEventResult.ignored;
+      };
 
     // Register the first SubVod focus node in the FocusProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -663,24 +657,38 @@ class _SubVodState extends State<SubVod> {
                                 .read<FocusProvider>()
                                 .requestMusicItemFocus(context);
                             return KeyEventResult.handled;
-                          } else if (event.logicalKey ==
+                          }
+
+                          // else if (event.logicalKey ==
+                          //     LogicalKeyboardKey.arrowDown) {
+                          //   // final homeCategoryFocusNode =
+                          //   //     context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
+                          //   // if (homeCategoryFocusNode != null) {
+                          //   //   homeCategoryFocusNode.requestFocus();
+                          //   //   return KeyEventResult.handled;
+                          //   // }
+                          //   // inside SubVod initState or ListView.builder:
+                          //   if (event.logicalKey ==
+                          //       LogicalKeyboardKey.arrowDown) {
+                          //     print(
+                          //         "⬇️ SubVod: Arrow Down pressed, requesting ManageMovies item focus");
+                          //     context
+                          //         .read<FocusProvider>()
+                          //         .requestManageMoviesFocus();
+                          //     return KeyEventResult.handled;
+                          //   }
+
+                          // }
+
+                          else if (event.logicalKey ==
                               LogicalKeyboardKey.arrowDown) {
-                            // final homeCategoryFocusNode =
-                            //     context.read<FocusProvider>().getHomeCategoryFirstItemFocusNode();
-                            // if (homeCategoryFocusNode != null) {
-                            //   homeCategoryFocusNode.requestFocus();
-                            //   return KeyEventResult.handled;
-                            // }
-                            // inside SubVod initState or ListView.builder:
-                            if (event.logicalKey ==
-                                LogicalKeyboardKey.arrowDown) {
-                              print(
-                                  "⬇️ SubVod: Arrow Down pressed, requesting ManageMovies item focus");
-                              context
-                                  .read<FocusProvider>()
-                                  .requestManageMoviesFocus();
-                              return KeyEventResult.handled;
-                            }
+                            print(
+                                "⬇️ SubVod: Arrow Down pressed, requesting ManageMovies item focus");
+                            context
+                                .read<FocusProvider>()
+                                .requestManageMoviesFocus();
+
+                            return KeyEventResult.handled;
                           }
                         }
                         return KeyEventResult.ignored;
@@ -929,19 +937,30 @@ class _VODState extends State<VOD> {
   //   );
   // }
   Widget build(BuildContext context) {
-    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
-      // Get background color based on provider state
-      Color backgroundColor =
-          colorProvider.isItemFocused ? colorProvider.dominantColor : cardColor;
-      return Scaffold(
-        backgroundColor: backgroundColor,
-        body: _isLoading
-            ? Center(child: LoadingIndicator())
-            : _networks != null
-                ? Container(color: Colors.black54, child: _buildNetworksList())
-                : Center(child: Text('...')),
-      );
-    });
+    return PopScope(
+        canPop: false, // Back button se page pop nahi hoga
+        onPopInvoked: (didPop) {
+          if (!didPop) {
+            // Back button dabane par ye function call hoga
+            context.read<FocusProvider>().requestWatchNowFocus();
+          }
+        },
+        child:
+            Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+          // Get background color based on provider state
+          Color backgroundColor = colorProvider.isItemFocused
+              ? colorProvider.dominantColor
+              : cardColor;
+          return Scaffold(
+            backgroundColor: backgroundColor,
+            body: _isLoading
+                ? Center(child: LoadingIndicator())
+                : _networks != null
+                    ? Container(
+                        color: Colors.black54, child: _buildNetworksList())
+                    : Center(child: Text('...')),
+          );
+        }));
   }
 
   @override

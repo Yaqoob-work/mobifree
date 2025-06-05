@@ -146,10 +146,7 @@ class _BannerSliderState extends State<BannerSlider> {
     super.initState();
     _lastPlayedScrollController = ScrollController();
     sharedDataProvider = context.read<SharedDataProvider>();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
 
-    sharedDataProvider.updateLastPlayedVideos(lastPlayedVideos);
-    });
     _socketService.initSocket();
     // printLastPlayedPositions();
     _pageController = PageController();
@@ -179,6 +176,7 @@ class _BannerSliderState extends State<BannerSlider> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      sharedDataProvider.updateLastPlayedVideos(lastPlayedVideos);
       context.read<FocusProvider>().setWatchNowFocusNode(_buttonFocusNode);
 
       if (lastPlayedVideos.isNotEmpty) {
@@ -404,158 +402,6 @@ class _BannerSliderState extends State<BannerSlider> {
       });
     }
   }
-
-  // Future<void> fetchBanners({bool isBackgroundFetch = false}) async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final cachedBanners = prefs.getString('banners');
-
-  //   try {
-  //     final response = await https.get(
-  //       Uri.parse('https://api.ekomflix.com/android/getCustomImageSlider'),
-  //       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> responseData = json.decode(response.body);
-
-  //       if (cachedBanners != null &&
-  //           json.encode(json.decode(cachedBanners)) ==
-  //               json.encode(responseData)) {
-  //         return;
-  //       }
-
-  //       setState(() {
-  //         bannerList = responseData
-  //             .where((banner) => banner['status'] == "1")
-  //             .map((banner) => NewsItemModel.fromJson(banner))
-  //             .toList();
-
-  //         selectedContentId = bannerList.isNotEmpty ? bannerList[0].id : null;
-  //         isLoading = false;
-  //       });
-
-  //       await prefs.setString('banners', response.body);
-  //       await _fetchBannerColors();
-  //       _startAutoSlide();
-  //     } else {
-  //       throw Exception('Failed to load banners');
-  //     }
-  //   } catch (e) {
-  //     setState(() {
-  //       errorMessage = e.toString();
-  //       isLoading = false;
-  //     });
-  //   }
-  // }
-
-  // Future<void> fetchAndPlayVideo(
-  //     String contentId, List<NewsItemModel> channelList) async {
-  //   if (_isNavigating) return; // Prevent duplicate navigation
-  //   _isNavigating = true;
-
-  //   bool shouldPlayVideo = true;
-  //   bool shouldPop = true;
-
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (BuildContext context) {
-  //       return WillPopScope(
-  //         onWillPop: () async {
-  //           shouldPlayVideo = false;
-  //           shouldPop = false;
-  //           return true;
-  //         },
-  //         child: SpinKitFadingCircle(
-  //           color: borderColor,
-  //           size: 50.0,
-  //         ),
-  //       );
-  //     },
-  //   );
-
-  //   try {
-  //     final responseData = await fetchLiveFeaturedTVById(contentId);
-
-  //     // final filteredData = responseData.firstWhere(
-  //     //   (channel) => channel['id'].toString() == contentId,
-  //     //   orElse: () => null,
-  //     // );
-
-  //     if (responseData != null) {
-  //       String originalUrl = responseData['url'] ?? '';
-  //       String videoUrl = responseData['url'] ?? '';
-
-  //       if (responseData['stream_type'] == 'YoutubeLive' ||
-  //           responseData['type'] == 'Youtube') {
-  //         for (int i = 0; i < _maxRetries; i++) {
-  //           try {
-  //             videoUrl = await _socketService.getUpdatedUrl(videoUrl);
-  //             responseData['url'] = videoUrl;
-  //             responseData['stream_type'] = "M3u8";
-  //             break;
-  //           } catch (e) {
-  //             if (i == _maxRetries - 1) rethrow;
-  //             await Future.delayed(Duration(seconds: _retryDelay));
-  //           }
-  //         }
-  //       }
-  //       bool liveStatus = false;
-  //       if (responseData['stream_type'] == 'YoutubeLive' ||
-  //           responseData['type'] == 'Youtube') {
-  //         setState(() {
-  //           liveStatus = true;
-  //         });
-  //       }
-  //       {
-  //         setState(() {
-  //           liveStatus = false;
-  //         });
-  //       }
-
-  //       if (shouldPop) {
-  //         Navigator.of(context, rootNavigator: true).pop();
-  //       }
-
-  //       if (shouldPlayVideo) {
-  //         Navigator.push(
-  //           context,
-  //           MaterialPageRoute(
-  //             builder: (context) => VideoScreen(
-  //               videoUrl: responseData['url']!,
-  //               channelList: channelList,
-  //               videoId: int.parse(contentId),
-  //               videoType: responseData['type']!,
-  //               isLive: true,
-  //               isVOD: false,
-  //               bannerImageUrl: responseData['banner']!,
-  //               startAtPosition: Duration.zero,
-  //               isBannerSlider: true,
-  //               source: 'isBannerSlider',
-  //               isSearch: false,
-  //               unUpdatedUrl: originalUrl,
-  //               name: responseData['name']!,
-  //               liveStatus: liveStatus,
-  //             ),
-  //           ),
-  //         ).then((_) {
-  //           _isNavigating = false;
-  //         });
-  //       }
-  //     } else {
-  //       throw Exception('Video not found');
-  //     }
-  //   } catch (e) {
-  //     if (shouldPop) {
-  //       Navigator.of(context, rootNavigator: true).pop();
-  //     }
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Something Went Wrong: ${e.toString()}')),
-  //     );
-  //   } finally {
-  //     _isNavigating = false;
-  //   }
-  // }
 
   Future<void> fetchAndPlayVideo(
       String contentId, List<NewsItemModel> channelList) async {
@@ -1488,10 +1334,9 @@ class _BannerSliderState extends State<BannerSlider> {
         });
         printLastPlayedPositions();
         print("LoadedlastPlayedVideos: $lastPlayedVideos");
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-
-        sharedDataProvider.updateLastPlayedVideos(lastPlayedVideos);
-  });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          sharedDataProvider.updateLastPlayedVideos(lastPlayedVideos);
+        });
         // WidgetsBinding.instance.addPostFrameCallback((_) {
         //   if (lastPlayedVideos.isNotEmpty) {
         //     context.read<FocusProvider>().setFirstLastPlayedFocusNode(
@@ -1505,9 +1350,6 @@ class _BannerSliderState extends State<BannerSlider> {
       });
     }
   }
-
-
-
 
   void printLastPlayedPositions() {
     for (int i = 0; i < lastPlayedVideos.length; i++) {

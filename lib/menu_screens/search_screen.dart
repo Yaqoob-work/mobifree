@@ -438,7 +438,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ColorProvider>(builder: (context, colorProvider, child) {
+    return 
+    PopScope(
+    canPop: false, // Back button se page pop nahi hoga
+    onPopInvoked: (didPop) {
+      if (!didPop) {
+        // Back button dabane par ye function call hoga
+        context.read<FocusProvider>().requestWatchNowFocus();
+      }
+    },
+    child:
+    Consumer<ColorProvider>(builder: (context, colorProvider, child) {
       // Get background color based on provider state
       Color backgroundColor =
           colorProvider.isItemFocused ? colorProvider.dominantColor : cardColor;
@@ -486,7 +496,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       );
-    });
+    }));
   }
 
   Widget _buildSearchBar() {

@@ -39,6 +39,7 @@ class ApiService {
 // }
 
   Future<List<NewsItemModel>> fetchMusicData() async {
+    try{
     final response = await https.get(
       Uri.parse('https://api.ekomflix.com/android/getFeaturedLiveTV'),
       headers: {'x-api-key': 'vLQTuPZUxktl5mVW'},
@@ -56,7 +57,14 @@ class ApiService {
 
       return sortedList;
     } else {
-      throw Exception('Failed to fetch music data');
+      // throw Exception('Failed to fetch music data');
+      throw Exception('Error fetching music data - Status Code: ${response.statusCode}');
+
+    }
+    } catch (e, stacktrace) {
+      print('Error fetching music data: $e');
+      throw Exception('Catch Error fetching music data :$e\n$stacktrace');
+
     }
   }
 

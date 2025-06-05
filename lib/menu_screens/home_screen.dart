@@ -180,7 +180,7 @@ import 'package:mobi_tv_entertainment/video_widget/socket_service.dart';
 import 'package:mobi_tv_entertainment/widgets/small_widgets/loading_indicator.dart';
 import 'package:provider/provider.dart';
 import 'home_sub_screen/banner_slider_screen.dart';
-import 'home_sub_screen/manage_movies.dart';
+import 'home_sub_screen/movies.dart';
 import 'home_sub_screen/music_screen.dart';
 import 'home_sub_screen/sub_vod.dart';
 import 'home_sub_screen/home_category.dart';
@@ -213,6 +213,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late FocusNode firstHomeCategoryFocusNode;
 
   bool _isLoading = false;
+
+
+  
 
   @override
   void initState() {
@@ -350,9 +353,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Use the dynamically calculated height based on category count
                     height: manageMoviesHeight,
                     key: manageMoviesKey,
-                    child: ManageMovies(
+                    child: Movies(
                       focusNode: manageMoviesFocusNode,
                     ),
+                    
                   ),
                   SizedBox(
                     // Use the dynamically calculated height based on category count

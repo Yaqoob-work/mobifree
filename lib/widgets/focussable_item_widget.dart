@@ -189,6 +189,7 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobi_tv_entertainment/main.dart';
 import 'package:mobi_tv_entertainment/menu_screens/home_sub_screen/sub_vod.dart';
 import 'package:mobi_tv_entertainment/provider/color_provider.dart';
@@ -204,6 +205,7 @@ class FocusableItemWidget extends StatefulWidget {
   final double? width;
   final double? height;
   final double? focusedHeight;
+  final VoidCallback? onUpPress; 
 
   const FocusableItemWidget({
     required this.imageUrl,
@@ -215,6 +217,7 @@ class FocusableItemWidget extends StatefulWidget {
     this.width,
     this.height,
     this.focusedHeight,
+    this.onUpPress,
   });
 
   @override
@@ -295,13 +298,33 @@ class _FocusableItemWidgetState extends State<FocusableItemWidget> {
           context.read<ColorProvider>().updateColor(paletteColor, true);
         }
       },
+      
       actions: {
+        // ActivateIntent: CallbackAction<ActivateIntent>(
+        //   onInvoke: (ActivateIntent intent) {
+        //     widget.onTap();
+        //     return null;
+        //   },
+        // ),
         ActivateIntent: CallbackAction<ActivateIntent>(
           onInvoke: (ActivateIntent intent) {
-            widget.onTap();
+            // Handle both cases - up press and normal tap
+            if (widget.onUpPress != null && _focusNode.hasFocus) {
+              widget.onUpPress!();
+            } else {
+              widget.onTap();
+            }
             return null;
           },
         ),
+      },
+
+      
+      
+      shortcuts: {
+        // Add this to handle both Enter and Select keys
+        LogicalKeySet(LogicalKeyboardKey.select): ActivateIntent(),
+        LogicalKeySet(LogicalKeyboardKey.enter): ActivateIntent(),
       },
       
       child: GestureDetector(

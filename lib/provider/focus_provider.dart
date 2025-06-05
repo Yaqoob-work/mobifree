@@ -73,6 +73,122 @@ class FocusProvider extends ChangeNotifier {
   }
 
 
+  
+
+
+  FocusNode? _firstManageMoviesFocusNode;
+  FocusNode? _firstManageWebseriesFocusNode;
+  bool _webseriesFocusPrepared = false;
+
+  // Movies focus management
+  void setFirstManageMoviesFocusNode(FocusNode node) {
+    _firstManageMoviesFocusNode = node;
+     print('🎭 Set first webseries focus node: $node');
+    notifyListeners();
+  }
+
+  void requestManageMoviesFocus() {
+    if (_firstManageMoviesFocusNode != null) {
+      _firstManageMoviesFocusNode!.requestFocus();
+    }
+  }
+
+  // Webseries focus management
+  void prepareWebseriesFocus() {
+    _webseriesFocusPrepared = true;
+    notifyListeners();
+  }
+
+  void setFirstManageWebseriesFocusNode(FocusNode node) {
+    _firstManageWebseriesFocusNode = node;
+    notifyListeners();
+  }
+
+    void requestFirstWebseriesFocus() {
+    if (_firstManageWebseriesFocusNode != null) {
+      print('🎭 Requesting focus on first webseries node');
+      _firstManageWebseriesFocusNode!.requestFocus();
+    } else {
+      print('❌ First webseries focus node is null');
+    }
+  }
+
+  // void requestFirstWebseriesFocus() {
+  //   if (_firstManageWebseriesFocusNode != null) {
+  //     _firstManageWebseriesFocusNode!.requestFocus();
+  //   } 
+  // }
+
+  // Add this to clear focus nodes when not needed
+  void clearWebseriesFocus() {
+    _firstManageWebseriesFocusNode = null;
+    _webseriesFocusPrepared = false;
+  }
+
+
+
+
+
+
+
+// // In FocusProvider:
+// FocusNode? manageWebseriesFirstNode;
+// void setFirstManageWebseriesFocusNode(FocusNode? node) {
+//   manageWebseriesFirstNode = node;
+// }
+// void requestManageWebseriesFocus() {
+//   // Try to request focus after a short delay so that widget is built
+//   if (manageWebseriesFirstNode != null) {
+//     Future.delayed(Duration(milliseconds: 30), () {
+//       if (manageWebseriesFirstNode!.canRequestFocus) {
+//         manageWebseriesFirstNode!.requestFocus();
+//       }
+//     });
+//   }
+// }
+
+
+
+// // Add these to your existing FocusProvider class
+
+// FocusNode? _firstManageWebseriesFocusNode;
+// bool _isWebseriesReady = false;
+// // final Map<String, GlobalKey> _elementKeys = {}; // This should already exist in your code
+
+// // Set the first focus node for webseries
+// void setFirstManageWebseriesFocusNode(FocusNode node) {
+//   _firstManageWebseriesFocusNode?.dispose(); // Dispose old node if exists
+//   _firstManageWebseriesFocusNode = node;
+//   print("📺 setFirstManageWebseriesFocusNode: $node");
+
+//   _isWebseriesReady = true;
+//   print("✅ Webseries focus node registered: ${node.debugLabel}");
+//   notifyListeners();
+// }
+
+// // Request focus on webseries with retry logic
+// void requestManageWebseriesFocus() {
+//   if (_firstManageWebseriesFocusNode != null && 
+//       _firstManageWebseriesFocusNode!.context != null) {
+//     print("🚀 Requesting focus on first webseries item");
+//   print("📺 requestManageWebseriesFocus: $_firstManageWebseriesFocusNode");
+//     _firstManageWebseriesFocusNode!.requestFocus();
+    
+
+//     scrollToElement('manageWebseries');
+//   } else {
+//     print("⚠️ First webseries focus node not available, scheduling retry");
+//     _isWebseriesReady = false;
+    
+//     // Retry mechanism - removed 'mounted' check as it's not needed here
+//     Future.delayed(Duration(milliseconds: 100), () {
+//       if (!_isWebseriesReady) { // Removed 'mounted' check
+//         print("🔄 Retrying webseries focus request");
+//         requestManageWebseriesFocus();
+//       }
+//     });
+//   }
+// }
 
 
 
@@ -124,11 +240,22 @@ class FocusProvider extends ChangeNotifier {
   }
 
 
-  // In focus_provider.dart
+  // // In focus_provider.dart
+  // void registerElementKey(String identifier, GlobalKey key) {
+  //   _elementKeys[identifier] = key;
+  //   notifyListeners();
+  // }
+
+
   void registerElementKey(String identifier, GlobalKey key) {
+    final bool isNewKey = _elementKeys[identifier] != key;
     _elementKeys[identifier] = key;
-    notifyListeners();
-  }
+    if (isNewKey) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+    }
+}
 
   void unregisterElementKey(String identifier) {
     _elementKeys.remove(identifier);
@@ -574,7 +701,7 @@ void requestLiveScreenFocus() {
   FocusNode? _watchNowFocusNode;
   // FocusNode? _firstMusicItemFocusNode;
   // FocusNode? _firstSubVodFocusNode;
-  FocusNode? _firstManageMoviesFocusNode;
+  // FocusNode? _firstManageMoviesFocusNode;
   
   // Category count for ManageMovies
   int _categoryCountMovies = 0;
@@ -617,36 +744,39 @@ void requestLiveScreenFocus() {
   }
   
 
-  
 
 
 
 
-  FocusNode? firstManageMoviesFocusNode;
-
-  void setFirstManageMoviesFocusNode(FocusNode node) {
-    firstManageMoviesFocusNode = node;
-    notifyListeners();
-  }
-
-  void requestManageMoviesFocus() {
-    firstManageMoviesFocusNode?.requestFocus();
-      scrollToElement('manageMovies');
-  }
 
 
 
-  FocusNode? firstManageWebseriesFocusNode;
 
-  void setFirstManageWebseriesFocusNode(FocusNode node) {
-    firstManageWebseriesFocusNode = node;
-    notifyListeners();
-  }
+  // FocusNode? firstManageMoviesFocusNode;
 
-  void requestManageWebseriesFocus() {
-    firstManageWebseriesFocusNode?.requestFocus();
-      scrollToElement('manageWebseries');
-  }
+  // void setFirstManageMoviesFocusNode(FocusNode node) {
+  //   firstManageMoviesFocusNode = node;
+  //   notifyListeners();
+  // }
+
+  // void requestManageMoviesFocus() {
+  //   firstManageMoviesFocusNode?.requestFocus();
+  //     scrollToElement('manageMovies');
+  // }
+
+
+
+  // FocusNode? firstManageWebseriesFocusNode;
+
+  // void setFirstManageWebseriesFocusNode(FocusNode node) {
+  //   firstManageWebseriesFocusNode = node;
+  //   notifyListeners();
+  // }
+
+  // void requestManageWebseriesFocus() {
+  //   firstManageWebseriesFocusNode?.requestFocus();
+  //     scrollToElement('manageWebseries');
+  // }
 
 
   

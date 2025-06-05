@@ -75,18 +75,16 @@ class _MusicScreenState extends State<MusicScreen> {
     //     });
     // }
 
-
-  //     categories.forEach((category) {
-  //   categoryFocusNodes[category] = FocusNode()
-  //     ..addListener(() {
-  //       if (categoryFocusNodes[category]!.hasFocus) {
-  //         widget.onFocusChange?.call(true);
-  //       }
-  //     });
-  // });
+    //     categories.forEach((category) {
+    //   categoryFocusNodes[category] = FocusNode()
+    //     ..addListener(() {
+    //       if (categoryFocusNodes[category]!.hasFocus) {
+    //         widget.onFocusChange?.call(true);
+    //       }
+    //     });
+    // });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      
       // Agar koi banner available nahi hai, tab category button focus set karein
       final firstCategoryNode = categoryFocusNodes[categories.first];
       if (firstCategoryNode != null) {
@@ -164,69 +162,83 @@ class _MusicScreenState extends State<MusicScreen> {
     );
   }
 
-
   Future<void> _loadCachedDataAndFetchMusic() async {
-  setState(() {
-    _isLoading = true;
-    _errorMessage = '';
-  });
-
-  try {
-    // Step 1: Load cached data
-    await _loadCachedMusicData();
-
-    // Step 2: Fetch new data in the background and update UI if needed
-    await _fetchMusicInBackground();
-  } catch (e) {
     setState(() {
-      _errorMessage = 'Failed to load data';
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = '';
     });
-  }
-}
 
-Future<void> _loadCachedMusicData() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedMusic = prefs.getString('music_list');
+    try {
+      // Step 1: Load cached data
+      await _loadCachedMusicData();
 
-    if (cachedMusic != null) {
-      final List<dynamic> cachedData = json.decode(cachedMusic);
+      // Step 2: Fetch new data in the background and update UI if needed
+      await _fetchMusicInBackground();
+    } catch (e) {
       setState(() {
-        _musicList =
-            cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
-        _isLoading = false; // Show cached data immediately
+        // _errorMessage = 'Failed to load data';
+        _isLoading = false;
       });
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      //   content: Text("_loadCachedDataAndFetch: $e"),
+      //   backgroundColor: Colors.red,
+      // ));
     }
-  } catch (e) {
-    print('Error loading cached music data: $e');
   }
-}
 
-Future<void> _fetchMusicInBackground() async {
-  try {
-    // Step 1: Fetch new data from API
-    final newMusicList = await _apiService.fetchMusicData();
+  Future<void> _loadCachedMusicData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedMusic = prefs.getString('music_list');
 
-    // Step 2: Compare with cached data
-    final prefs = await SharedPreferences.getInstance();
-    final cachedMusic = prefs.getString('music_list');
-    final String newMusicJson = json.encode(newMusicList);
-
-    if (cachedMusic == null || cachedMusic != newMusicJson) {
-      // Step 3: Update cache if new data is different
-      await prefs.setString('music_list', newMusicJson);
-
-      // Step 4: Update UI with new data
-      setState(() {
-        _musicList = newMusicList;
-      });
+      if (cachedMusic != null) {
+        final List<dynamic> cachedData = json.decode(cachedMusic);
+        setState(() {
+          _musicList =
+              cachedData.map((item) => NewsItemModel.fromJson(item)).toList();
+          _isLoading = false; // Show cached data immediately
+        });
+      }
+    } catch (e) {
+      print('Error loading cached music data: $e');
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      //   content: Text("_loadCachedData : $e"),
+      //   backgroundColor: Colors.red,
+      // ));
     }
-  } catch (e) {
-    print('Error fetching music data: $e');
   }
-}
 
+  Future<void> _fetchMusicInBackground() async {
+    try {
+      // Step 1: Fetch new data from API
+      final newMusicList = await _apiService.fetchMusicData();
+
+      // Step 2: Compare with cached data
+      final prefs = await SharedPreferences.getInstance();
+      final cachedMusic = prefs.getString('music_list');
+      final String newMusicJson = json.encode(newMusicList);
+
+      if (cachedMusic == null || cachedMusic != newMusicJson) {
+        // Step 3: Update cache if new data is different
+        await prefs.setString('music_list', newMusicJson);
+
+        // Step 4: Update UI with new data
+        setState(() {
+          _musicList = newMusicList;
+        });
+      }
+    } catch (e, stacktrace) {
+      print('Error fetching music data: $e');
+
+        print('❌ Detailed error: $e');
+  print('📌 Stacktrace: $stacktrace');
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text("Music API fetch failed: $e"),
+    backgroundColor: Colors.red,
+  ));
+
+    }
+  }
 
   // Future<void> _loadCachedDataAndFetchMusic() async {
   //   setState(() {
@@ -290,19 +302,17 @@ Future<void> _fetchMusicInBackground() async {
   //   }
   // }
 
-
   void _initializeNewsItemFocusNodes() {
-  newsItemFocusNodes.clear();
-  for (var item in _musicList) {
-    newsItemFocusNodes[item.id] = FocusNode()
-      ..addListener(() {
-        if (newsItemFocusNodes[item.id]!.hasFocus) {
-          _scrollToFocusedItem(item.id);
-        }
-      });
+    newsItemFocusNodes.clear();
+    for (var item in _musicList) {
+      newsItemFocusNodes[item.id] = FocusNode()
+        ..addListener(() {
+          if (newsItemFocusNodes[item.id]!.hasFocus) {
+            _scrollToFocusedItem(item.id);
+          }
+        });
+    }
   }
-}
-
 
   Future<void> fetchData() async {
     setState(() {
@@ -346,9 +356,14 @@ Future<void> _fetchMusicInBackground() async {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Something Went Wrong';
+        // _errorMessage = 'Something Went Wrong';
         _isLoading = false;
       });
+
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      //   content: Text("_fetchData : $e"),
+      //   backgroundColor: Colors.red,
+      // ));
     }
   }
 
@@ -427,7 +442,20 @@ Future<void> _fetchMusicInBackground() async {
                   //     }
                   //   }
                   // }
-                  else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+
+                  else if (event is RawKeyDownEvent &&
+                      event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    if (_musicList.isNotEmpty) {
+                      // पहला न्यूज़-आइटम लें
+                      final firstId = _musicList[0].id;
+                      final nextNode = newsItemFocusNodes[firstId];
+                      if (nextNode != null) {
+                        FocusScope.of(context).requestFocus(nextNode);
+                        return KeyEventResult.handled;
+                      }
+                    }
+                  } else if (event.logicalKey ==
+                      LogicalKeyboardKey.arrowRight) {
                     if (index == categories.length - 1) {
                       FocusScope.of(context).requestFocus(moreFocusNode);
                     } else {
@@ -812,7 +840,8 @@ Future<void> _fetchMusicInBackground() async {
               streamType: 'M3u8',
               type: 'M3u8',
               genres: newsItem.genres,
-              status: newsItem.status, index: newsItem.index,
+              status: newsItem.status,
+              index: newsItem.index,
             );
             break; // Exit loop when URL is successfully updated
           } catch (e) {

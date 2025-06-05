@@ -74,6 +74,7 @@ class _NewsItemState extends State<NewsItem> {
       onKey: (FocusNode node, RawKeyEvent event) {
         if (event is RawKeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            
             widget.onDownPress?.call(); // Call the callback
             
             return KeyEventResult.handled;
