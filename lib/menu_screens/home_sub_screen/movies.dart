@@ -1,9 +1,5 @@
 
 
-
-
-
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -26,7 +22,7 @@ class Movies extends StatefulWidget {
   final Function(bool)? onFocusChange;
   final FocusNode focusNode;
 
-  const Movies({Key? key, this.onFocusChange, required this.focusNode}) 
+  const Movies({Key? key, this.onFocusChange, required this.focusNode})
       : super(key: key);
 
   @override
@@ -49,48 +45,53 @@ class _MoviesState extends State<Movies> {
   @override
   void initState() {
     super.initState();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    context.read<FocusProvider>().setMoviesScrollController(_scrollController);
+  });
+
     _viewAllFocusNode = FocusNode()
       ..addListener(() {
         if (_viewAllFocusNode!.hasFocus) {
           setState(() {
-            _viewAllColor = Colors.primaries[Random().nextInt(Colors.primaries.length)];
+            _viewAllColor =
+                Colors.primaries[Random().nextInt(Colors.primaries.length)];
           });
         }
       });
     _loadCachedDataAndFetchMovies();
-  //    WidgetsBinding.instance.addPostFrameCallback((_) {
-  //   if (moviesList.isNotEmpty) {
-  //     final firstMovieId = moviesList[0]['id'];
-  //     if (movieFocusNodes.containsKey(firstMovieId)) {
-  //       // YAHAN SET KARO
-  //       context.read<FocusProvider>().setFirstManageMoviesFocusNode(
-  //         movieFocusNodes[firstMovieId]!
-  //       );
-  //       print('🎬 Registered Movies FocusNode: ${movieFocusNodes[firstMovieId]}');
-  //     }
-  //   }
-  // });
-  _initializeMovieFocusNodes();
+    _initializeMovieFocusNodes();
+  }
+
+  // Add this method to your _MoviesState class, similar to MusicScreen
+  void _scrollToFirstItem() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0, // Scroll to beginning
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
 
-  void _registerMoviesFocus() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final focusProvider = context.read<FocusProvider>();
-      
-      if (moviesList.isNotEmpty) {
-        final firstMovieId = moviesList[0]['id'];
-        if (movieFocusNodes.containsKey(firstMovieId)) {
-          focusProvider.setFirstManageMoviesFocusNode(
-            movieFocusNodes[firstMovieId]!
-          );
-        }
+  // 2. _registerMoviesFocus method को update करें
+void _registerMoviesFocus() {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final focusProvider = context.read<FocusProvider>();
+    
+    if (moviesList.isNotEmpty) {
+      final firstMovieId = moviesList[0]['id'];
+      if (movieFocusNodes.containsKey(firstMovieId)) {
+        focusProvider.setFirstManageMoviesFocusNode(
+          movieFocusNodes[firstMovieId]!
+        );
+        print('🎬 Registered Movies FocusNode: ${movieFocusNodes[firstMovieId]}');
       }
-      
-      // Prepare webseries focus
-      focusProvider.prepareWebseriesFocus();
-    });
-  }
+    }
+  });
+}
+
 
   // Update this method
   void _initializeMovieFocusNodes() {
@@ -159,7 +160,7 @@ class _MoviesState extends State<Movies> {
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-        
+
         // Sort data by API index if available
         if (data.isNotEmpty && data[0]['index'] != null) {
           data.sort((a, b) => a['index'].compareTo(b['index']));
@@ -200,7 +201,7 @@ class _MoviesState extends State<Movies> {
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-        
+
         // Sort data by API index if available
         if (data.isNotEmpty && data[0]['index'] != null) {
           data.sort((a, b) => a['index'].compareTo(b['index']));
@@ -228,8 +229,6 @@ class _MoviesState extends State<Movies> {
       });
     }
   }
-
-
 
   void _scrollToFocusedItem(String itemId) {
     if (movieFocusNodes[itemId] != null && movieFocusNodes[itemId]!.hasFocus) {
@@ -275,7 +274,7 @@ class _MoviesState extends State<Movies> {
           Text(
             'MOVIES',
             style: TextStyle(
-              fontSize: menutextsz,
+              fontSize: Headingtextsz,
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
@@ -289,9 +288,12 @@ class _MoviesState extends State<Movies> {
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
     } else if (_errorMessage.isNotEmpty) {
-      return Center(child: Text(_errorMessage, style: TextStyle(color: Colors.white)));
+      return Center(
+          child: Text(_errorMessage, style: TextStyle(color: Colors.white)));
     } else if (moviesList.isEmpty) {
-      return Center(child: Text('No movies found', style: TextStyle(color: Colors.white)));
+      return Center(
+          child:
+              Text('No movies found', style: TextStyle(color: Colors.white)));
     } else {
       return _buildMoviesList();
     }
@@ -300,7 +302,6 @@ class _MoviesState extends State<Movies> {
   Widget _buildMoviesList() {
     bool showViewAll = moviesList.length > 7;
     return ListView.builder(
-      
       scrollDirection: Axis.horizontal,
       controller: _scrollController,
       itemCount: showViewAll ? 8 : moviesList.length,
@@ -316,7 +317,7 @@ class _MoviesState extends State<Movies> {
 
   Widget _buildViewAllItem() {
     bool isFocused = _viewAllFocusNode?.hasFocus ?? false;
-    
+
     return Focus(
       focusNode: _viewAllFocusNode,
       onKey: (FocusNode node, RawKeyEvent event) {
@@ -325,7 +326,8 @@ class _MoviesState extends State<Movies> {
             return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
             if (moviesList.isNotEmpty) {
-              FocusScope.of(context).requestFocus(movieFocusNodes[moviesList[6]['id']]);
+              FocusScope.of(context)
+                  .requestFocus(movieFocusNodes[moviesList[6]['id']]);
               return KeyEventResult.handled;
             }
           } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
@@ -333,15 +335,15 @@ class _MoviesState extends State<Movies> {
             return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
 // Also update the _buildViewAllItem arrow down handling:
-  FocusScope.of(context).unfocus();
-  print('⬇️ Arrow down pressed on Movie View All');
-  
-  Future.delayed(const Duration(milliseconds: 100), () {
-    if (mounted) {
-      context.read<FocusProvider>().requestFirstWebseriesFocus();
-    }
-  });
-  return KeyEventResult.handled;
+            FocusScope.of(context).unfocus();
+            print('⬇️ Arrow down pressed on Movie View All');
+
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted) {
+                context.read<FocusProvider>().requestFirstWebseriesFocus();
+              }
+            });
+            return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.select) {
             _navigateToMoviesGrid();
             return KeyEventResult.handled;
@@ -357,7 +359,7 @@ class _MoviesState extends State<Movies> {
             AnimatedContainer(
               duration: Duration(milliseconds: 300),
               width: MediaQuery.of(context).size.width * 0.19,
-              height: isFocused 
+              height: isFocused
                   ? MediaQuery.of(context).size.height * 0.22
                   : MediaQuery.of(context).size.height * 0.2,
               decoration: BoxDecoration(
@@ -445,72 +447,46 @@ class _MoviesState extends State<Movies> {
           context.read<ColorProvider>().resetColor();
         }
       },
-      // onKey: (FocusNode node, RawKeyEvent event) {
-      //   if (event is RawKeyDownEvent) {
-      //     if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-      //       if (index < moviesList.length - 1 && index != 6) {
-      //         FocusScope.of(context).requestFocus(movieFocusNodes[moviesList[index + 1]['id']]);
-      //         return KeyEventResult.handled;
-      //       } else if (index == 6 && moviesList.length > 7) {
-      //         FocusScope.of(context).requestFocus(_viewAllFocusNode);
-      //         return KeyEventResult.handled;
-      //       }
-      //     } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-      //       if (index > 0) {
-      //         FocusScope.of(context).requestFocus(movieFocusNodes[moviesList[index - 1]['id']]);
-      //         return KeyEventResult.handled;
-      //       }
-      //     } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      //       context.read<FocusProvider>().requestSubVodFocus();
-      //       return KeyEventResult.handled;
-      //     } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      //       FocusScope.of(context).unfocus();
-      //               print('⬇️ Arrow down pressed on Movie');
-      //     context.read<FocusProvider>().requestFirstWebseriesFocus();
-      //       return KeyEventResult.handled;
-      //     } else if (event.logicalKey == LogicalKeyboardKey.select) {
-      //       _handleMovieTap(movie);
-      //       return KeyEventResult.handled;
-      //     }
-      //   }
-      //   return KeyEventResult.ignored;
-      // },
 
       onKey: (FocusNode node, RawKeyEvent event) {
-  if (event is RawKeyDownEvent) {
-    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-      if (index < moviesList.length - 1 && index != 6) {
-        FocusScope.of(context).requestFocus(movieFocusNodes[moviesList[index + 1]['id']]);
-        return KeyEventResult.handled;
-      } else if (index == 6 && moviesList.length > 7) {
-        FocusScope.of(context).requestFocus(_viewAllFocusNode);
-        return KeyEventResult.handled;
-      }
-    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-      if (index > 0) {
-        FocusScope.of(context).requestFocus(movieFocusNodes[moviesList[index - 1]['id']]);
-        return KeyEventResult.handled;
-      }
-    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      context.read<FocusProvider>().requestSubVodFocus();
-      return KeyEventResult.handled;
-    } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      // Fix: Unfocus current and request webseries focus with delay
-      FocusScope.of(context).unfocus();
-      print('⬇️ Arrow down pressed on Movie');
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          context.read<FocusProvider>().requestFirstWebseriesFocus();
+        if (event is RawKeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            if (index < moviesList.length - 1 && index != 6) {
+              FocusScope.of(context)
+                  .requestFocus(movieFocusNodes[moviesList[index + 1]['id']]);
+              return KeyEventResult.handled;
+            } else if (index == 6 && moviesList.length > 7) {
+              FocusScope.of(context).requestFocus(_viewAllFocusNode);
+              return KeyEventResult.handled;
+            }
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            if (index > 0) {
+              FocusScope.of(context)
+                  .requestFocus(movieFocusNodes[moviesList[index - 1]['id']]);
+              return KeyEventResult.handled;
+            }
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            context.read<FocusProvider>().requestSubVodFocus();
+            return KeyEventResult.handled;
+            
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            // Fix: Unfocus current and request webseries focus with delay
+            _scrollToFirstItem();
+            FocusScope.of(context).unfocus();
+            print('⬇️ Arrow down pressed on Movie');
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted) {
+                context.read<FocusProvider>().requestFirstWebseriesFocus();
+              }
+            });
+            return KeyEventResult.handled;
+          } else if (event.logicalKey == LogicalKeyboardKey.select) {
+            _handleMovieTap(movie);
+            return KeyEventResult.handled;
+          }
         }
-      });
-      return KeyEventResult.handled;
-    } else if (event.logicalKey == LogicalKeyboardKey.select) {
-      _handleMovieTap(movie);
-      return KeyEventResult.handled;
-    }
-  }
-  return KeyEventResult.ignored;
-},
+        return KeyEventResult.ignored;
+      },
       child: GestureDetector(
         onTap: () => _handleMovieTap(movie),
         child: Column(
@@ -598,22 +574,22 @@ class _MoviesState extends State<Movies> {
 
     try {
       // Convert all movies to NewsItemModel list
-      List<NewsItemModel> allMovies = moviesList.map((m) => 
-        NewsItemModel(
-          id: m['id'],
-          name: m['name'],
-          banner: m['banner'],
-          poster: m['poster'],
-          description: m['description'] ?? '',
-          url: m['url'] ?? '',
-          streamType: m['streamType'] ?? '',
-          type: m['type'] ?? '',
-          genres: m['genres'] ?? '',
-          status: m['status'] ?? '',
-          videoId: m['videoId'] ?? '',
-          index: m['index']?.toString() ?? '',
-        )
-      ).toList();
+      List<NewsItemModel> allMovies = moviesList
+          .map((m) => NewsItemModel(
+                id: m['id'],
+                name: m['name'],
+                banner: m['banner'],
+                poster: m['poster'],
+                description: m['description'] ?? '',
+                url: m['url'] ?? '',
+                streamType: m['streamType'] ?? '',
+                type: m['type'] ?? '',
+                genres: m['genres'] ?? '',
+                status: m['status'] ?? '',
+                videoId: m['videoId'] ?? '',
+                index: m['index']?.toString() ?? '',
+              ))
+          .toList();
 
       // Close loading dialog
       Navigator.of(context, rootNavigator: true).pop();
@@ -703,22 +679,22 @@ class _MoviesGridViewState extends State<MoviesGridView> {
                 focusNode: _movieFocusNodes[movie['id']]!,
                 onTap: () {
                   // Convert all movies to NewsItemModel list
-                  List<NewsItemModel> allMovies = widget.moviesList.map((m) => 
-                    NewsItemModel(
-                      id: m['id'],
-                      name: m['name'],
-                      banner: m['banner'],
-                      poster: m['poster'],
-                      description: m['description'] ?? '',
-                      url: m['url'] ?? '',
-                      streamType: m['streamType'] ?? '',
-                      type: m['type'] ?? '',
-                      genres: m['genres'] ?? '',
-                      status: m['status'] ?? '',
-                      videoId: m['videoId'] ?? '',
-                      index: m['index']?.toString() ?? '',
-                    )
-                  ).toList();
+                  List<NewsItemModel> allMovies = widget.moviesList
+                      .map((m) => NewsItemModel(
+                            id: m['id'],
+                            name: m['name'],
+                            banner: m['banner'],
+                            poster: m['poster'],
+                            description: m['description'] ?? '',
+                            url: m['url'] ?? '',
+                            streamType: m['streamType'] ?? '',
+                            type: m['type'] ?? '',
+                            genres: m['genres'] ?? '',
+                            status: m['status'] ?? '',
+                            videoId: m['videoId'] ?? '',
+                            index: m['index']?.toString() ?? '',
+                          ))
+                      .toList();
 
                   Navigator.push(
                     context,
@@ -733,8 +709,8 @@ class _MoviesGridViewState extends State<MoviesGridView> {
                     ),
                   );
                 },
-                fetchPaletteColor: (url) => PaletteColorService()
-                    .getSecondaryColor(url),
+                fetchPaletteColor: (url) =>
+                    PaletteColorService().getSecondaryColor(url),
               );
             },
           ),

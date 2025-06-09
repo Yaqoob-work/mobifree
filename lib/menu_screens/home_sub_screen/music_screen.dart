@@ -22,7 +22,7 @@ import '../../widgets/utils/random_light_color_widget.dart';
 import 'channels_category.dart';
 
 class MusicScreen extends StatefulWidget {
-  final Function(bool)? onFocusChange; // Add this
+  final Function(bool)? onFocusChange; // Add this 
 
   const MusicScreen(
       {Key? key, this.onFocusChange, required FocusNode focusNode})
@@ -302,6 +302,62 @@ class _MusicScreenState extends State<MusicScreen> {
   //   }
   // }
 
+
+
+
+
+  // Also update the existing _scrollToFocusedItem method for better visibility
+// void _scrollToFocusedItem(String itemId) {
+//   if (newsItemFocusNodes[itemId] != null &&
+//       newsItemFocusNodes[itemId]!.hasFocus) {
+    
+//     // Find the index of the focused item
+//     int itemIndex = _musicList.indexWhere((item) => item.id == itemId);
+    
+//     if (itemIndex != -1 && _scrollController.hasClients) {
+//       // Calculate approximate position based on item width
+//       double itemWidth = screenwdt * 0.25; // Adjust based on your item width
+//       double targetPosition = itemIndex * itemWidth;
+      
+//       // Ensure the item is visible with some padding
+//       double maxScroll = _scrollController.position.maxScrollExtent;
+//       double viewportWidth = _scrollController.position.viewportDimension;
+      
+//       if (targetPosition < _scrollController.offset) {
+//         // Item is to the left, scroll left
+//         _scrollController.animateTo(
+//           targetPosition,
+//           duration: Duration(milliseconds: 300),
+//           curve: Curves.easeInOut,
+//         );
+//       } else if (targetPosition + itemWidth > _scrollController.offset + viewportWidth) {
+//         // Item is to the right, scroll right
+//         _scrollController.animateTo(
+//           targetPosition + itemWidth - viewportWidth,
+//           duration: Duration(milliseconds: 300),
+//           curve: Curves.easeInOut,
+//         );
+//       }
+//     }
+//   }
+// }
+
+// // Alternative approach: Ensure focus visibility using Scrollable.ensureVisible
+// void _scrollToFocusedItemAlternative(String itemId) {
+//   if (newsItemFocusNodes[itemId] != null &&
+//       newsItemFocusNodes[itemId]!.hasFocus &&
+//       newsItemFocusNodes[itemId]!.context != null) {
+    
+//     // Use Scrollable.ensureVisible for automatic positioning
+//     Scrollable.ensureVisible(
+//       newsItemFocusNodes[itemId]!.context!,
+//       alignment: 0.2, // Show item at 20% from left edge
+//       duration: Duration(milliseconds: 500),
+//       curve: Curves.easeInOut,
+//     );
+//   }
+// }
+
   void _initializeNewsItemFocusNodes() {
     newsItemFocusNodes.clear();
     for (var item in _musicList) {
@@ -367,6 +423,21 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
+
+
+  void _scrollToFirstItem() {
+  if (_scrollController.hasClients) {
+    _scrollController.animateTo(
+      0.0, // Scroll to beginning
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+}
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -408,53 +479,40 @@ class _MusicScreenState extends State<MusicScreen> {
                   }
                 });
               },
-              onKey: (FocusNode node, RawKeyEvent event) {
-                if (event is RawKeyDownEvent) {
-                  if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                    final sharedDataProvider =
-                        context.read<SharedDataProvider>();
-                    final lastPlayedVideos =
-                        sharedDataProvider.lastPlayedVideos;
+// Complete updated category button arrow down handling
+onKey: (FocusNode node, RawKeyEvent event) {
+  if (event is RawKeyDownEvent) {
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      final sharedDataProvider = context.read<SharedDataProvider>();
+      final lastPlayedVideos = sharedDataProvider.lastPlayedVideos;
 
-                    if (lastPlayedVideos.isNotEmpty) {
-                      // Request focus for the first banner in lastPlayedVideos
-                      context
-                          .read<FocusProvider>()
-                          .requestFirstLastPlayedFocus();
-                      return KeyEventResult.handled;
-                    }
-                  }
-                  // else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                  //   if (_musicList.isNotEmpty) {
-                  //     // // Request focus for first news item
-                  //     // final firstItemId = _musicList[0].id;
-                  //     // if (newsItemFocusNodes.containsKey(firstItemId)) {
-                  //     //   FocusScope.of(context)
-                  //     //       .requestFocus(newsItemFocusNodes[firstItemId]);
-                  //     //   return KeyEventResult.handled;
-                  //     // }
-                  //     final firstItemId = _musicList[0].id;
-                  //     if (newsItemFocusNodes.containsKey(firstItemId)) {
-                  //       // Use FocusProvider to request focus
-                  //       context.read<FocusProvider>().requestNewsItemFocusNode(
-                  //           newsItemFocusNodes[firstItemId]!);
-                  //       return KeyEventResult.handled;
-                  //     }
-                  //   }
-                  // }
-
-                  else if (event is RawKeyDownEvent &&
-                      event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                    if (_musicList.isNotEmpty) {
-                      // पहला न्यूज़-आइटम लें
-                      final firstId = _musicList[0].id;
-                      final nextNode = newsItemFocusNodes[firstId];
-                      if (nextNode != null) {
-                        FocusScope.of(context).requestFocus(nextNode);
-                        return KeyEventResult.handled;
-                      }
-                    }
-                  } else if (event.logicalKey ==
+      if (lastPlayedVideos.isNotEmpty) {
+        context.read<FocusProvider>().requestFirstLastPlayedFocus();
+        return KeyEventResult.handled;
+      }
+    }
+    else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (_musicList.isNotEmpty) {
+        // Ensure first item is visible by scrolling to start
+        _scrollToFirstItem();
+        
+        // Request focus after scrolling animation
+        Future.delayed(Duration(milliseconds: 150), () {
+          final firstId = _musicList[0].id;
+          final nextNode = newsItemFocusNodes[firstId];
+          if (nextNode != null && nextNode.context != null) {
+            FocusScope.of(context).requestFocus(nextNode);
+            
+            // Double ensure visibility
+            Future.delayed(Duration(milliseconds: 50), () {
+              _scrollToFocusedItem(firstId);
+            });
+          }
+        });
+        return KeyEventResult.handled;
+      }
+    }
+                  else if (event.logicalKey ==
                       LogicalKeyboardKey.arrowRight) {
                     if (index == categories.length - 1) {
                       FocusScope.of(context).requestFocus(moreFocusNode);

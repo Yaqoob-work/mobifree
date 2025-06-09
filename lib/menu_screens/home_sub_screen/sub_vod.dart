@@ -684,11 +684,18 @@ class _SubVodState extends State<SubVod> {
                               LogicalKeyboardKey.arrowDown) {
                             print(
                                 "⬇️ SubVod: Arrow Down pressed, requesting ManageMovies item focus");
-                            context
-                                .read<FocusProvider>()
-                                .requestManageMoviesFocus();
+                            // context
+                            //     .read<FocusProvider>()
+                            //     .requestManageMoviesFocus();
 
-                            return KeyEventResult.handled;
+  // context.read<FocusProvider>().requestManageMoviesFocusWithScroll();
+  // return KeyEventResult.handled;
+
+         context.read<FocusProvider>().requestFirstMoviesFocus();
+        return KeyEventResult.handled;
+
+  
+
                           }
                         }
                         return KeyEventResult.ignored;

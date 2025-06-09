@@ -73,6 +73,68 @@ class FocusProvider extends ChangeNotifier {
   }
 
 
+  // 4. FocusProvider में scroll functionality add करें
+ScrollController? _moviesScrollController;
+
+void setMoviesScrollController(ScrollController controller) {
+  _moviesScrollController = controller;
+}
+
+void _scrollToFirstMovieItem() {
+  if (_moviesScrollController != null && _moviesScrollController!.hasClients) {
+    _moviesScrollController!.animateTo(
+      0.0,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+}
+
+
+
+// 3. FocusProvider में ये method add करें (MusicScreen pattern follow करते हुए)
+void requestFirstMoviesFocus() {
+  if (_firstManageMoviesFocusNode != null) {
+    // Pehle scroll करें first item को visible करने के लिए
+    _scrollToFirstMovieItem();
+    
+    // Scroll के बाद focus request करें
+    Future.delayed(const Duration(milliseconds: 150), () {
+      _firstManageMoviesFocusNode!.requestFocus();
+      print('🎯 Requested focus for first movie item');
+      
+      // Double ensure visibility
+      Future.delayed(const Duration(milliseconds: 50), () {
+        _scrollToFirstMovieItem();
+      });
+    });
+  } else {
+    print('⚠️ First movie focus node not available');
+  }
+}
+
+
+
+// ScrollController? _moviesScrollController;
+
+// void setMoviesScrollController(ScrollController controller) {
+//   _moviesScrollController = controller;
+// }
+
+void requestManageMoviesFocusWithScroll() {
+  // Pehle scroll करें
+  if (_moviesScrollController?.hasClients == true) {
+    _moviesScrollController!.animateTo(0.0,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut);
+  }
+  
+  // Phir focus request करें
+  Future.delayed(Duration(milliseconds: 150), () {
+    _firstManageMoviesFocusNode?.requestFocus();
+  });
+}
+
   
 
 
